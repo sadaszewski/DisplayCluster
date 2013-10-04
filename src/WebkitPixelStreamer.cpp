@@ -38,15 +38,12 @@
 /*********************************************************************/
 
 #include "WebkitPixelStreamer.h"
+#include "ContentWindowManager.h"
+#include "main.h"
 
 #include <QtWebKit/QWebFrame>
-#include <QtWebKit/QWebView>
 #include <QtWebKit/QWebElement>
 #include <QKeyEvent>
-
-#include <QTimer>
-
-#include "log.h"
 
 #define WEPPAGE_DEFAULT_WIDTH   1280
 #define WEBPAGE_DEFAULT_HEIGHT  1024
@@ -55,46 +52,49 @@
 #define WEBPAGE_MIN_HEIGHT  (WEBPAGE_DEFAULT_HEIGHT/2)
 
 
+size_t WebkitPixelStreamer::id_ = 0;
 
-WebkitPixelStreamer::WebkitPixelStreamer(QString uri)
-    : LocalPixelStreamer(uri)
-    , webView_(0)
-    , timer_(0)
+WebkitPixelStreamer::WebkitPixelStreamer()
+    : LocalPixelStreamer(getUniqueURI())
     , frameIndex_(0)
 {
-    webView_ = new QWebView();
-    webView_->page()->setViewportSize( QSize( WEPPAGE_DEFAULT_WIDTH*WEBPAGE_DEFAULT_ZOOM, WEBPAGE_DEFAULT_HEIGHT*WEBPAGE_DEFAULT_ZOOM ));
-    webView_->setZoomFactor(WEBPAGE_DEFAULT_ZOOM);
+    webView_.page()->setViewportSize( QSize( WEPPAGE_DEFAULT_WIDTH*WEBPAGE_DEFAULT_ZOOM, WEBPAGE_DEFAULT_HEIGHT*WEBPAGE_DEFAULT_ZOOM ));
+    webView_.setZoomFactor(WEBPAGE_DEFAULT_ZOOM);
 
-    webView_->settings()->setAttribute(QWebSettings::PluginsEnabled, true);
-    webView_->settings()->setAttribute(QWebSettings::FrameFlatteningEnabled, true);
+    QWebSettings* websettings = webView_.settings();
+    websettings->setAttribute( QWebSettings::AcceleratedCompositingEnabled, true );
+    websettings->setAttribute( QWebSettings::FrameFlatteningEnabled, true );
+    websettings->setAttribute( QWebSettings::PluginsEnabled, true );
+#if QT_VERSION >= 0x040800
+    websettings->setAttribute( QWebSettings::WebGLEnabled, true );
+#endif
 
-    timer_ = new QTimer();
-    connect(timer_, SIGNAL(timeout()), this, SLOT(update()));
-    timer_->start(30);
+    connect(&timer_, SIGNAL(timeout()), this, SLOT(update()));
+    timer_.start(1000 / 30);
 }
 
 WebkitPixelStreamer::~WebkitPixelStreamer()
 {
-    timer_->stop();
-    delete timer_;
-    delete webView_;
+    timer_.stop();
 }
-
 
 void WebkitPixelStreamer::setUrl(QString url)
 {
     QMutexLocker locker(&mutex_);
 
-    webView_->load( QUrl(url) );
+    webView_.load( QUrl(url) );
 }
 
+QString WebkitPixelStreamer::getUniqueURI()
+{
+    return QString("WebBrowser%1").arg(++id_);
+}
 
 void WebkitPixelStreamer::updateInteractionState(InteractionState interactionState)
 {
     QMutexLocker locker(&mutex_);
 
-    QWebPage* page = webView_->page();
+    QWebPage* page = webView_.page();
 
     int x = interactionState.mouseX*page->viewportSize().width();
     int y = interactionState.mouseY*page->viewportSize().height();
@@ -113,12 +113,12 @@ void WebkitPixelStreamer::updateInteractionState(InteractionState interactionSta
         // History navigation (until swipe gestures are fixed)
         if (interactionState.mouseX < 0.02)
         {
-            webView_->back();
+            webView_.back();
             return;
         }
         else if (interactionState.mouseX > 0.98)
         {
-            webView_->forward();
+            webView_.forward();
             return;
         }
 
@@ -128,7 +128,7 @@ void WebkitPixelStreamer::updateInteractionState(InteractionState interactionSta
         {
             if (!hitResult.linkUrl().isEmpty())
             {
-                webView_->load(hitResult.linkUrl());
+                webView_.load(hitResult.linkUrl());
             }
             else
             {
@@ -153,11 +153,11 @@ void WebkitPixelStreamer::updateInteractionState(InteractionState interactionSta
 
     else if (interactionState.type == InteractionState::EVT_SWIPE_LEFT)
     {
-        webView_->back();
+        webView_.back();
     }
     else if (interactionState.type == InteractionState::EVT_SWIPE_RIGHT)
     {
-        webView_->forward();
+        webView_.forward();
     }
 
     else if (interactionState.type == InteractionState::EVT_KEY_PRESS)
@@ -183,25 +183,25 @@ void WebkitPixelStreamer::updateInteractionState(InteractionState interactionSta
 
         double zoomFactor = (double)newSize.width() / (double)WEPPAGE_DEFAULT_WIDTH;
 
-        webView_->page()->setViewportSize( newSize );
-        webView_->setZoomFactor(zoomFactor);
+        webView_.page()->setViewportSize( newSize );
+        webView_.setZoomFactor(zoomFactor);
     }
 }
 
 QSize WebkitPixelStreamer::size() const
 {
-    return webView_->page()->viewportSize();
+    return webView_.page()->viewportSize();
 }
 
 void WebkitPixelStreamer::update()
 {
     QMutexLocker locker(&mutex_);
 
-    QWebPage* page = webView_->page();
+    QWebPage* page = webView_.page();
     if( !page->viewportSize().isEmpty())
     {
         if (image_.size() != page->viewportSize())
-	        image_ = QImage( page->viewportSize(), QImage::Format_ARGB32 );
+            image_ = QImage( page->viewportSize(), QImage::Format_ARGB32 );
 
         QPainter painter( &image_ );
         page->mainFrame()->render( &painter );
@@ -226,8 +226,8 @@ PixelStreamSegmentParameters WebkitPixelStreamer::makeSegmentHeader()
     parameters.sourceIndex = 0;
     parameters.frameIndex = frameIndex_;
 
-    parameters.totalHeight = webView_->page()->viewportSize().height();
-    parameters.totalWidth = webView_->page()->viewportSize().width();
+    parameters.totalHeight = webView_.page()->viewportSize().height();
+    parameters.totalWidth = webView_.page()->viewportSize().width();
 
     parameters.height = parameters.totalHeight;
     parameters.width = parameters.totalWidth;

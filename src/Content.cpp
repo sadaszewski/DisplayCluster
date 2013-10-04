@@ -41,7 +41,8 @@
 #include "main.h"
 #include "GLWindow.h"
 #include "log.h"
-#include <QGLWidget>
+
+#define DESCRIPTOR_SEPARATOR "#$%"
 
 Content::Content(QString uri)
 {
@@ -54,6 +55,28 @@ Content::Content(QString uri)
 const QString& Content::getURI() const
 {
     return uri_;
+}
+
+QString Content::getMetaInfo() const
+{
+    return metaInfo_;
+}
+
+void Content::setMetaInfo( const QString& descriptor )
+{
+    metaInfo_ = QString("%1%2").arg(getContentTypeString(getType( )))
+                                 .arg(DESCRIPTOR_SEPARATOR) + descriptor;
+}
+
+bool Content::extractDescriptor( const QString& descriptor,
+                                 CONTENT_TYPE& type, QString& uri )
+{
+    QStringList list = descriptor.split( DESCRIPTOR_SEPARATOR );
+    if( list.size() != 2 )
+        return false;
+    type = getContentType(list.at(0));
+    uri = list.at(1);
+    return true;
 }
 
 void Content::getDimensions(int &width, int &height)

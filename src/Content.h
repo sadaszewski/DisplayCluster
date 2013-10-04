@@ -61,6 +61,11 @@ class Content : public QObject {
 
         const QString& getURI() const;
 
+        QString getMetaInfo() const;
+        void setMetaInfo( const QString& descriptor );
+        static bool extractDescriptor( const QString& descriptor,
+                                       CONTENT_TYPE& type, QString& uri );
+
         virtual CONTENT_TYPE getType() = 0;
 
         void getDimensions(int &width, int &height);
@@ -84,12 +89,14 @@ class Content : public QObject {
         void serialize(Archive & ar, const unsigned int)
         {
             ar & uri_;
+            ar & metaInfo_;
             ar & width_;
             ar & height_;
             ar & blockAdvance_;
         }
 
         QString uri_;
+        QString metaInfo_;
         int width_;
         int height_;
         bool blockAdvance_;

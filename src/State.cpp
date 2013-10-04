@@ -56,7 +56,7 @@ State::State()
 }
 
 bool State::saveXML( const QString& filename,
-                       const ContentWindowManagerPtrs& contentWindowManagers )
+                     const ContentWindowManagerPtrs& contentWindowManagers )
 {
     QDomDocument doc("state");
     QDomElement root = doc.createElement("state");
@@ -83,7 +83,7 @@ bool State::saveXML( const QString& filename,
 }
 
 bool State::loadXML( const QString& filename,
-                       ContentWindowManagerPtrs& contentWindowManagers )
+                     ContentWindowManagerPtrs& contentWindowManagers )
 {
     contentWindowManagers.clear();
 

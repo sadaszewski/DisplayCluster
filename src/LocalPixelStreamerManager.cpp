@@ -52,26 +52,18 @@ LocalPixelStreamerManager::LocalPixelStreamerManager(DisplayGroupManager* displa
     connect(displayGroupManager, SIGNAL(pixelStreamViewClosed(QString)), this, SLOT(removePixelStreamer(QString)));
 }
 
-bool LocalPixelStreamerManager::createWebBrowser(QString uri, QString url)
+void LocalPixelStreamerManager::createWebBrowser( const QString& url )
 {
-    // see if we need to create the object
-    if(map_.count(uri) == 0)
-    {
-        boost::shared_ptr<WebkitPixelStreamer> lpc(new WebkitPixelStreamer(uri));
+    boost::shared_ptr<WebkitPixelStreamer> streamer(new WebkitPixelStreamer);
+    map_[streamer->getUri()] = streamer;
 
-        lpc->setUrl(url);
+    streamer->setUrl(url);
 
-        map_[uri] = lpc;
-
-        displayGroupManager_->openPixelStream(uri, lpc->size().width(), lpc->size().height());
-        bindPixelStreamerInteraction(lpc.get());
-
-        return true;
-    }
-    else
-    {
-        return false;
-    }
+    ContentWindowManagerPtr contentWindowManager =
+             displayGroupManager_->openPixelStream( streamer->getUri(),
+                                                    streamer->size().width(),
+                                                    streamer->size().height( ));
+    bindPixelStreamerInteraction( contentWindowManager, streamer.get( ));
 }
 
 DockPixelStreamer* LocalPixelStreamerManager::getDockInstance()
@@ -102,19 +94,23 @@ bool LocalPixelStreamerManager::isDockOpen()
     return map_.count(uri);
 }
 
-void LocalPixelStreamerManager::openDockAt(QPointF pos)
+void LocalPixelStreamerManager::openDockAt( const QPointF& pos )
 {
     DockPixelStreamer* dock = getDockInstance();
 
-    boost::shared_ptr<ContentWindowManager> cwm = displayGroupManager_->getContentWindowManager(dock->getUri(), CONTENT_TYPE_PIXEL_STREAM);
-    if (!cwm)
+    ContentWindowManagerPtr contentWindowManager =
+            displayGroupManager_->getContentWindowManager( dock->getUri(),
+                                                    CONTENT_TYPE_PIXEL_STREAM );
+    if( !contentWindowManager )
     {
-        displayGroupManager_->openPixelStream(dock->getUri(), dock->size().width(), dock->size().height());
-        bindPixelStreamerInteraction(dock);
-        cwm = displayGroupManager_->getContentWindowManager(dock->getUri(), CONTENT_TYPE_PIXEL_STREAM);
+        contentWindowManager =
+                  displayGroupManager_->openPixelStream( dock->getUri(),
+                                                         dock->size().width(),
+                                                         dock->size().height());
+        bindPixelStreamerInteraction( contentWindowManager, dock );
     }
 
-    setWindowManagerPosition(cwm, pos);
+    setWindowManagerPosition( contentWindowManager, pos );
 
     dock->open();
 }
@@ -132,10 +128,10 @@ void LocalPixelStreamerManager::removePixelStreamer(QString uri)
     }
 }
 
-void LocalPixelStreamerManager::bindPixelStreamerInteraction(LocalPixelStreamer *streamer)
+void LocalPixelStreamerManager::bindPixelStreamerInteraction( ContentWindowManagerPtr contentWindowManager,
+                                                              LocalPixelStreamer *streamer )
 {
-    boost::shared_ptr<ContentWindowManager> cwm = displayGroupManager_->getContentWindowManager(streamer->getUri(), CONTENT_TYPE_PIXEL_STREAM);
-    cwm->bindInteraction(streamer, SLOT(updateInteractionState(InteractionState)));
+    contentWindowManager->bindInteraction(streamer, SLOT(updateInteractionState(InteractionState)));
 
     connect(streamer, SIGNAL(segmentUpdated(QString,PixelStreamSegment)), displayGroupManager_, SLOT(processPixelStreamSegment(QString,PixelStreamSegment)));
     connect(streamer, SIGNAL(streamClosed(QString)), displayGroupManager_, SLOT(deletePixelStream(QString)));

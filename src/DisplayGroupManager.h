@@ -126,10 +126,11 @@ class DisplayGroupManager : public DisplayGroupInterface, public boost::enable_s
         void setSkeletons(std::vector<boost::shared_ptr<SkeletonState> > skeletons);
 #endif
         // Rank0 manages pixel stream events
-        void processPixelStreamSegment(QString uri, PixelStreamSegment segment);
-        void openPixelStream(QString uri, int width, int height);
-        void adjustPixelStreamContentDimensions(QString uri, int width, int height, bool changeViewSize);
-        void deletePixelStream(const QString& uri);
+        void processPixelStreamSegment( const QString& uri, const PixelStreamSegment& segment );
+        ContentWindowManagerPtr openPixelStream( const QString& uri, int width, int height );
+        void adjustPixelStreamContentDimensions( const QString& uri, int width,
+                                                 int height, bool changeViewSize );
+        void deletePixelStream( const QString& uri );
 
     private:
         friend class boost::serialization::access;

@@ -527,18 +527,13 @@ void MainWindow::showBackgroundWidget()
 
 void MainWindow::openWebBrowser()
 {
-    static int webbrowserCounter = 0;
     bool ok;
     QString url = QInputDialog::getText(this, tr("New WebBrowser Content"),
                                          tr("URL:"), QLineEdit::Normal,
                                          "http://www.google.ch", &ok);
     if (ok && !url.isEmpty())
     {
-        bool success = g_localPixelStreamers->createWebBrowser("WebBrowser"+QString::number(webbrowserCounter++), url);
-        if(!success)
-        {
-            QMessageBox::warning(this, "Error", "A WebBrowser with this uri already exists.", QMessageBox::Ok, QMessageBox::Ok);
-        }
+        g_localPixelStreamers->createWebBrowser(url);
     }
 }
 

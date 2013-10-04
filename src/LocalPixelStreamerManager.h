@@ -40,6 +40,8 @@
 #ifndef LOCALPIXELSTREAMERMANAGER_H
 #define LOCALPIXELSTREAMERMANAGER_H
 
+#include "types.h"
+
 #include <map>
 #include <boost/shared_ptr.hpp>
 #include <QMutex>
@@ -58,10 +60,10 @@ Q_OBJECT
 public:
     LocalPixelStreamerManager(DisplayGroupManager *displayGroupManager);
 
-    bool createWebBrowser(QString uri, QString url);
+    void createWebBrowser( const QString& url );
 
     bool isDockOpen();
-    void openDockAt(QPointF pos);
+    void openDockAt( const QPointF& pos );
     DockPixelStreamer* getDockInstance();
 
     void clear();
@@ -80,7 +82,8 @@ private:
     DisplayGroupManager *displayGroupManager_;
 
     void setWindowManagerPosition(boost::shared_ptr<ContentWindowManager> cwm, QPointF pos);
-    void bindPixelStreamerInteraction(LocalPixelStreamer* streamer);
+    void bindPixelStreamerInteraction( ContentWindowManagerPtr contentWindowManager,
+                                       LocalPixelStreamer* streamer );
 };
 
 #endif // LOCALPIXELSTREAMERMANAGER_H

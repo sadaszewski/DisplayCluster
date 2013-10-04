@@ -40,13 +40,15 @@
 #ifndef WEBKITPIXELSTREAMER_H
 #define WEBKITPIXELSTREAMER_H
 
+#include "types.h"
 #include "LocalPixelStreamer.h"
 #include <QString>
 #include <QImage>
 #include <QMutex>
+#include <QUrl>
+#include <QTimer>
+#include <QtWebKit/QWebView>
 
-class QWebView;
-class QTimer;
 class QRect;
 
 class WebkitPixelStreamer : public LocalPixelStreamer
@@ -54,7 +56,7 @@ class WebkitPixelStreamer : public LocalPixelStreamer
     Q_OBJECT
 
 public:
-    WebkitPixelStreamer(QString uri);
+    WebkitPixelStreamer();
     ~WebkitPixelStreamer();
 
     virtual QSize size() const;
@@ -63,13 +65,15 @@ public:
 
 public slots:
     virtual void updateInteractionState(InteractionState interactionState);
-
     void update();
 
 private:
 
-    QWebView* webView_;
-    QTimer* timer_;
+    static QString getUniqueURI();
+    static size_t id_;
+
+    QWebView webView_;
+    QTimer timer_;
     QMutex mutex_;
     int frameIndex_;
 
