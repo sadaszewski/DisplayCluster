@@ -43,76 +43,30 @@
 #include <QGLWidget>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-// required for FFMPEG includes below, specifically for the Linux build
-#ifdef __cplusplus
-    #ifndef __STDC_CONSTANT_MACROS
-        #define __STDC_CONSTANT_MACROS
-    #endif
+#include "FFMPEGMovie.h"
 
-    #ifdef _STDINT_H
-        #undef _STDINT_H
-    #endif
+class Movie : public FactoryObject
+{
+public:
+    Movie(QString uri);
+    ~Movie();
 
-    #include <stdint.h>
-#endif
+    void getDimensions(int &width, int &height);
+    void render(float tX, float tY, float tW, float tH);
+    void nextFrame(const boost::posix_time::time_duration timeSinceLastFrame, const bool skip);
+    void setPause(const bool pause);
+    void setLoop(const bool loop);
 
-extern "C" {
-    #include <libavcodec/avcodec.h>
-    #include <libavformat/avformat.h>
-    #include <libswscale/swscale.h>
-    #include <libavutil/error.h>
-    #include <libavutil/mathematics.h>
-}
+private:
+    FFMPEGMovie* ffmpegMovie_;
 
-class Movie : public FactoryObject {
+    QString uri_;
+    GLuint textureId_;
 
-    public:
+    bool paused_;
 
-        Movie(QString uri);
-        ~Movie();
-
-        static void initFFMPEGGlobalState();
-
-        void getDimensions(int &width, int &height);
-        void render(float tX, float tY, float tW, float tH);
-        void nextFrame(bool skip);
-        void setPause(const bool pause);
-        void setLoop(const bool loop);
-
-    private:
-
-        // image location
-        QString uri_;
-
-        // texture
-        GLuint textureId_;
-
-        // FFMPEG
-        AVFormatContext * avFormatContext_;
-        AVCodecContext * avCodecContext_; // this is a member of AVFormatContext, saved for convenience; no need to free
-        SwsContext * swsContext_;
-        AVFrame * avFrame_;
-        AVFrame * avFrameRGB_;
-        int streamIdx_;
-        AVStream * videostream_;    // shortcut; no need to free
-
-        // used for seeking
-        int64_t start_time_;
-        int64_t duration_;
-        int64_t num_frames_;
-        double frameDuration_;
-
-        int64_t frame_index_;
-        bool skipped_frames_;
-
-        bool paused_;
-        bool loop_;
-
-        int64_t den2_;
-        int64_t num2_;
-
-        // frame timing
-        boost::posix_time::ptime nextTimestamp_;
+    void generateTexture();
+    void updateTexture();
 };
 
 #endif

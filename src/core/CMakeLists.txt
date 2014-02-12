@@ -112,6 +112,7 @@ list(APPEND SRCS
     DynamicTexture.cpp
     DynamicTextureContent.cpp
     FactoryObject.cpp
+    FFMPEGMovie.cpp
     FileCommandHandler.cpp
     FpsCounter.cpp
     GLWindow.cpp

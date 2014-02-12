@@ -42,30 +42,30 @@
 #include "Content.h"
 #include <boost/serialization/base_object.hpp>
 
-class MovieContent : public Content {
+class MovieContent : public Content
+{
+public:
+    MovieContent(QString uri = "") : Content(uri) { }
 
-    public:
-        MovieContent(QString uri = "") : Content(uri) { }
+    CONTENT_TYPE getType();
 
-        CONTENT_TYPE getType();
+    void getFactoryObjectDimensions(int &width, int &height);
 
-        void getFactoryObjectDimensions(int &width, int &height);
+    static const QStringList& getSupportedExtensions();
 
-        static const QStringList& getSupportedExtensions();
+private:
+    friend class boost::serialization::access;
 
-    private:
-        friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int)
+    {
+        // serialize base class information
+        ar & boost::serialization::base_object<Content>(*this);
+    }
 
-        template<class Archive>
-        void serialize(Archive & ar, const unsigned int)
-        {
-            // serialize base class information
-            ar & boost::serialization::base_object<Content>(*this);
-        }
+    void advance(ContentWindowManagerPtr window, const boost::posix_time::time_duration timeSinceLastFrame);
 
-        void advance(ContentWindowManagerPtr window);
-
-        void renderFactoryObject(float tX, float tY, float tW, float tH);
+    void renderFactoryObject(float tX, float tY, float tW, float tH);
 };
 
 #endif

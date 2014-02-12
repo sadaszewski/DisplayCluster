@@ -69,10 +69,10 @@ void MovieContent::getFactoryObjectDimensions(int &width, int &height)
     g_mainWindow->getGLWindow()->getMovieFactory().getObject(getURI())->getDimensions(width, height);
 }
 
-void MovieContent::advance(ContentWindowManagerPtr window)
+void MovieContent::advance(ContentWindowManagerPtr window, const boost::posix_time::time_duration timeSinceLastFrame)
 {
-    if( blockAdvance_ )
-        return;
+//    if( blockAdvance_ )
+//        return;
 
     // window parameters
     double x, y, w, h;
@@ -84,7 +84,7 @@ void MovieContent::advance(ContentWindowManagerPtr window)
     boost::shared_ptr< Movie > movie = g_mainWindow->getGLWindow()->getMovieFactory().getObject(getURI());
     movie->setPause( window->getControlState() & STATE_PAUSED );
     movie->setLoop( window->getControlState() & STATE_LOOP );
-    movie->nextFrame(skip);
+    movie->nextFrame(timeSinceLastFrame, skip);
 }
 
 void MovieContent::renderFactoryObject(float tX, float tY, float tW, float tH)

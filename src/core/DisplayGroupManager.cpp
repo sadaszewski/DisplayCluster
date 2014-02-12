@@ -593,6 +593,7 @@ void DisplayGroupManager::sendFrameClockUpdate()
     MPI_Bcast((void *)serializedString.data(), size, MPI_BYTE, 0, g_mpiRenderComm);
 
     // update timestamp
+    prevTimestamp_ = timestamp_;
     timestamp_ = timestamp;
 }
 
@@ -631,6 +632,7 @@ void DisplayGroupManager::receiveFrameClockUpdate()
     }
 
     boost::archive::binary_iarchive ia(iss);
+    prevTimestamp_ = timestamp_;
     ia >> timestamp_;
 
     // free mpi buffer
@@ -659,13 +661,10 @@ void DisplayGroupManager::advanceContents()
     // note that if we have multiple ContentWindowManagers corresponding to a single Content object,
     // we will call advance() multiple times per frame on that Content object...
     for(unsigned int i=0; i<contentWindowManagers_.size(); i++)
-    {
-        contentWindowManagers_[i]->getContent()->advance(contentWindowManagers_[i]);
-    }
+        contentWindowManagers_[i]->getContent()->advance(contentWindowManagers_[i], getTimeSinceLastFrame());
+
     if (backgroundContent_)
-    {
-        backgroundContent_->getContent()->advance(backgroundContent_);
-    }
+        backgroundContent_->getContent()->advance(backgroundContent_, getTimeSinceLastFrame());
 }
 
 void DisplayGroupManager::openPixelStream(QString uri, int width, int height)
@@ -806,4 +805,12 @@ void DisplayGroupManager::receivePixelStreams(const MessageHeader& messageHeader
 
     // free mpi buffer
     delete [] buf;
+}
+
+boost::posix_time::time_duration DisplayGroupManager::getTimeSinceLastFrame() const
+{
+    if (prevTimestamp_.is_not_a_date_time() || timestamp_.is_not_a_date_time())
+        return boost::posix_time::time_duration(); // duration == 0
+
+    return timestamp_ - prevTimestamp_;
 }

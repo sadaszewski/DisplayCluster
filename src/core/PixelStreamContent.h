@@ -51,7 +51,7 @@ class PixelStreamContent : public Content
 
         virtual void getFactoryObjectDimensions(int &width, int &height);
 
-        virtual void advance(ContentWindowManagerPtr);
+        virtual void advance(ContentWindowManagerPtr, boost::posix_time::time_duration);
 
     private:
         friend class boost::serialization::access;

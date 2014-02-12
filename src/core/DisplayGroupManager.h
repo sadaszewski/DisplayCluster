@@ -193,6 +193,7 @@ public slots:
 
         // frame timing
         boost::posix_time::ptime timestamp_;
+        boost::posix_time::ptime prevTimestamp_;
 
 #if ENABLE_SKELETON_SUPPORT
         std::vector<boost::shared_ptr<SkeletonState> > skeletons_;
@@ -208,6 +209,8 @@ public slots:
         void receiveDisplayGroup(const MessageHeader& messageHeader);
         void receiveContentsDimensionsRequest(const MessageHeader& messageHeader);
         void receivePixelStreams(const MessageHeader& messageHeader);
+
+        boost::posix_time::time_duration getTimeSinceLastFrame() const;
 };
 
 #endif
