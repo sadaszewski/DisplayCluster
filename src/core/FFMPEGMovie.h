@@ -57,13 +57,15 @@ extern "C"
 {
     #include <libavcodec/avcodec.h>
     #include <libavformat/avformat.h>
-    #include <libswscale/swscale.h>
     #include <libavutil/error.h>
     #include <libavutil/mathematics.h>
 }
+
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <QString>
+
+class FFMPEGVideoFrameConverter;
 
 /**
  * Read and play movies using the FFMPEG library.
@@ -113,13 +115,12 @@ public:
 
 private:
     // FFMPEG
-    AVFormatContext * avFormatContext_;
-    AVCodecContext * avCodecContext_; // this is a member of AVFormatContext, saved for convenience; no need to free
-    SwsContext * swsContext_;
-    AVFrame * avFrame_;
-    AVFrame * avFrameRGB_;
-    int streamIdx_;
-    AVStream * videostream_;    // shortcut; no need to free
+    AVFormatContext * avFormatContext_;    // AV Format information from the file header
+    AVCodecContext * videoCodecContext_;   // shortcut to videostream_->codec; don't free
+    AVFrame * avFrame_;                    // Frame for decoding
+    AVStream * videoStream_;               // shortcut to avFormatContext_->streams[streamIdx_]; don't free
+
+    FFMPEGVideoFrameConverter * videoFrameConverter_; // Convert decoded frames to RGBA format
 
     // used for seeking
     int64_t den2_;
@@ -140,6 +141,15 @@ private:
     static void initGlobalState();
 
     bool open(const QString& uri);
+
+    bool createAvFormatContext(const QString& uri);
+    void releaseAvFormatContext();
+
+    bool findVideoStream();
+
+    bool openVideoStreamDecoder();
+    void closeVideoStreamDecoder() const;
+
     bool readVideoFrame();
     bool seekTo(const int64_t frameIndex);
     bool seekToNearestFullframe(const int64_t frameIndex); // Warning: looses frameIndex_!!
@@ -148,6 +158,7 @@ private:
     bool decodeVideoFrame(AVPacket& packet);
     void rewind();
     bool isVideoStream(const AVPacket& packet) const;
+    void generateSeekingParameters();
 };
 
 #endif // FFMPEGMOVIE_H
