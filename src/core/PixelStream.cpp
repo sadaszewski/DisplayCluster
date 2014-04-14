@@ -39,7 +39,8 @@
 #include "PixelStream.h"
 #include "globals.h"
 #include "ContentWindowManager.h"
-#include "DisplayGroupManager.h"
+#include "configuration/Configuration.h"
+#include "Options.h"
 #include "MPIChannel.h"
 #include "MainWindow.h"
 #include "GLWindow.h"
@@ -163,8 +164,8 @@ void PixelStream::render(const QRectF&, const QRectF& windowRect)
 {
     updateRenderedFrameIndex();
 
-    const bool showSegmentBorders = g_displayGroupManager->getOptions()->getShowStreamingSegments();
-    const bool showSegmentStatistics = g_displayGroupManager->getOptions()->getShowStreamingStatistics();
+    const bool showSegmentBorders = g_configuration->getOptions()->getShowStreamingSegments();
+    const bool showSegmentStatistics = g_configuration->getOptions()->getShowStreamingStatistics();
 
     glPushMatrix();
     glScalef(1.f/(float)width_, 1.f/(float)height_, 0.f);

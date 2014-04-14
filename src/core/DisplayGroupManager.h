@@ -40,7 +40,6 @@
 #define DISPLAY_GROUP_MANAGER_H
 
 #include "DisplayGroupInterface.h"
-#include "Options.h"
 #include "Marker.h"
 
 #include "config.h"
@@ -71,8 +70,6 @@ public:
 
     DisplayGroupManager();
     ~DisplayGroupManager();
-
-    OptionsPtr getOptions() const;
 
     MarkerPtr getNewMarker();
     MarkerPtrs getMarkers() const;
@@ -129,7 +126,6 @@ private:
     void serialize(Archive & ar, const unsigned int)
     {
         QMutexLocker locker(&markersMutex_);
-        ar & options_;
         ar & markers_;
         ar & contentWindowManagers_;
         ar & backgroundContent_;
@@ -143,8 +139,6 @@ private:
 
     ContentWindowManagerPtr backgroundContent_;
     QColor backgroundColor_;
-
-    OptionsPtr options_;
 
     mutable QMutex markersMutex_;
     MarkerPtrs markers_;

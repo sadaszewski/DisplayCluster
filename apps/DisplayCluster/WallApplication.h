@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
+/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
 /*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -37,78 +37,35 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#include "MasterConfiguration.h"
+#ifndef WALLAPPLICATION_H
+#define WALLAPPLICATION_H
 
-#include <QtXmlPatterns>
+#include "Application.h"
 
-#include "log.h"
+class WallConfiguration;
 
-#define DEFAULT_WEBSERVICE_PORT 8888
-#define TRIM_REGEX "[\\n\\t\\r]"
-#define DEFAULT_URL "http://www.google.com";
-
-MasterConfiguration::MasterConfiguration(const QString &filename)
-    : Configuration(filename)
+class WallApplication : public Application
 {
-    loadMasterSettings();
-}
+    Q_OBJECT
 
-void MasterConfiguration::loadMasterSettings()
-{
-    QXmlQuery query;
-    if(!query.setFocus(QUrl(filename_)))
-    {
-        put_flog(LOG_FATAL, "failed to load %s", filename_.toLatin1().constData());
-        exit(-1);
-    }
+public:
+    /**
+     * Constructor
+     * @param argc Command line argument count (required by QApplication)
+     * @param argv Command line arguments (required by QApplication)
+     * @param mpiChannel The interprocess communication channel
+     */
+    WallApplication(int &argc, char **argv, MPIChannelPtr mpiChannel);
 
-    loadDockStartDirectory(query);
-    loadWebBrowserStartURL(query);
-}
+    /** Destructor */
+    virtual ~WallApplication();
 
-void MasterConfiguration::loadDockStartDirectory(QXmlQuery& query)
-{
-    QString queryResult;
+private slots:
+    void updateDisplayGroup(DisplayGroupManagerPtr displayGroup);
+    void updateOptions(OptionsPtr options);
 
-    query.setQuery("string(/configuration/dock/@directory)");
-    if (query.evaluateTo(&queryResult))
-        dockStartDir_ = queryResult.remove(QRegExp(TRIM_REGEX));
-    if (dockStartDir_.isEmpty())
-        dockStartDir_ = QDir::homePath();
+private:
+    void init(const WallConfiguration* config);
+};
 
-    // WebService server port
-    query.setQuery("string(/configuration/webservice/@port)");
-    if (query.evaluateTo(&queryResult))
-    {
-        if (queryResult.isEmpty())
-            dcWebServicePort_ = DEFAULT_WEBSERVICE_PORT;
-        else
-            dcWebServicePort_ = queryResult.toInt();
-    }
-}
-
-void MasterConfiguration::loadWebBrowserStartURL(QXmlQuery& query)
-{
-    QString queryResult;
-
-    query.setQuery("string(/configuration/webbrowser/@defaultURL)");
-    if (query.evaluateTo(&queryResult))
-        webBrowserDefaultURL_ = queryResult.remove(QRegExp(TRIM_REGEX));
-    if (webBrowserDefaultURL_.isEmpty())
-        webBrowserDefaultURL_ = DEFAULT_URL;
-}
-
-const QString& MasterConfiguration::getDockStartDir() const
-{
-    return dockStartDir_;
-}
-
-int MasterConfiguration::getWebServicePort() const
-{
-    return dcWebServicePort_;
-}
-
-const QString& MasterConfiguration::getWebBrowserDefaultURL() const
-{
-    return webBrowserDefaultURL_;
-}
+#endif // WALLAPPLICATION_H

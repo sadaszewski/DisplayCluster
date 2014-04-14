@@ -38,6 +38,7 @@
 
 #include "GLWindow.h"
 #include "globals.h"
+#include "Options.h"
 #include "MPIChannel.h"
 #include "Marker.h"
 #include "configuration/WallConfiguration.h"
@@ -155,7 +156,7 @@ void GLWindow::paintGL()
 {
     setOrthographicView(g_displayGroupManager->getBackgroundColor());
 
-    OptionsPtr options = g_displayGroupManager->getOptions();
+    OptionsPtr options = g_configuration->getOptions();
 
     // if the show test pattern option is enabled, render the test pattern and return
     if(options->getShowTestPattern())

@@ -57,7 +57,7 @@ const int HEIGHT = 100;
 BOOST_AUTO_TEST_CASE( testInitialSize )
 {
     g_configuration =
-        new Configuration( "configuration.xml", OptionsPtr(new Options));
+        new Configuration( "configuration.xml" );
 
     ContentPtr content( new DummyContent );
     content->setDimensions( WIDTH, HEIGHT );
@@ -80,8 +80,7 @@ BOOST_AUTO_TEST_CASE( testInitialSize )
 BOOST_AUTO_TEST_CASE( testFullScreenSize )
 {
     g_configuration =
-        new MasterConfiguration( "configuration.xml",
-                                 OptionsPtr(new Options));
+        new MasterConfiguration( "configuration.xml" );
 
     ContentPtr content( new DummyContent );
     content->setDimensions( WIDTH, HEIGHT );
@@ -107,8 +106,7 @@ BOOST_AUTO_TEST_CASE( testFullScreenSize )
 BOOST_AUTO_TEST_CASE( testFromFullscreenBackToNormalized )
 {
     g_configuration =
-        new MasterConfiguration( "configuration.xml",
-                                 OptionsPtr(new Options));
+        new MasterConfiguration( "configuration.xml" );
 
     ContentPtr content( new DummyContent );
     content->setDimensions( WIDTH, HEIGHT );
@@ -143,8 +141,7 @@ BOOST_AUTO_TEST_CASE( testFromFullscreenBackToNormalized )
 BOOST_AUTO_TEST_CASE( testValidID )
 {
     g_configuration =
-        new MasterConfiguration( "configuration.xml",
-                                 OptionsPtr(new Options));
+        new MasterConfiguration( "configuration.xml" );
 
     ContentPtr content( new DummyContent );
     content->setDimensions( WIDTH, HEIGHT );
@@ -158,8 +155,7 @@ BOOST_AUTO_TEST_CASE( testValidID )
 BOOST_AUTO_TEST_CASE( testUniqueID )
 {
     g_configuration =
-        new MasterConfiguration( "configuration.xml",
-                                 OptionsPtr(new Options));
+        new MasterConfiguration( "configuration.xml" );
 
     ContentPtr content( new DummyContent );
     content->setDimensions( WIDTH, HEIGHT );
@@ -178,8 +174,7 @@ BOOST_AUTO_TEST_CASE( testUniqueID )
 BOOST_AUTO_TEST_CASE( testSetContent )
 {
     g_configuration =
-        new MasterConfiguration( "configuration.xml",
-                                 OptionsPtr(new Options));
+        new MasterConfiguration( "configuration.xml" );
 
     ContentPtr content( new DummyContent );
     content->setDimensions( WIDTH, HEIGHT );

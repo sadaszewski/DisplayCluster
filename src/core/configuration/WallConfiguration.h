@@ -54,10 +54,9 @@ public:
     /**
      * @brief WallConfiguration
      * @param filename \see Configuration
-     * @param options \see Configuration
      * @param processIndex MPI index in the range [1;n] of the process
      */
-    WallConfiguration(const QString &filename, OptionsPtr options, int processIndex);
+    WallConfiguration(const QString &filename, const int processIndex);
 
     /**
      * @brief getHost
@@ -100,7 +99,7 @@ private:
     std::vector<QPoint> screenPosition_;
     std::vector<QPoint> screenGlobalIndex_;
 
-    void loadWallSettings(int processIndex);
+    void loadWallSettings(const int processIndex);
 };
 
 #endif // WALLCONFIGURATION_H

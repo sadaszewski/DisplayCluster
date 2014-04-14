@@ -67,10 +67,18 @@ public:
     /**
      * @brief Configuration constructor
      * @param filename path to the xml configuration file
-     * @param options a pointer to options that change during runtime
      */
-    Configuration(const QString& filename, OptionsPtr options);
+    Configuration(const QString& filename);
     virtual ~Configuration() {}
+
+    /** Get the configuration options that change during runtime. */
+    OptionsPtr getOptions() const;
+
+    /**
+     * Replace the options during runtime.
+     * @param options The new options.
+     */
+    void setOptions(OptionsPtr options);
 
     /**
      * @brief getTotalScreenCountX Get the total number of screens along the x axis

@@ -38,6 +38,7 @@
 
 #include "MainWindow.h"
 #include "globals.h"
+#include "Options.h"
 #include "MPIChannel.h"
 #include "configuration/WallConfiguration.h"
 #include "configuration/MasterConfiguration.h"
@@ -181,68 +182,70 @@ void MainWindow::setupMasterWindowUI()
     quitAction->setStatusTip("Quit application");
     connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
 
+    OptionsPtr options = g_configuration->getOptions();
+
     // show window borders action
     QAction * showWindowBordersAction = new QAction("Show Window Borders", this);
     showWindowBordersAction->setStatusTip("Show window borders");
     showWindowBordersAction->setCheckable(true);
-    showWindowBordersAction->setChecked(g_displayGroupManager->getOptions()->getShowWindowBorders());
-    connect(showWindowBordersAction, SIGNAL(toggled(bool)), g_displayGroupManager->getOptions().get(), SLOT(setShowWindowBorders(bool)));
+    showWindowBordersAction->setChecked(options->getShowWindowBorders());
+    connect(showWindowBordersAction, SIGNAL(toggled(bool)), options.get(), SLOT(setShowWindowBorders(bool)));
 
     // show mouse cursor action
     QAction * showMouseCursorAction = new QAction("Show Mouse Cursor", this);
     showMouseCursorAction->setStatusTip("Show mouse cursor");
     showMouseCursorAction->setCheckable(true);
-    showMouseCursorAction->setChecked(g_displayGroupManager->getOptions()->getShowMouseCursor());
-    connect(showMouseCursorAction, SIGNAL(toggled(bool)), g_displayGroupManager->getOptions().get(), SLOT(setShowMouseCursor(bool)));
+    showMouseCursorAction->setChecked(options->getShowMouseCursor());
+    connect(showMouseCursorAction, SIGNAL(toggled(bool)), options.get(), SLOT(setShowMouseCursor(bool)));
 
     // show touch points action
     QAction * showTouchPoints = new QAction("Show Touch Points", this);
     showTouchPoints->setStatusTip("Show touch points");
     showTouchPoints->setCheckable(true);
-    showTouchPoints->setChecked(g_displayGroupManager->getOptions()->getShowTouchPoints());
-    connect(showTouchPoints, SIGNAL(toggled(bool)), g_displayGroupManager->getOptions().get(), SLOT(setShowTouchPoints(bool)));
+    showTouchPoints->setChecked(options->getShowTouchPoints());
+    connect(showTouchPoints, SIGNAL(toggled(bool)), options.get(), SLOT(setShowTouchPoints(bool)));
 
     // show movie controls action
     QAction * showMovieControlsAction = new QAction("Show Movie Controls", this);
     showMovieControlsAction->setStatusTip("Show movie controls");
     showMovieControlsAction->setCheckable(true);
-    showMovieControlsAction->setChecked(g_displayGroupManager->getOptions()->getShowMovieControls());
-    connect(showMovieControlsAction, SIGNAL(toggled(bool)), g_displayGroupManager->getOptions().get(), SLOT(setShowMovieControls(bool)));
+    showMovieControlsAction->setChecked(options->getShowMovieControls());
+    connect(showMovieControlsAction, SIGNAL(toggled(bool)), options.get(), SLOT(setShowMovieControls(bool)));
 
     // show test pattern action
     QAction * showTestPatternAction = new QAction("Show Test Pattern", this);
     showTestPatternAction->setStatusTip("Show test pattern");
     showTestPatternAction->setCheckable(true);
-    showTestPatternAction->setChecked(g_displayGroupManager->getOptions()->getShowTestPattern());
-    connect(showTestPatternAction, SIGNAL(toggled(bool)), g_displayGroupManager->getOptions().get(), SLOT(setShowTestPattern(bool)));
+    showTestPatternAction->setChecked(options->getShowTestPattern());
+    connect(showTestPatternAction, SIGNAL(toggled(bool)), options.get(), SLOT(setShowTestPattern(bool)));
 
     // enable mullion compensation action
     QAction * enableMullionCompensationAction = new QAction("Enable Mullion Compensation", this);
     enableMullionCompensationAction->setStatusTip("Enable mullion compensation");
     enableMullionCompensationAction->setCheckable(true);
-    enableMullionCompensationAction->setChecked(g_displayGroupManager->getOptions()->getEnableMullionCompensation());
-    connect(enableMullionCompensationAction, SIGNAL(toggled(bool)), g_displayGroupManager->getOptions().get(), SLOT(setEnableMullionCompensation(bool)));
+    enableMullionCompensationAction->setChecked(options->getEnableMullionCompensation());
+    connect(enableMullionCompensationAction, SIGNAL(toggled(bool)), options.get(), SLOT(setEnableMullionCompensation(bool)));
 
     // show zoom context action
     QAction * showZoomContextAction = new QAction("Show Zoom Context", this);
     showZoomContextAction->setStatusTip("Show zoom context");
     showZoomContextAction->setCheckable(true);
-    showZoomContextAction->setChecked(g_displayGroupManager->getOptions()->getShowZoomContext());
-    connect(showZoomContextAction, SIGNAL(toggled(bool)), g_displayGroupManager->getOptions().get(), SLOT(setShowZoomContext(bool)));
+    showZoomContextAction->setChecked(options->getShowZoomContext());
+    connect(showZoomContextAction, SIGNAL(toggled(bool)), options.get(), SLOT(setShowZoomContext(bool)));
 
     // show streaming segments action
     QAction * showStreamingSegmentsAction = new QAction("Show Segments", this);
     showStreamingSegmentsAction->setStatusTip("Show segments");
     showStreamingSegmentsAction->setCheckable(true);
-    showStreamingSegmentsAction->setChecked(g_displayGroupManager->getOptions()->getShowStreamingSegments());
-    connect(showStreamingSegmentsAction, SIGNAL(toggled(bool)), g_displayGroupManager->getOptions().get(), SLOT(setShowStreamingSegments(bool)));
+    showStreamingSegmentsAction->setChecked(options->getShowStreamingSegments());
+    connect(showStreamingSegmentsAction, SIGNAL(toggled(bool)), options.get(), SLOT(setShowStreamingSegments(bool)));
 
     // show streaming statistics action
     QAction * showStreamingStatisticsAction = new QAction("Show Statistics", this);
     showStreamingStatisticsAction->setStatusTip("Show statistics");
     showStreamingStatisticsAction->setCheckable(true);
-    showStreamingStatisticsAction->setChecked(g_displayGroupManager->getOptions()->getShowStreamingStatistics());
-    connect(showStreamingStatisticsAction, SIGNAL(toggled(bool)), g_displayGroupManager->getOptions().get(), SLOT(setShowStreamingStatistics(bool)));
+    showStreamingStatisticsAction->setChecked(options->getShowStreamingStatistics());
+    connect(showStreamingStatisticsAction, SIGNAL(toggled(bool)), options.get(), SLOT(setShowStreamingStatistics(bool)));
 
 #if ENABLE_SKELETON_SUPPORT
     // enable skeleton tracking action
@@ -256,8 +259,8 @@ void MainWindow::setupMasterWindowUI()
     QAction * showSkeletonsAction = new QAction("Show Skeletons", this);
     showSkeletonsAction->setStatusTip("Show skeletons");
     showSkeletonsAction->setCheckable(true);
-    showSkeletonsAction->setChecked(g_displayGroupManager->getOptions()->getShowSkeletons());
-    connect(showSkeletonsAction, SIGNAL(toggled(bool)), g_displayGroupManager->getOptions().get(), SLOT(setShowSkeletons(bool)));
+    showSkeletonsAction->setChecked(options->getShowSkeletons());
+    connect(showSkeletonsAction, SIGNAL(toggled(bool)), options.get(), SLOT(setShowSkeletons(bool)));
 #endif
 
     // add actions to menus
@@ -309,8 +312,12 @@ void MainWindow::setupMasterWindowUI()
     DisplayGroupGraphicsViewProxy * dggv = new DisplayGroupGraphicsViewProxy(g_displayGroupManager);
     mainWidget->addTab((QWidget *)dggv->getGraphicsView(), "Display group 0");
     // Forward background touch events
-    connect(dggv->getGraphicsView(), SIGNAL(backgroundTap(QPointF)), this, SIGNAL(hideDock()));
-    connect(dggv->getGraphicsView(), SIGNAL(backgroundTapAndHold(QPointF)), this, SLOT(openDock(QPointF)));
+    connect(dggv->getGraphicsView(), SIGNAL(backgroundTap(QPointF)),
+            this, SIGNAL(hideDock()));
+    connect(dggv->getGraphicsView(), SIGNAL(backgroundTapAndHold(QPointF)),
+            this, SLOT(openDock(QPointF)));
+    connect(g_configuration->getOptions().get(), SIGNAL(updated(OptionsPtr)),
+            dggv, SLOT(optionsUpdated(OptionsPtr)));
 
 #if ENABLE_TUIO_TOUCH_LISTENER
     touchListener_ = new MultiTouchListener( dggv );
@@ -702,14 +709,13 @@ void MainWindow::openDock(const QPointF position)
 void MainWindow::updateGLWindows()
 {
     // receive any waiting messages
-    g_mpiChannel->receiveMessages(g_displayGroupManager,
-                                  getGLWindow()->getPixelStreamFactory());
+    g_mpiChannel->receiveMessages(getGLWindow()->getPixelStreamFactory());
 
     // synchronize clock right after receiving messages to ensure we have an
     // accurate time for rendering, etc. below
     g_mpiChannel->synchronizeClock();
 
-    if( g_displayGroupManager->getOptions()->getShowMouseCursor( ))
+    if( g_configuration->getOptions()->getShowMouseCursor( ))
         unsetCursor();
     else
         setCursor( QCursor( Qt::BlankCursor ));

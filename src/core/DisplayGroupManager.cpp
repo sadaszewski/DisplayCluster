@@ -50,11 +50,7 @@
 #include "log.h"
 
 DisplayGroupManager::DisplayGroupManager()
-    : options_(new Options())
 {
-    // make Options trigger sendDisplayGroup() when it is updated
-    connect(options_.get(), SIGNAL(updated()), this, SLOT(sendDisplayGroup()), Qt::QueuedConnection);
-
     // register types for use in signals/slots
     qRegisterMetaType<Event>("Event");
     qRegisterMetaType<ContentWindowManagerPtr>("ContentWindowManagerPtr");
@@ -67,11 +63,6 @@ DisplayGroupManager::DisplayGroupManager()
 
 DisplayGroupManager::~DisplayGroupManager()
 {
-}
-
-OptionsPtr DisplayGroupManager::getOptions() const
-{
-    return options_;
 }
 
 MarkerPtr DisplayGroupManager::getNewMarker()

@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
+/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
 /*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -37,78 +37,49 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#include "MasterConfiguration.h"
+#include "WallApplication.h"
 
-#include <QtXmlPatterns>
+#include "MPIChannel.h"
+#include "configuration/WallConfiguration.h"
+#include "MainWindow.h"
 
-#include "log.h"
-
-#define DEFAULT_WEBSERVICE_PORT 8888
-#define TRIM_REGEX "[\\n\\t\\r]"
-#define DEFAULT_URL "http://www.google.com";
-
-MasterConfiguration::MasterConfiguration(const QString &filename)
-    : Configuration(filename)
+WallApplication::WallApplication(int& argc_, char** argv_, MPIChannelPtr mpiChannel)
+    : Application(argc_, argv_)
 {
-    loadMasterSettings();
+    WallConfiguration* config = new WallConfiguration(getConfigFilename(),
+                                                      mpiChannel->getRank());
+    g_configuration = config;
+
+    init(config);
+
+    connect(mpiChannel.get(), SIGNAL(received(DisplayGroupManagerPtr)),
+            this, SLOT(updateDisplayGroup(DisplayGroupManagerPtr)));
+
+    connect(mpiChannel.get(), SIGNAL(received(OptionsPtr)),
+            this, SLOT(updateOptions(OptionsPtr)));
 }
 
-void MasterConfiguration::loadMasterSettings()
+void WallApplication::init(const WallConfiguration*)
 {
-    QXmlQuery query;
-    if(!query.setFocus(QUrl(filename_)))
-    {
-        put_flog(LOG_FATAL, "failed to load %s", filename_.toLatin1().constData());
-        exit(-1);
-    }
-
-    loadDockStartDirectory(query);
-    loadWebBrowserStartURL(query);
+    g_mainWindow = new MainWindow();
 }
 
-void MasterConfiguration::loadDockStartDirectory(QXmlQuery& query)
+WallApplication::~WallApplication()
 {
-    QString queryResult;
+    // call finalize cleanup actions
+    g_mainWindow->finalize();
 
-    query.setQuery("string(/configuration/dock/@directory)");
-    if (query.evaluateTo(&queryResult))
-        dockStartDir_ = queryResult.remove(QRegExp(TRIM_REGEX));
-    if (dockStartDir_.isEmpty())
-        dockStartDir_ = QDir::homePath();
-
-    // WebService server port
-    query.setQuery("string(/configuration/webservice/@port)");
-    if (query.evaluateTo(&queryResult))
-    {
-        if (queryResult.isEmpty())
-            dcWebServicePort_ = DEFAULT_WEBSERVICE_PORT;
-        else
-            dcWebServicePort_ = queryResult.toInt();
-    }
+    // destruct the main window
+    delete g_mainWindow;
+    g_mainWindow = 0;
 }
 
-void MasterConfiguration::loadWebBrowserStartURL(QXmlQuery& query)
+void WallApplication::updateDisplayGroup(DisplayGroupManagerPtr displayGroup)
 {
-    QString queryResult;
-
-    query.setQuery("string(/configuration/webbrowser/@defaultURL)");
-    if (query.evaluateTo(&queryResult))
-        webBrowserDefaultURL_ = queryResult.remove(QRegExp(TRIM_REGEX));
-    if (webBrowserDefaultURL_.isEmpty())
-        webBrowserDefaultURL_ = DEFAULT_URL;
+    g_displayGroupManager = displayGroup;
 }
 
-const QString& MasterConfiguration::getDockStartDir() const
+void WallApplication::updateOptions(OptionsPtr options)
 {
-    return dockStartDir_;
-}
-
-int MasterConfiguration::getWebServicePort() const
-{
-    return dcWebServicePort_;
-}
-
-const QString& MasterConfiguration::getWebBrowserDefaultURL() const
-{
-    return webBrowserDefaultURL_;
+    g_configuration->setOptions(options);
 }

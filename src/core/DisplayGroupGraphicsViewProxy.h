@@ -62,7 +62,7 @@ class DisplayGroupGraphicsViewProxy : public DisplayGroupInterface
 
     public slots:
 
-        void optionsUpdated();
+        void optionsUpdated(OptionsPtr options);
 
     private:
 

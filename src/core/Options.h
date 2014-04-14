@@ -43,78 +43,80 @@
 #include <QObject>
 #include <boost/serialization/access.hpp>
 
-class Options : public QObject
+#include "types.h"
+#include <boost/enable_shared_from_this.hpp>
+
+class Options : public QObject, public boost::enable_shared_from_this<Options>
 {
     Q_OBJECT
 
-    public:
-        Options();
+public:
+    Options();
 
-        bool getShowWindowBorders();
-        bool getShowMouseCursor();
-        bool getShowTouchPoints();
-        bool getShowMovieControls();
-        bool getShowTestPattern();
-        bool getEnableMullionCompensation();
-        bool getShowZoomContext();
-        bool getShowStreamingSegments();
-        bool getShowStreamingStatistics();
+    bool getShowWindowBorders() const;
+    bool getShowMouseCursor() const;
+    bool getShowTouchPoints() const;
+    bool getShowMovieControls() const;
+    bool getShowTestPattern() const;
+    bool getEnableMullionCompensation() const;
+    bool getShowZoomContext() const;
+    bool getShowStreamingSegments() const;
+    bool getShowStreamingStatistics() const;
 
 #if ENABLE_SKELETON_SUPPORT
-        bool getShowSkeletons();
+    bool getShowSkeletons() const;
 #endif
 
-    public slots:
-        void setShowWindowBorders(bool set);
-        void setShowMouseCursor(bool set);
-        void setShowTouchPoints(bool set);
-        void setShowMovieControls(bool set);
-        void setShowTestPattern(bool set);
-        void setEnableMullionCompensation(bool set);
-        void setShowZoomContext(bool set);
-        void setShowStreamingSegments(bool set);
-        void setShowStreamingStatistics(bool set);
+public slots:
+    void setShowWindowBorders(bool set);
+    void setShowMouseCursor(bool set);
+    void setShowTouchPoints(bool set);
+    void setShowMovieControls(bool set);
+    void setShowTestPattern(bool set);
+    void setEnableMullionCompensation(bool set);
+    void setShowZoomContext(bool set);
+    void setShowStreamingSegments(bool set);
+    void setShowStreamingStatistics(bool set);
 
 #if ENABLE_SKELETON_SUPPORT
-        void setShowSkeletons(bool set);
+    void setShowSkeletons(bool set);
 #endif
 
-    signals:
-        void updated();
+signals:
+    void updated(OptionsPtr);
 
-    private:
-        friend class boost::serialization::access;
+private:
+    friend class boost::serialization::access;
 
-        template<class Archive>
-        void serialize(Archive & ar, const unsigned int)
-        {
-            ar & showWindowBorders_;
-            ar & showMouseCursor_;
-            ar & showTouchPoints_;
-            ar & showMovieControls_;
-            ar & showTestPattern_;
-            ar & enableMullionCompensation_;
-            ar & showZoomContext_;
-            ar & showStreamingSegments_;
-            ar & showStreamingStatistics_;
-
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int)
+    {
+        ar & showWindowBorders_;
+        ar & showMouseCursor_;
+        ar & showTouchPoints_;
+        ar & showMovieControls_;
+        ar & showTestPattern_;
+        ar & enableMullionCompensation_;
+        ar & showZoomContext_;
+        ar & showStreamingSegments_;
+        ar & showStreamingStatistics_;
 #if ENABLE_SKELETON_SUPPORT
-            ar & showSkeletons_;
+        ar & showSkeletons_;
 #endif
-        }
+    }
 
-        bool showWindowBorders_;
-        bool showMouseCursor_;
-        bool showTouchPoints_;
-        bool showMovieControls_;
-        bool showTestPattern_;
-        bool enableMullionCompensation_;
-        bool showZoomContext_;
-        bool showStreamingSegments_;
-        bool showStreamingStatistics_;
+    bool showWindowBorders_;
+    bool showMouseCursor_;
+    bool showTouchPoints_;
+    bool showMovieControls_;
+    bool showTestPattern_;
+    bool enableMullionCompensation_;
+    bool showZoomContext_;
+    bool showStreamingSegments_;
+    bool showStreamingStatistics_;
 
 #if ENABLE_SKELETON_SUPPORT
-        bool showSkeletons_;
+    bool showSkeletons_;
 #endif
 };
 

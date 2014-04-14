@@ -39,6 +39,8 @@
 #ifndef TOUCH_LISTENER_H
 #define TOUCH_LISTENER_H
 
+#include "types.h"
+
 #include <TuioListener.h>
 #include <TuioClient.h>
 #include <QtGui>
@@ -52,7 +54,7 @@ class TouchListener : public TUIO::TuioListener
 {
     public:
 
-        TouchListener();
+        TouchListener(DisplayGroupManagerPtr displayGroup);
 
         void addTuioObject(TUIO::TuioObject *tobj);
         void updateTuioObject(TUIO::TuioObject *tobj);

@@ -43,14 +43,14 @@
 
 #include "log.h"
 
-WallConfiguration::WallConfiguration(const QString &filename, OptionsPtr options, int processIndex)
-    : Configuration(filename, options)
+WallConfiguration::WallConfiguration(const QString &filename, const int processIndex)
+    : Configuration(filename)
     , screenCountForCurrentProcess_(0)
 {
     loadWallSettings(processIndex);
 }
 
-void WallConfiguration::loadWallSettings(int processIndex)
+void WallConfiguration::loadWallSettings(const int processIndex)
 {
     assert(processIndex > 0 && "WallConfiguration::loadWallSettings is only valid for processes of rank > 0");
 

@@ -47,7 +47,6 @@ DisplayGroupGraphicsViewProxy::DisplayGroupGraphicsViewProxy(DisplayGroupManager
     : DisplayGroupInterface(displayGroupManager)
     , graphicsView_( new DisplayGroupGraphicsView() )
 {
-    connect(displayGroupManager->getOptions().get(), SIGNAL(updated()), this, SLOT(optionsUpdated()));
 }
 
 DisplayGroupGraphicsViewProxy::~DisplayGroupGraphicsViewProxy()
@@ -122,7 +121,7 @@ void DisplayGroupGraphicsViewProxy::moveContentWindowManagerToFront(ContentWindo
     }
 }
 
-void DisplayGroupGraphicsViewProxy::optionsUpdated()
+void DisplayGroupGraphicsViewProxy::optionsUpdated(OptionsPtr)
 {
     // mullion compensation may have been enabled or disabled, so refresh the tiled display rectangles
     static_cast<DisplayGroupGraphicsScene *>(graphicsView_->scene())->refreshTileRects();

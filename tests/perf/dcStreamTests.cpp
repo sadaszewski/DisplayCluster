@@ -154,8 +154,7 @@ BOOST_AUTO_TEST_CASE( testSocketConnection )
 
     g_displayGroupManager.reset( new DisplayGroupManager );
     g_configuration =
-        new MasterConfiguration( "configuration.xml",
-                                 g_displayGroupManager->getOptions( ));
+        new MasterConfiguration( "configuration.xml" );
 
     PixelStreamWindowManager pixelStreamWindowManager( *g_displayGroupManager );
     NetworkListener listener( pixelStreamWindowManager );

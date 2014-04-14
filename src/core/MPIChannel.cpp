@@ -41,6 +41,7 @@
 
 #include "MessageHeader.h"
 #include "DisplayGroupManager.h"
+#include "Options.h"
 
 #include "log.h"
 
@@ -49,7 +50,7 @@
 #include <boost/serialization/utility.hpp>
 #include <boost/date_time/posix_time/time_serialize.hpp>
 
-// Will be removed whne implementing DISCL-21
+// Will be removed when implementing DISCL-21
 #include "ContentWindowManager.h"
 #include "Content.h"
 
@@ -169,8 +170,7 @@ void MPIChannel::calibrateTimestampOffset()
     }
 }
 
-void MPIChannel::receiveMessages(DisplayGroupManagerPtr& displayGroup,
-                                 Factory<PixelStream>& pixelStreamFactory)
+void MPIChannel::receiveMessages(Factory<PixelStream>& pixelStreamFactory)
 {
     if(mpiRank == 0)
     {
@@ -202,11 +202,15 @@ void MPIChannel::receiveMessages(DisplayGroupManagerPtr& displayGroup,
 
             if(mh.type == MESSAGE_TYPE_CONTENTS)
             {
-                displayGroup = receiveDisplayGroup(mh);
+                emit(received(receiveDisplayGroup(mh)));
+            }
+            else if(mh.type == MESSAGE_TYPE_OPTIONS)
+            {
+                emit(received(receiveOptions(mh)));
             }
             else if(mh.type == MESSAGE_TYPE_CONTENTS_DIMENSIONS)
             {
-                receiveContentsDimensionsRequest(displayGroup);
+                receiveContentsDimensionsRequest(g_displayGroupManager);
             }
             else if(mh.type == MESSAGE_TYPE_PIXELSTREAM)
             {
@@ -243,6 +247,30 @@ void MPIChannel::send(DisplayGroupManagerPtr displayGroup)
     MessageHeader mh;
     mh.size = size;
     mh.type = MESSAGE_TYPE_CONTENTS;
+
+    // Send header via a send so we can probe it on the render processes
+    for(int i=1; i<mpiSize; ++i)
+        MPI_Send((void *)&mh, sizeof(MessageHeader), MPI_BYTE, i, 0, MPI_COMM_WORLD);
+
+    // Broadcast the message
+    MPI_Bcast((void *)serializedString.data(), size, MPI_BYTE, 0, MPI_COMM_WORLD);
+}
+
+void MPIChannel::send(OptionsPtr options)
+{
+    std::ostringstream oss(std::ostringstream::binary);
+    {
+        // brace this so destructor is called on archive before we use the stream
+        boost::archive::binary_oarchive oa(oss);
+        oa << options;
+    }
+
+    const std::string serializedString = oss.str();
+    const int size = serializedString.size();
+
+    MessageHeader mh;
+    mh.size = size;
+    mh.type = MESSAGE_TYPE_OPTIONS;
 
     // Send header via a send so we can probe it on the render processes
     for(int i=1; i<mpiSize; ++i)
@@ -428,6 +456,36 @@ DisplayGroupManagerPtr MPIChannel::receiveDisplayGroup(const MessageHeader& mess
     ia >> displayGroup;
 
     return displayGroup;
+}
+
+OptionsPtr MPIChannel::receiveOptions(const MessageHeader& messageHeader)
+{
+    if(mpiRank < 1)
+    {
+        put_flog(LOG_WARN, "called on rank %i < 1", mpiRank);
+        return OptionsPtr();
+    }
+
+    // receive serialized data
+    std::vector<char> buffer(messageHeader.size);
+
+    // read message into the buffer
+    MPI_Bcast((void *)buffer.data(), messageHeader.size, MPI_BYTE, 0, MPI_COMM_WORLD);
+
+    // de-serialize...
+    std::istringstream iss(std::istringstream::binary);
+
+    if(iss.rdbuf()->pubsetbuf(buffer.data(), messageHeader.size) == NULL)
+    {
+        put_flog(LOG_FATAL, "rank %i: error setting stream buffer", mpiRank);
+        return OptionsPtr();
+    }
+
+    boost::archive::binary_iarchive ia(iss);
+    OptionsPtr options;
+    ia >> options;
+
+    return options;
 }
 
 void MPIChannel::receiveContentsDimensionsRequest(DisplayGroupManagerPtr displayGroup)

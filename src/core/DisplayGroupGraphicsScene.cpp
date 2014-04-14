@@ -38,6 +38,7 @@
 
 #include "DisplayGroupGraphicsScene.h"
 #include "globals.h"
+#include "Options.h"
 #include "configuration/Configuration.h"
 #include "DisplayGroupManager.h"
 #include "Marker.h"
@@ -118,7 +119,7 @@ bool DisplayGroupGraphicsScene::event(QEvent *evt)
     case QEvent::TouchUpdate:
     case QEvent::TouchEnd:
     {
-        if( g_displayGroupManager->getOptions()->getShowTouchPoints( ))
+        if( g_configuration->getOptions()->getShowTouchPoints( ))
         {
             QTouchEvent* touchEvent = static_cast< QTouchEvent* >( evt );
 

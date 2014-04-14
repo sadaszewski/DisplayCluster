@@ -43,10 +43,9 @@
 
 //#define TABLET_INTERACTION
 
-TouchListener::TouchListener()
+TouchListener::TouchListener(DisplayGroupManagerPtr displayGroup)
+    : graphicsViewProxy_(new DisplayGroupGraphicsViewProxy(displayGroup))
 {
-    graphicsViewProxy_ = new DisplayGroupGraphicsViewProxy(g_displayGroupManager);
-
     client_.addTuioListener(this);
     client_.connect();
 

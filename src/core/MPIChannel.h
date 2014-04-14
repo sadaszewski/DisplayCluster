@@ -93,12 +93,12 @@ public:
 
     /**
      * Ranks 1-N: Receive messages.
-     * @param displayGroup A REFERENCE to the target DisplayGroup.
-     *        It will be replaced if a new DisplayGroup was sent by rank0.
+     * Will emit a signal if an object was reveived.
+     * @see received(DisplayGroupManagerPtr)
+     * @see received(OptionsPtr)
      * @param pixelStreamFactory The target Factory for incomming PixelStreams.
      */
-    void receiveMessages(DisplayGroupManagerPtr& displayGroup,
-                         Factory<PixelStream>& pixelStreamFactory);
+    void receiveMessages(Factory<PixelStream>& pixelStreamFactory);
 
     /**
      * Rank 0: Send pixel stream segments to ranks 1-N
@@ -132,6 +132,27 @@ public slots:
      */
     void send(DisplayGroupManagerPtr displayGroup);
 
+    /**
+     * Rank0: send the given Options to ranks 1-N
+     * @param options The options to send
+     */
+    void send(OptionsPtr options);
+
+signals:
+    /**
+     * Rank 1-N: Emitted when a displayGroup was recieved
+     * @see receiveMessages()
+     * @param displayGroup The DisplayGroup that was received
+     */
+    void received(DisplayGroupManagerPtr displayGroup);
+
+    /**
+     * Rank 1-N: Emitted when new Options were recieved
+     * @see receiveMessages()
+     * @param options The options that was received
+     */
+    void received(OptionsPtr options);
+
 private:
     int mpiRank;
     int mpiSize;
@@ -145,6 +166,7 @@ private:
 
     // Ranks 1-n recieve data through MPI
     DisplayGroupManagerPtr receiveDisplayGroup(const MessageHeader& messageHeader);
+    OptionsPtr receiveOptions(const MessageHeader& messageHeader);
     void receivePixelStreams(const MessageHeader& messageHeader,
                              Factory<PixelStream>& pixelStreamFactory);
     // TODO remove content dimension requests (DISCL-21)

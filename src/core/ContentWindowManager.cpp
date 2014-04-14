@@ -40,6 +40,7 @@
 #include "Content.h"
 #include "DisplayGroupManager.h"
 #include "globals.h"
+#include "Options.h"
 #include "MPIChannel.h"
 #include "ContentInteractionDelegate.h"
 #include "configuration/Configuration.h"
@@ -207,11 +208,10 @@ void ContentWindowManager::render()
     bool showWindowBorders = true;
     bool showZoomContext = false;
 
-    DisplayGroupManagerPtr displayGroup = getDisplayGroupManager();
-    if(displayGroup)
+    if(g_configuration)
     {
-        showWindowBorders = displayGroup->getOptions()->getShowWindowBorders();
-        showZoomContext = displayGroup->getOptions()->getShowZoomContext();
+        showWindowBorders = g_configuration->getOptions()->getShowWindowBorders();
+        showZoomContext = g_configuration->getOptions()->getShowZoomContext();
     }
 
     content_->render(shared_from_this(), showZoomContext);
