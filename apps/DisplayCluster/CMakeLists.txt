@@ -5,6 +5,7 @@ include_directories(${CMAKE_BINARY_DIR}) ### for config.h ###
 set(MOC_HEADERS
   Application.h
   MasterApplication.h
+  MasterWindow.h
   WallApplication.h
 )
 
@@ -12,6 +13,7 @@ set(DISPLAYCLUSTER_FILES
   main.cpp
   Application.cpp
   MasterApplication.cpp
+  MasterWindow.cpp
   WallApplication.cpp
 )
 

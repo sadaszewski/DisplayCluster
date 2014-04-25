@@ -39,7 +39,7 @@
 
 #include "MasterApplication.h"
 
-#include "MainWindow.h"
+#include "MasterWindow.h"
 #include "DisplayGroupManager.h"
 #include "configuration/MasterConfiguration.h"
 #include "MPIChannel.h"
@@ -71,25 +71,24 @@
 
 MasterApplication::MasterApplication(int& argc_, char** argv_, MPIChannelPtr mpiChannel)
     : Application(argc_, argv_)
-#if ENABLE_JOYSTICK_SUPPORT
-    , joystickThread_(0)
-#endif
-#if ENABLE_SKELETON_SUPPORT
-    , skeletonThread_(0)
-#endif
+    , masterWindow_(0)
     , networkListener_(0)
     , pixelStreamerLauncher_(0)
     , pixelStreamWindowManager_(0)
     , webServiceServer_(0)
     , textInputDispatcher_(0)
+    #if ENABLE_JOYSTICK_SUPPORT
+        , joystickThread_(0)
+    #endif
+    #if ENABLE_SKELETON_SUPPORT
+        , skeletonThread_(0)
+    #endif
 {
     MasterConfiguration* config = new MasterConfiguration(getConfigFilename());
     g_configuration = config;
 
     if( argc_ == 2 )
         StateSerializationHelper(g_displayGroupManager).load( argv_[1] );
-
-    init(config);
 
     // Distribute the DisplayGroup through MPI whenever it is modified
     connect(g_displayGroupManager.get(),SIGNAL(modified(DisplayGroupManagerPtr)),
@@ -98,6 +97,8 @@ MasterApplication::MasterApplication(int& argc_, char** argv_, MPIChannelPtr mpi
     // Distribute the options when they are updated
     connect(config->getOptions().get(), SIGNAL(updated(OptionsPtr)),
             mpiChannel.get(), SLOT(send(OptionsPtr)));
+
+    init(config);
 }
 
 MasterApplication::~MasterApplication()
@@ -115,12 +116,9 @@ MasterApplication::~MasterApplication()
     // Clear all windows - was in DisplayGroupManager::sendQuit()
     g_displayGroupManager->setContentWindowManagers( ContentWindowManagerPtrs() );
 
-    // call finalize cleanup actions
-    g_mainWindow->finalize();
-
     // destruct the main window
-    delete g_mainWindow;
-    g_mainWindow = 0;
+    delete masterWindow_;
+    masterWindow_ = 0;
 
     delete pixelStreamerLauncher_;
     pixelStreamerLauncher_ = 0;
@@ -142,7 +140,7 @@ MasterApplication::~MasterApplication()
 
 void MasterApplication::init(const MasterConfiguration* config)
 {
-    g_mainWindow = new MainWindow();
+    masterWindow_ = new MasterWindow();
 
     pixelStreamWindowManager_ = new PixelStreamWindowManager(*g_displayGroupManager);
 
@@ -208,11 +206,11 @@ void MasterApplication::initPixelStreamLauncher()
 {
     pixelStreamerLauncher_ = new PixelStreamerLauncher(*pixelStreamWindowManager_);
 
-    pixelStreamerLauncher_->connect(g_mainWindow, SIGNAL(openWebBrowser(QPointF,QSize,QString)),
+    pixelStreamerLauncher_->connect(masterWindow_, SIGNAL(openWebBrowser(QPointF,QSize,QString)),
                                        SLOT(openWebBrowser(QPointF,QSize,QString)));
-    pixelStreamerLauncher_->connect(g_mainWindow, SIGNAL(openDock(QPointF,QSize,QString)),
+    pixelStreamerLauncher_->connect(masterWindow_, SIGNAL(openDock(QPointF,QSize,QString)),
                                        SLOT(openDock(QPointF,QSize,QString)));
-    pixelStreamerLauncher_->connect(g_mainWindow, SIGNAL(hideDock()),
+    pixelStreamerLauncher_->connect(masterWindow_, SIGNAL(hideDock()),
                                        SLOT(hideDock()));
 }
 

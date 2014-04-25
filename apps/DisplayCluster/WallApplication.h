@@ -63,9 +63,6 @@ public:
 private slots:
     void updateDisplayGroup(DisplayGroupManagerPtr displayGroup);
     void updateOptions(OptionsPtr options);
-
-private:
-    void init(const WallConfiguration* config);
 };
 
 #endif // WALLAPPLICATION_H

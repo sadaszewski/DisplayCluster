@@ -42,84 +42,39 @@
 #include "config.h"
 #include "types.h"
 
-#include <QtGui>
-#include <QGLWidget>
+#include <QMainWindow>
 #include <boost/shared_ptr.hpp>
 
-class MultiTouchListener;
-class BackgroundWidget;
+class WallConfiguration;
 
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
-    public:
-        MainWindow();
-        ~MainWindow();
+public:
+    MainWindow(const WallConfiguration* configuration);
+    ~MainWindow();
 
-        GLWindowPtr getGLWindow(int index=0);
-        GLWindowPtr getActiveGLWindow();
+    GLWindowPtr getGLWindow(const int index=0);
+    GLWindowPtr getActiveGLWindow();
 
-        bool isRegionVisible(const QRectF& region) const;
+    bool isRegionVisible(const QRectF& region) const;
 
-        void finalize();
+    void finalize();
 
-    signals:
-        void openDock(QPointF pos, QSize size, QString rootDir);
-        void hideDock();
-        void openWebBrowser(QPointF pos, QSize size, QString url);
+signals:
+    void updateGLWindowsFinished();
 
-#if ENABLE_SKELETON_SUPPORT
-        void enableSkeletonTracking();
-        void disableSkeletonTracking();
-#endif
-        void updateGLWindowsFinished();
+private slots:
+    void updateGLWindows();
 
-    protected:
-        void dragEnterEvent(QDragEnterEvent *event);
-        void dropEvent(QDropEvent *event);
+private:
+    void setupWallOpenGLWindows(const WallConfiguration* configuration);
+    void swapBuffers();
+    void clearStaleFactoryObjects();
 
-    private slots:
-        void openContent();
-        void openContentsDirectory();
-        void clearContents();
-
-        void saveState();
-        void loadState();
-
-        void computeImagePyramid();
-        void showBackgroundWidget();
-
-        void openWebBrowser();
-        void openDock(const QPointF position);
-
-    #if ENABLE_SKELETON_SUPPORT
-        void setEnableSkeletonTracking(bool enable);
-    #endif
-
-        void updateGLWindows();
-
-    private:
-        void setupMasterWindowUI();
-        void setupWallOpenGLWindows();
-
-        void addContentDirectory(const QString &directoryName, unsigned int gridX=0, unsigned int gridY=0);
-        void loadState(const QString &filename);
-
-        void estimateGridSize(unsigned int numElem, unsigned int& gridX, unsigned int& gridY);
-
-        QStringList extractValidContentUrls(const QMimeData* mimeData);
-        QStringList extractFolderUrls(const QMimeData *mimeData);
-        QString extractStateFile(const QMimeData *mimeData);
-
-        GLWindowPtrs glWindows_;
-        GLWindowPtr activeGLWindow_;
-
-        BackgroundWidget* backgroundWidget_;
-
-#if ENABLE_TUIO_TOUCH_LISTENER
-        MultiTouchListener* touchListener_;
-#endif
+    GLWindowPtrs glWindows_;
+    GLWindowPtr activeGLWindow_;
 };
 
 #endif

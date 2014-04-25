@@ -115,7 +115,8 @@ private:
     Factory<PixelStream> pixelStreamFactory_;
 
     // mutex and vector of texture id's to purge
-    // this allows other threads to trigger deletion of a texture during the main OpenGL thread execution
+    // this allows other threads to trigger deletion of a texture during
+    // the main OpenGL thread execution
     QMutex purgeTexturesMutex_;
     std::vector<GLuint> purgeTextureIds_;
 

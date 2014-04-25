@@ -50,18 +50,13 @@ WallApplication::WallApplication(int& argc_, char** argv_, MPIChannelPtr mpiChan
                                                       mpiChannel->getRank());
     g_configuration = config;
 
-    init(config);
+    g_mainWindow = new MainWindow(config);
 
     connect(mpiChannel.get(), SIGNAL(received(DisplayGroupManagerPtr)),
             this, SLOT(updateDisplayGroup(DisplayGroupManagerPtr)));
 
     connect(mpiChannel.get(), SIGNAL(received(OptionsPtr)),
             this, SLOT(updateOptions(OptionsPtr)));
-}
-
-void WallApplication::init(const WallConfiguration*)
-{
-    g_mainWindow = new MainWindow();
 }
 
 WallApplication::~WallApplication()

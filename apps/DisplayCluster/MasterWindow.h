@@ -37,64 +37,79 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef MASTERAPPLICATION_H
-#define MASTERAPPLICATION_H
+#ifndef MASTERWINDOW_H
+#define MASTERWINDOW_H
 
-#include "Application.h"
+#include "config.h"
+#include "types.h"
 
-class MasterWindow;
-class NetworkListener;
-class PixelStreamerLauncher;
-class PixelStreamWindowManager;
-class WebServiceServer;
-class TextInputDispatcher;
-class MasterConfiguration;
+#include <QMainWindow>
+#include <QMimeData>
+#include <boost/shared_ptr.hpp>
 
-class MasterApplication : public Application
+class MultiTouchListener;
+class BackgroundWidget;
+
+class MasterWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    /**
-     * Constructor
-     * @param argc Command line argument count (required by QApplication)
-     * @param argv Command line arguments (required by QApplication)
-     * @param mpiChannel The interprocess communication channel
-     */
-    MasterApplication(int &argc, char **argv, MPIChannelPtr mpiChannel);
+    /** Constructor */
+    MasterWindow();
 
     /** Destructor */
-    virtual ~MasterApplication();
+    ~MasterWindow();
+
+signals:
+    void openDock(QPointF pos, QSize size, QString rootDir);
+    void hideDock();
+    void openWebBrowser(QPointF pos, QSize size, QString url);
+
+#if ENABLE_SKELETON_SUPPORT
+    void enableSkeletonTracking();
+    void disableSkeletonTracking();
+#endif
+
+protected:
+    void dragEnterEvent(QDragEnterEvent *event);
+    void dropEvent(QDropEvent *event);
+
+private slots:
+    void openContent();
+    void openContentsDirectory();
+    void clearContents();
+
+    void saveState();
+    void loadState();
+
+    void computeImagePyramid();
+    void showBackgroundWidget();
+
+    void openWebBrowser();
+    void openDock(const QPointF position);
+
+#if ENABLE_SKELETON_SUPPORT
+    void setEnableSkeletonTracking(bool enable);
+#endif
 
 private:
-    MasterWindow* masterWindow_;
-    NetworkListener* networkListener_;
-    PixelStreamerLauncher* pixelStreamerLauncher_;
-    PixelStreamWindowManager* pixelStreamWindowManager_;
-    WebServiceServer* webServiceServer_;
-    TextInputDispatcher* textInputDispatcher_;
+    void setupMasterWindowUI();
 
-#if ENABLE_JOYSTICK_SUPPORT
-    JoystickThread* joystickThread_;
-#endif
+    void addContentDirectory(const QString &directoryName, unsigned int gridX=0, unsigned int gridY=0);
+    void loadState(const QString &filename);
 
-#if ENABLE_SKELETON_SUPPORT
-    SkeletonThread* skeletonThread_;
-#endif
+    void estimateGridSize(unsigned int numElem, unsigned int& gridX, unsigned int& gridY);
 
-    void init(const MasterConfiguration* config);
-    void startNetworkListener(const MasterConfiguration* configuration);
-    void startWebservice(const int webServicePort);
-    void restoreBackground(const MasterConfiguration* configuration);
-    void initPixelStreamLauncher();
+    QStringList extractValidContentUrls(const QMimeData* mimeData);
+    QStringList extractFolderUrls(const QMimeData *mimeData);
+    QString extractStateFile(const QMimeData *mimeData);
 
-#if ENABLE_JOYSTICK_SUPPORT
-    void startJoystickThread();
-#endif
+    BackgroundWidget* backgroundWidget_;
 
-#if ENABLE_SKELETON_SUPPORT
-    void startSkeletonThread();
+#if ENABLE_TUIO_TOUCH_LISTENER
+    MultiTouchListener* touchListener_;
 #endif
 };
 
-#endif // MASTERAPPLICATION_H
+#endif // MASTERWINDOW_H
