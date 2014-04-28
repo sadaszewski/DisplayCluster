@@ -64,6 +64,8 @@ class DisplayGroupInterface : public QObject {
         void setContentWindowManagers(ContentWindowManagerPtrs contentWindowManagers);
 
     public slots:
+        /** Clear all ContentWindows */
+        void clear();
 
         // these methods set the local copies of the state variables if source != this
         // they will emit signals if source == NULL or if this is a DisplayGroup object

@@ -38,26 +38,12 @@
 
 #include "MainWindow.h"
 
-#include "log.h"
-#include "globals.h"
-#include "Options.h"
-#include "MPIChannel.h"
 #include "configuration/WallConfiguration.h"
-
-#include "DisplayGroupManager.h"
 #include "GLWindow.h"
 
 MainWindow::MainWindow(const WallConfiguration* configuration)
 {
     setupWallOpenGLWindows(configuration);
-
-    // setup connection so updateGLWindows() will be called continuously must be
-    // queued so we return to the main event loop and avoid infinite recursion
-    connect(this, SIGNAL(updateGLWindowsFinished()),
-            this, SLOT(updateGLWindows()), Qt::QueuedConnection);
-
-    // trigger the first update
-    updateGLWindows();
 }
 
 MainWindow::~MainWindow()
@@ -66,43 +52,22 @@ MainWindow::~MainWindow()
 
 void MainWindow::setupWallOpenGLWindows(const WallConfiguration* configuration)
 {
-    // if we have just one tile for this process, make the GL window the central widget
-    // otherwise, create multiple windows
-    if(configuration->getScreenCount() == 1)
+    for(int i=0; i<configuration->getScreenCount(); ++i)
     {
-        move(configuration->getScreenPosition(0));
-        resize(configuration->getScreenWidth(), configuration->getScreenHeight());
+        QRect windowRect = QRect(configuration->getScreenPosition(i),
+                                 QSize(configuration->getScreenWidth(),
+                                       configuration->getScreenHeight()));
 
-        GLWindowPtr glw(new GLWindow(0));
+        // share OpenGL context from the first GLWindow
+        GLWindow* shareWidget = (i==0) ? 0 : glWindows_[0].get();
+
+        GLWindowPtr glw(new GLWindow(i, windowRect, shareWidget));
         glWindows_.push_back(glw);
 
-        setCentralWidget(glw.get());
-
         if(configuration->getFullscreen())
-            showFullScreen();
+            glw->showFullScreen();
         else
-            show();
-    }
-    else
-    {
-        for(int i=0; i<configuration->getScreenCount(); i++)
-        {
-            QRect windowRect = QRect(configuration->getScreenPosition(i), QSize(configuration->getScreenWidth(), configuration->getScreenHeight()));
-
-            // setup shared OpenGL contexts
-            GLWindow * shareWidget = NULL;
-
-            if(i > 0)
-                shareWidget = glWindows_[0].get();
-
-            GLWindowPtr glw(new GLWindow(i, windowRect, shareWidget));
-            glWindows_.push_back(glw);
-
-            if(configuration->getFullscreen())
-                glw->showFullScreen();
-            else
-                glw->show();
-        }
+            glw->show();
     }
 }
 
@@ -116,6 +81,36 @@ GLWindowPtr MainWindow::getActiveGLWindow()
     return activeGLWindow_;
 }
 
+Factory<Texture> & MainWindow::getTextureFactory()
+{
+    return textureFactory_;
+}
+
+Factory<DynamicTexture> & MainWindow::getDynamicTextureFactory()
+{
+    return dynamicTextureFactory_;
+}
+
+Factory<PDF> & MainWindow::getPDFFactory()
+{
+    return pdfFactory_;
+}
+
+Factory<SVG> & MainWindow::getSVGFactory()
+{
+    return svgFactory_;
+}
+
+Factory<Movie> & MainWindow::getMovieFactory()
+{
+    return movieFactory_;
+}
+
+Factory<PixelStream> & MainWindow::getPixelStreamFactory()
+{
+    return pixelStreamFactory_;
+}
+
 bool MainWindow::isRegionVisible(const QRectF& region) const
 {
     for(unsigned int i=0; i<glWindows_.size(); i++)
@@ -126,39 +121,14 @@ bool MainWindow::isRegionVisible(const QRectF& region) const
     return false;
 }
 
-void MainWindow::updateGLWindows()
+void MainWindow::updateGLWindows(DisplayGroupManagerPtr displayGroup)
 {
-    // receive any waiting messages
-    g_mpiChannel->receiveMessages(getGLWindow()->getPixelStreamFactory());
-
-    // synchronize clock right after receiving messages to ensure we have an
-    // accurate time for rendering, etc. below
-    g_mpiChannel->synchronizeClock();
-
-    if( g_configuration->getOptions()->getShowMouseCursor( ))
-        unsetCursor();
-    else
-        setCursor( QCursor( Qt::BlankCursor ));
-
-    // render all GLWindows
     for(size_t i=0; i<glWindows_.size(); i++)
     {
         activeGLWindow_ = glWindows_[i];
+        glWindows_[i]->setDisplayGroup(displayGroup);
         glWindows_[i]->updateGL();
     }
-
-    // all render processes render simultaneously
-    g_mpiChannel->globalBarrier();
-    swapBuffers();
-
-    g_displayGroupManager->advanceContents();
-
-    clearStaleFactoryObjects();
-    glWindows_[0]->purgeTextures();
-
-    ++g_frameCount;
-
-    emit(updateGLWindowsFinished());
 }
 
 void MainWindow::swapBuffers()
@@ -169,17 +139,26 @@ void MainWindow::swapBuffers()
 
 void MainWindow::clearStaleFactoryObjects()
 {
-    glWindows_[0]->getTextureFactory().clearStaleObjects();
-    glWindows_[0]->getDynamicTextureFactory().clearStaleObjects();
-    glWindows_[0]->getPDFFactory().clearStaleObjects();
-    glWindows_[0]->getSVGFactory().clearStaleObjects();
-    glWindows_[0]->getMovieFactory().clearStaleObjects();
-    glWindows_[0]->getPixelStreamFactory().clearStaleObjects();
-    glWindows_[0]->getPDFFactory().clearStaleObjects();
+    textureFactory_.clearStaleObjects();
+    dynamicTextureFactory_.clearStaleObjects();
+    pdfFactory_.clearStaleObjects();
+    svgFactory_.clearStaleObjects();
+    movieFactory_.clearStaleObjects();
+    pixelStreamFactory_.clearStaleObjects();
+    pdfFactory_.clearStaleObjects();
+
+    glWindows_[0]->purgeTextures();
 }
 
 void MainWindow::finalize()
 {
-    for(size_t i=0; i<glWindows_.size(); i++)
-        glWindows_[i]->finalize();
+    textureFactory_.clear();
+    dynamicTextureFactory_.clear();
+    pdfFactory_.clear();
+    svgFactory_.clear();
+    movieFactory_.clear();
+    pixelStreamFactory_.clear();
+    pdfFactory_.clear();
+
+    glWindows_[0]->purgeTextures();
 }

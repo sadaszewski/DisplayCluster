@@ -170,7 +170,9 @@ private:
     void receivePixelStreams(const MessageHeader& messageHeader,
                              Factory<PixelStream>& pixelStreamFactory);
     // TODO remove content dimension requests (DISCL-21)
-    void receiveContentsDimensionsRequest(DisplayGroupManagerPtr displayGroup);
+    void receiveContentsDimensionsRequest();
+    // Storing the DisplayGroup (on Rank1) to serve contentDimensionsRequests
+    DisplayGroupManagerPtr displayGroup_;
 };
 
 #endif // MPICHANNEL_H

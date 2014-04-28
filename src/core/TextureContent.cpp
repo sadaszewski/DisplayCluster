@@ -73,10 +73,10 @@ const QStringList& TextureContent::getSupportedExtensions()
 
 void TextureContent::getFactoryObjectDimensions(int &width, int &height)
 {
-    g_mainWindow->getGLWindow()->getTextureFactory().getObject(getURI())->getDimensions(width, height);
+    g_mainWindow->getTextureFactory().getObject(getURI())->getDimensions(width, height);
 }
 
 void TextureContent::renderFactoryObject(ContentWindowManagerPtr, const QRectF& texCoords)
 {
-    g_mainWindow->getGLWindow()->getTextureFactory().getObject(getURI())->render(texCoords);
+    g_mainWindow->getTextureFactory().getObject(getURI())->render(texCoords);
 }

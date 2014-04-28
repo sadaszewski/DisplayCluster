@@ -54,7 +54,6 @@ public:
     Options();
 
     bool getShowWindowBorders() const;
-    bool getShowMouseCursor() const;
     bool getShowTouchPoints() const;
     bool getShowMovieControls() const;
     bool getShowTestPattern() const;
@@ -69,7 +68,6 @@ public:
 
 public slots:
     void setShowWindowBorders(bool set);
-    void setShowMouseCursor(bool set);
     void setShowTouchPoints(bool set);
     void setShowMovieControls(bool set);
     void setShowTestPattern(bool set);
@@ -92,7 +90,6 @@ private:
     void serialize(Archive & ar, const unsigned int)
     {
         ar & showWindowBorders_;
-        ar & showMouseCursor_;
         ar & showTouchPoints_;
         ar & showMovieControls_;
         ar & showTestPattern_;
@@ -106,7 +103,6 @@ private:
     }
 
     bool showWindowBorders_;
-    bool showMouseCursor_;
     bool showTouchPoints_;
     bool showMovieControls_;
     bool showTestPattern_;

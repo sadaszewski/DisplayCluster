@@ -40,7 +40,6 @@
 
 Options::Options()
     : showWindowBorders_(false)
-    , showMouseCursor_(false)
     , showTouchPoints_(false)
     , showMovieControls_(true)
     , showTestPattern_(false)
@@ -57,11 +56,6 @@ Options::Options()
 bool Options::getShowWindowBorders() const
 {
     return showWindowBorders_;
-}
-
-bool Options::getShowMouseCursor() const
-{
-    return showMouseCursor_;
 }
 
 bool Options::getShowTouchPoints() const
@@ -109,13 +103,6 @@ bool Options::getShowSkeletons() const
 void Options::setShowWindowBorders(bool set)
 {
     showWindowBorders_ = set;
-
-    emit(updated(shared_from_this()));
-}
-
-void Options::setShowMouseCursor(bool set)
-{
-    showMouseCursor_ = set;
 
     emit(updated(shared_from_this()));
 }

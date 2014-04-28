@@ -92,16 +92,17 @@ ContentWindowManagerPtr DisplayGroupInterface::getContentWindowManager(const QUu
 void DisplayGroupInterface::setContentWindowManagers(ContentWindowManagerPtrs contentWindowManagers)
 {
     // remove existing content window managers
-    while(!contentWindowManagers_.empty())
-    {
-        removeContentWindowManager(contentWindowManagers_[0]);
-    }
+    clear();
 
     // add new content window managers
     for(unsigned int i=0; i<contentWindowManagers.size(); i++)
-    {
         addContentWindowManager(contentWindowManagers[i]);
-    }
+}
+
+void DisplayGroupInterface::clear()
+{
+    while(!contentWindowManagers_.empty())
+        removeContentWindowManager(contentWindowManagers_[0]);
 }
 
 void DisplayGroupInterface::addContentWindowManager(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface * source)

@@ -42,6 +42,8 @@
 
 #include <QDialog>
 
+#include "types.h"
+
 class QLabel;
 
 class BackgroundWidget : public QDialog
@@ -49,6 +51,10 @@ class BackgroundWidget : public QDialog
     Q_OBJECT
 public:
     explicit BackgroundWidget(QWidget *parent = 0);
+
+signals:
+    void backgroundColorChanged(QColor color);
+    void backgroundContentChanged(ContentPtr content);
 
 public slots:
     void accept();

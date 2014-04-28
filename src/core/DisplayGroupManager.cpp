@@ -39,15 +39,10 @@
 #include "DisplayGroupManager.h"
 
 #include "ContentWindowManager.h"
-#include "ContentFactory.h"
 #include "Content.h"
 
 #include "globals.h"
 #include "MPIChannel.h"
-#include "MainWindow.h"
-#include "GLWindow.h"
-
-#include "log.h"
 
 DisplayGroupManager::DisplayGroupManager()
 {
@@ -173,18 +168,20 @@ void DisplayGroupManager::moveContentWindowManagerToFront(ContentWindowManagerPt
     }
 }
 
-void DisplayGroupManager::setBackgroundContentWindowManager(ContentWindowManagerPtr contentWindowManager)
+void DisplayGroupManager::setBackgroundContent(ContentPtr content)
 {
-    // This method can be used to remove the background by sending a NULL ptr
-    if (contentWindowManager)
+    if (content)
     {
+        backgroundContent_ = ContentWindowManagerPtr(new ContentWindowManager(content));
         // set display group in content window manager object
-        contentWindowManager->setDisplayGroupManager(shared_from_this());
-        contentWindowManager->adjustSize( SIZE_FULLSCREEN );
-        watchChanges(contentWindowManager);
+        backgroundContent_->setDisplayGroupManager(shared_from_this());
+        backgroundContent_->adjustSize( SIZE_FULLSCREEN );
+        watchChanges(backgroundContent_);
     }
-
-    backgroundContent_ = contentWindowManager;
+    else
+    {
+        backgroundContent_ = ContentWindowManagerPtr();
+    }
 
     emit modified(shared_from_this());
 }
@@ -205,22 +202,6 @@ ContentWindowManagerPtr DisplayGroupManager::getActiveWindow() const
         return ContentWindowManagerPtr();
 
     return contentWindowManagers_.back();
-}
-
-bool DisplayGroupManager::setBackgroundContentFromUri(const QString& filename)
-{
-    if(!filename.isEmpty())
-    {
-        ContentPtr content = ContentFactory::getContent(filename);
-
-        if( content )
-        {
-            ContentWindowManagerPtr contentWindow(new ContentWindowManager(content));
-            setBackgroundContentWindowManager(contentWindow);
-            return true;
-        }
-    }
-    return false;
 }
 
 QColor DisplayGroupManager::getBackgroundColor() const

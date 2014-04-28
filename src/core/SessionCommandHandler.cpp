@@ -60,7 +60,7 @@ void SessionCommandHandler::handle(const Command& command, const QString&)
     const QString& arguments = command.getArguments();
 
     if (arguments == CLEARALL_COMMAND)
-        displayGroupManager_.setContentWindowManagers(ContentWindowManagerPtrs());
+        displayGroupManager_.clear();
     else
         put_flog( LOG_ERROR, "Invalid Session command received: '%s'",
                   arguments.toStdString().c_str());

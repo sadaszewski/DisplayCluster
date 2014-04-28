@@ -151,12 +151,10 @@ BOOST_AUTO_TEST_CASE( testSocketConnection )
 {
     ut::master_test_suite_t& testSuite = ut::framework::master_test_suite();
     g_mpiChannel.reset(new MPIChannel(testSuite.argc, testSuite.argv));
+    g_configuration = new MasterConfiguration( "configuration.xml" );
 
-    g_displayGroupManager.reset( new DisplayGroupManager );
-    g_configuration =
-        new MasterConfiguration( "configuration.xml" );
-
-    PixelStreamWindowManager pixelStreamWindowManager( *g_displayGroupManager );
+    DisplayGroupManager displayGroup;
+    PixelStreamWindowManager pixelStreamWindowManager( displayGroup );
     NetworkListener listener( pixelStreamWindowManager );
 #ifdef NTHREADS
     QThreadPool::globalInstance()->setMaxThreadCount( NTHREADS );

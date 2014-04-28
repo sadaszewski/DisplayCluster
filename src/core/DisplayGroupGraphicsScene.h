@@ -51,7 +51,7 @@ class DisplayGroupGraphicsScene : public QGraphicsScene {
 
     public:
 
-        DisplayGroupGraphicsScene();
+        DisplayGroupGraphicsScene(DisplayGroupManagerPtr displayGroup);
 
         void refreshTileRects();
 
@@ -67,6 +67,8 @@ class DisplayGroupGraphicsScene : public QGraphicsScene {
         MarkerPtrs markers_;
 
         std::vector<QGraphicsRectItem *> tileRects_;
+
+        DisplayGroupManagerPtr displayGroup_;
 };
 
 #endif

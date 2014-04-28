@@ -60,9 +60,17 @@ public:
     /** Destructor */
     virtual ~WallApplication();
 
+signals:
+    void frameFinished();
+
 private slots:
+    void renderFrame();
+
     void updateDisplayGroup(DisplayGroupManagerPtr displayGroup);
     void updateOptions(OptionsPtr options);
+
+private:
+    DisplayGroupManagerPtr displayGroup_;
 };
 
 #endif // WALLAPPLICATION_H

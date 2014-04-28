@@ -71,10 +71,10 @@ const QStringList& SVGContent::getSupportedExtensions()
 
 void SVGContent::getFactoryObjectDimensions(int &width, int &height)
 {
-    g_mainWindow->getGLWindow()->getSVGFactory().getObject(getURI())->getDimensions(width, height);
+    g_mainWindow->getSVGFactory().getObject(getURI())->getDimensions(width, height);
 }
 
 void SVGContent::renderFactoryObject(ContentWindowManagerPtr, const QRectF& texCoords)
 {
-    g_mainWindow->getGLWindow()->getSVGFactory().getObject(getURI())->render(texCoords);
+    g_mainWindow->getSVGFactory().getObject(getURI())->render(texCoords);
 }

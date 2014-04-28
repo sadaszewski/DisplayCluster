@@ -44,8 +44,6 @@
 #include "globals.h"
 #include "configuration/Configuration.h"
 #include "ContentFactory.h"
-#include "ContentWindowManager.h"
-#include "DisplayGroupManager.h"
 
 BackgroundWidget::BackgroundWidget(QWidget *widget_) :
     QDialog(widget_)
@@ -128,8 +126,9 @@ void BackgroundWidget::reject()
     g_configuration->setBackgroundColor(previousColor_);
     g_configuration->setBackgroundUri(previousBackgroundURI_);
 
-    g_displayGroupManager->setBackgroundColor(previousColor_);
-    g_displayGroupManager->setBackgroundContentFromUri(previousBackgroundURI_);
+    ContentPtr content = ContentFactory::getContent( previousBackgroundURI_ );
+    emit backgroundContentChanged(content);
+    emit backgroundColorChanged(previousColor_);
 
     QDialog::reject();
 }
@@ -143,24 +142,26 @@ void BackgroundWidget::chooseColor()
         colorLabel_->setText(color.name());
         colorLabel_->setPalette(QPalette(color));
 
-        g_displayGroupManager->setBackgroundColor(color);
-
-        // Store settings
         g_configuration->setBackgroundColor(color);
+        emit backgroundColorChanged(color);
     }
 }
 
 void BackgroundWidget::openBackgroundContent()
 {
-    QString filename = QFileDialog::getOpenFileName(this, tr("Choose content"), QString(), ContentFactory::getSupportedFilesFilterAsString());
-
+    const QString filename = QFileDialog::getOpenFileName(this,
+                                                          tr("Choose content"),
+                                                          QString(),
+                                                          ContentFactory::getSupportedFilesFilterAsString());
     if(filename.isEmpty())
         return;
 
-    if(g_displayGroupManager->setBackgroundContentFromUri(filename))
+    ContentPtr content = ContentFactory::getContent( filename );
+    if(content)
     {
         backgroundLabel_->setText(filename);
         g_configuration->setBackgroundUri(filename);
+        emit backgroundContentChanged(content);
     }
     else
     {
@@ -172,8 +173,7 @@ void BackgroundWidget::openBackgroundContent()
 
 void BackgroundWidget::removeBackground()
 {
-    g_displayGroupManager->setBackgroundContentWindowManager(ContentWindowManagerPtr());
-
     backgroundLabel_->setText("");
     g_configuration->setBackgroundUri("");
+    emit backgroundContentChanged(ContentPtr());
 }

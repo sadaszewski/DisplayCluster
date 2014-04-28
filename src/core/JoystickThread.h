@@ -51,6 +51,8 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 
+#include "types.h"
+
 class ContentWindowInterface;
 class DisplayGroupJoystick;
 
@@ -90,7 +92,7 @@ class JoystickThread : public QThread {
 
     public:
 
-        JoystickThread();
+        JoystickThread(DisplayGroupManagerPtr displayGroup);
         ~JoystickThread();
 
     protected:
@@ -111,6 +113,8 @@ class JoystickThread : public QThread {
         std::vector<SDL_Joystick *> joysticks_;
         std::vector<boost::shared_ptr<DisplayGroupJoystick> > displayGroupJoysticks_;
         std::vector<JoystickState> states_;
+
+        DisplayGroupManagerPtr displayGroup_;
 
         void joystickMoveMarker(int index, float dx, float dy);
         void joystickPan(int index, float dx, float dy);

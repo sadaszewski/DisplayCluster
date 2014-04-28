@@ -58,17 +58,17 @@ bool PixelStreamContent::readMetadata()
 
 void PixelStreamContent::getFactoryObjectDimensions(int &width, int &height)
 {
-    g_mainWindow->getGLWindow()->getPixelStreamFactory().getObject(getURI())->getDimensions(width, height);
+    g_mainWindow->getPixelStreamFactory().getObject(getURI())->getDimensions(width, height);
 }
 
 void PixelStreamContent::advance(ContentWindowManagerPtr window)
 {
     const QRectF& windowRect = window->getCoordinates();
-    g_mainWindow->getGLWindow()->getPixelStreamFactory().getObject(getURI())->preRenderUpdate(windowRect);
+    g_mainWindow->getPixelStreamFactory().getObject(getURI())->preRenderUpdate(windowRect);
 }
 
 void PixelStreamContent::renderFactoryObject(ContentWindowManagerPtr window, const QRectF& texCoords)
 {
     const QRectF& windowRect = window->getCoordinates();
-    g_mainWindow->getGLWindow()->getPixelStreamFactory().getObject(getURI())->render(texCoords, windowRect);
+    g_mainWindow->getPixelStreamFactory().getObject(getURI())->render(texCoords, windowRect);
 }

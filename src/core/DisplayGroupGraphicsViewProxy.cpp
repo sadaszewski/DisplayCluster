@@ -43,9 +43,9 @@
 #include "ContentWindowManager.h"
 #include "ContentWindowGraphicsItem.h"
 
-DisplayGroupGraphicsViewProxy::DisplayGroupGraphicsViewProxy(DisplayGroupManagerPtr displayGroupManager)
-    : DisplayGroupInterface(displayGroupManager)
-    , graphicsView_( new DisplayGroupGraphicsView() )
+DisplayGroupGraphicsViewProxy::DisplayGroupGraphicsViewProxy(DisplayGroupManagerPtr displayGroup)
+    : DisplayGroupInterface(displayGroup)
+    , graphicsView_( new DisplayGroupGraphicsView(displayGroup) )
 {
 }
 

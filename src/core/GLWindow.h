@@ -39,15 +39,11 @@
 #ifndef GL_WINDOW_H
 #define GL_WINDOW_H
 
-#include "Factory.hpp"
-#include "Texture.h"
-#include "DynamicTexture.h"
-#include "PDF.h"
-#include "SVG.h"
-#include "Movie.h"
-#include "PixelStream.h"
-#include "FpsCounter.h"
 #include <QGLWidget>
+#include <QMutex>
+
+#include "types.h"
+#include "FpsCounter.h"
 
 class WallConfiguration;
 
@@ -61,18 +57,13 @@ public:
     /** Get the unique tile index identifier. */
     int getTileIndex() const;
 
-    Factory<Texture> & getTextureFactory();
-    Factory<DynamicTexture> & getDynamicTextureFactory();
-    Factory<PDF> &getPDFFactory();
-    Factory<SVG> & getSVGFactory();
-    Factory<Movie> & getMovieFactory();
-    Factory<PixelStream> & getPixelStreamFactory();
+    /** Set the DisplayGroup to render. */
+    void setDisplayGroup(DisplayGroupManagerPtr displayGroup);
 
+    // TODO See if we can remove this method of deleting textures.
+    // It is only used in DynamicTexture.
     void insertPurgeTextureId(GLuint textureId);
     void purgeTextures();
-
-    /** Must be called before destroying this object to clear all Contents and textures. */
-    void finalize();
 
     /**
      * Is the given region visible in this window.
@@ -92,12 +83,14 @@ public:
     static void drawRectangle(double x, double y, double w, double h);
 
 protected:
-    void initializeGL();
-    void paintGL();
-    void resizeGL(int w, int h);
+    /** Overloaded methods from QGLWidget */
+    virtual void initializeGL();
+    virtual void paintGL();
+    virtual void resizeGL(int w, int h);
 
 private:
     const WallConfiguration* configuration_;
+    DisplayGroupManagerPtr displayGroup_;
 
     int tileIndex_;
 
@@ -106,13 +99,6 @@ private:
     double right_;
     double bottom_;
     double top_;
-
-    Factory<Texture> textureFactory_;
-    Factory<DynamicTexture> dynamicTextureFactory_;
-    Factory<PDF> pdfFactory_;
-    Factory<SVG> svgFactory_;
-    Factory<Movie> movieFactory_;
-    Factory<PixelStream> pixelStreamFactory_;
 
     // mutex and vector of texture id's to purge
     // this allows other threads to trigger deletion of a texture during
@@ -129,6 +115,7 @@ private:
     void setOrthographicView(const QColor& clearColor);
 #if ENABLE_SKELETON_SUPPORT
     bool setPerspectiveView(double x=0., double y=0., double w=1., double h=1.);
+    void renderSkeletons(const std::vector< boost::shared_ptr<SkeletonState> >& skeletons);
 #endif
 
     void renderTestPattern();

@@ -42,15 +42,18 @@
 #include "config.h"
 #include "types.h"
 
-#include <QMainWindow>
-#include <boost/shared_ptr.hpp>
+#include "Factory.hpp"
+#include "Texture.h"
+#include "DynamicTexture.h"
+#include "PDF.h"
+#include "SVG.h"
+#include "Movie.h"
+#include "PixelStream.h"
 
 class WallConfiguration;
 
-class MainWindow : public QMainWindow
+class MainWindow
 {
-    Q_OBJECT
-
 public:
     MainWindow(const WallConfiguration* configuration);
     ~MainWindow();
@@ -62,19 +65,29 @@ public:
 
     void finalize();
 
-signals:
-    void updateGLWindowsFinished();
-
-private slots:
-    void updateGLWindows();
-
-private:
-    void setupWallOpenGLWindows(const WallConfiguration* configuration);
+    void updateGLWindows(DisplayGroupManagerPtr displayGroup);
     void swapBuffers();
     void clearStaleFactoryObjects();
 
+    Factory<Texture> & getTextureFactory();
+    Factory<DynamicTexture> & getDynamicTextureFactory();
+    Factory<PDF> &getPDFFactory();
+    Factory<SVG> & getSVGFactory();
+    Factory<Movie> & getMovieFactory();
+    Factory<PixelStream> & getPixelStreamFactory();
+
+private:
+    void setupWallOpenGLWindows(const WallConfiguration* configuration);
+
     GLWindowPtrs glWindows_;
     GLWindowPtr activeGLWindow_;
+
+    Factory<Texture> textureFactory_;
+    Factory<DynamicTexture> dynamicTextureFactory_;
+    Factory<PDF> pdfFactory_;
+    Factory<SVG> svgFactory_;
+    Factory<Movie> movieFactory_;
+    Factory<PixelStream> pixelStreamFactory_;
 };
 
 #endif

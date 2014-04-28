@@ -56,7 +56,7 @@ class MasterWindow : public QMainWindow
 
 public:
     /** Constructor */
-    MasterWindow();
+    MasterWindow(DisplayGroupManagerPtr displayGroup);
 
     /** Destructor */
     ~MasterWindow();
@@ -78,7 +78,6 @@ protected:
 private slots:
     void openContent();
     void openContentsDirectory();
-    void clearContents();
 
     void saveState();
     void loadState();
@@ -105,6 +104,7 @@ private:
     QStringList extractFolderUrls(const QMimeData *mimeData);
     QString extractStateFile(const QMimeData *mimeData);
 
+    DisplayGroupManagerPtr displayGroup_;
     BackgroundWidget* backgroundWidget_;
 
 #if ENABLE_TUIO_TOUCH_LISTENER

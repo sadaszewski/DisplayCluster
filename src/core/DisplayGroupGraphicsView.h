@@ -40,6 +40,7 @@
 #define DISPLAY_GROUP_GRAPHICS_VIEW_H
 
 #include <QtGui>
+#include "types.h"
 
 class PanGesture;
 class PinchGesture;
@@ -49,7 +50,7 @@ class DisplayGroupGraphicsView : public QGraphicsView
     Q_OBJECT
 
 public:
-    DisplayGroupGraphicsView();
+    DisplayGroupGraphicsView(DisplayGroupManagerPtr displayGroup);
     virtual ~DisplayGroupGraphicsView();
 
     void grabGestures();

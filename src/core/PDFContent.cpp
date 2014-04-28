@@ -106,11 +106,11 @@ void PDFContent::previousPage()
 
 void PDFContent::getFactoryObjectDimensions(int &width, int &height)
 {
-    g_mainWindow->getGLWindow()->getPDFFactory().getObject(getURI())->getDimensions(width, height);
+    g_mainWindow->getPDFFactory().getObject(getURI())->getDimensions(width, height);
 }
 
 void PDFContent::renderFactoryObject(ContentWindowManagerPtr, const QRectF& texCoords)
 {
-    g_mainWindow->getGLWindow()->getPDFFactory().getObject(getURI())->setPage(pageNumber_);
-    g_mainWindow->getGLWindow()->getPDFFactory().getObject(getURI())->render(texCoords);
+    g_mainWindow->getPDFFactory().getObject(getURI())->setPage(pageNumber_);
+    g_mainWindow->getPDFFactory().getObject(getURI())->render(texCoords);
 }

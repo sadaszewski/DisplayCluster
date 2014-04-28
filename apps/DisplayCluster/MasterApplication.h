@@ -68,6 +68,7 @@ public:
 
 private:
     MasterWindow* masterWindow_;
+    DisplayGroupManagerPtr displayGroup_;
     NetworkListener* networkListener_;
     PixelStreamerLauncher* pixelStreamerLauncher_;
     PixelStreamWindowManager* pixelStreamWindowManager_;

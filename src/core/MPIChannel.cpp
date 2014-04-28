@@ -202,7 +202,8 @@ void MPIChannel::receiveMessages(Factory<PixelStream>& pixelStreamFactory)
 
             if(mh.type == MESSAGE_TYPE_CONTENTS)
             {
-                emit(received(receiveDisplayGroup(mh)));
+                displayGroup_ = receiveDisplayGroup(mh);
+                emit(received(displayGroup_));
             }
             else if(mh.type == MESSAGE_TYPE_OPTIONS)
             {
@@ -210,7 +211,7 @@ void MPIChannel::receiveMessages(Factory<PixelStream>& pixelStreamFactory)
             }
             else if(mh.type == MESSAGE_TYPE_CONTENTS_DIMENSIONS)
             {
-                receiveContentsDimensionsRequest(g_displayGroupManager);
+                receiveContentsDimensionsRequest();
             }
             else if(mh.type == MESSAGE_TYPE_PIXELSTREAM)
             {
@@ -488,18 +489,19 @@ OptionsPtr MPIChannel::receiveOptions(const MessageHeader& messageHeader)
     return options;
 }
 
-void MPIChannel::receiveContentsDimensionsRequest(DisplayGroupManagerPtr displayGroup)
+void MPIChannel::receiveContentsDimensionsRequest()
 {
     if(mpiRank != 1)
         return;
 
-    // get dimensions of Content objects associated with each ContentWindowManager
-    // note that we must use g_displayGroupManager to access content window managers
-    // since earlier updates (in the same frame) of this display group may have
-    // occurred, and g_displayGroupManager would have then been replaced
+    ContentWindowManagerPtrs contentWindows;
+    if (displayGroup_)
+        contentWindows = displayGroup_->getContentWindowManagers();
+    else
+        put_flog(LOG_ERROR, "Cannot send content dimensions before a DisplayGroup was received!");
+
     std::vector<std::pair<int, int> > dimensions;
 
-    ContentWindowManagerPtrs contentWindows = displayGroup->getContentWindowManagers();
     for(size_t i=0; i<contentWindows.size(); ++i)
     {
         int w,h;

@@ -192,7 +192,6 @@ list(APPEND MOC_HEADERS
     DisplayGroupGraphicsViewProxy.h
     DisplayGroupListWidgetProxy.h
     EventReceiver.h
-    MainWindow.h
     Marker.h
     MPIChannel.h
     NetworkListener.h

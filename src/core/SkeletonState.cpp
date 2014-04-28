@@ -58,12 +58,12 @@ inline float calculateDistance(SkeletonPoint& a, SkeletonPoint& b)
     return result;
 }
 
-SkeletonState::SkeletonState()
+SkeletonState::SkeletonState(DisplayGroupManagerPtr displayGroup)
 {
     if(g_mpiChannel->getRank() == 0)
     {
         // create display group interface
-        boost::shared_ptr<DisplayGroupJoystick> dgj(new DisplayGroupJoystick(g_displayGroupManager));
+        boost::shared_ptr<DisplayGroupJoystick> dgj(new DisplayGroupJoystick(displayGroup));
         displayGroup_ = dgj;
 
         // default mode is focused interaction

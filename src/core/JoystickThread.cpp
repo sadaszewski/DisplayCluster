@@ -38,11 +38,12 @@
 
 #include "JoystickThread.h"
 #include "log.h"
-#include "main.h"
+#include "globals.h"
 #include "DisplayGroupJoystick.h"
 #include "ContentWindowInterface.h"
 
-JoystickThread::JoystickThread()
+JoystickThread::JoystickThread(DisplayGroupManagerPtr displayGroup)
+    : displayGroup_(displayGroup)
 {
     moveToThread(this);
 
@@ -78,7 +79,7 @@ void JoystickThread::run()
         SDL_Joystick * joystick = SDL_JoystickOpen(i);
         joysticks_.push_back(joystick);
 
-        boost::shared_ptr<DisplayGroupJoystick> dgj(new DisplayGroupJoystick(g_displayGroupManager));
+        boost::shared_ptr<DisplayGroupJoystick> dgj(new DisplayGroupJoystick(displayGroup_));
         displayGroupJoysticks_.push_back(dgj);
     }
 

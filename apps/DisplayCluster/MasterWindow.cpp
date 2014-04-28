@@ -70,8 +70,9 @@
 
 #define DOCK_WIDTH_RELATIVE_TO_WALL   0.175
 
-MasterWindow::MasterWindow()
+MasterWindow::MasterWindow(DisplayGroupManagerPtr displayGroup)
     : QMainWindow()
+    , displayGroup_(displayGroup)
     , backgroundWidget_(0)
 #if ENABLE_TUIO_TOUCH_LISTENER
     , touchListener_(0)
@@ -95,7 +96,6 @@ MasterWindow::~MasterWindow()
     delete touchListener_;
 #endif
 }
-
 
 void MasterWindow::setupMasterWindowUI()
 {
@@ -128,7 +128,7 @@ void MasterWindow::setupMasterWindowUI()
     // clear contents action
     QAction * clearContentsAction = new QAction("Clear", this);
     clearContentsAction->setStatusTip("Clear");
-    connect(clearContentsAction, SIGNAL(triggered()), this, SLOT(clearContents()));
+    connect(clearContentsAction, SIGNAL(triggered()), displayGroup_.get(), SLOT(clear()));
 
     // save state action
     QAction * saveStateAction = new QAction("Save State", this);
@@ -175,13 +175,6 @@ void MasterWindow::setupMasterWindowUI()
     showWindowBordersAction->setCheckable(true);
     showWindowBordersAction->setChecked(options->getShowWindowBorders());
     connect(showWindowBordersAction, SIGNAL(toggled(bool)), options.get(), SLOT(setShowWindowBorders(bool)));
-
-    // show mouse cursor action
-    QAction * showMouseCursorAction = new QAction("Show Mouse Cursor", this);
-    showMouseCursorAction->setStatusTip("Show mouse cursor");
-    showMouseCursorAction->setCheckable(true);
-    showMouseCursorAction->setChecked(options->getShowMouseCursor());
-    connect(showMouseCursorAction, SIGNAL(toggled(bool)), options.get(), SLOT(setShowMouseCursor(bool)));
 
     // show touch points action
     QAction * showTouchPoints = new QAction("Show Touch Points", this);
@@ -259,7 +252,6 @@ void MasterWindow::setupMasterWindowUI()
     fileMenu->addAction(quitAction);
     viewMenu->addAction(backgroundAction);
     viewMenu->addAction(showWindowBordersAction);
-    viewMenu->addAction(showMouseCursorAction);
     viewMenu->addAction(showTouchPoints);
     viewMenu->addAction(showMovieControlsAction);
     viewMenu->addAction(showTestPatternAction);
@@ -294,7 +286,7 @@ void MasterWindow::setupMasterWindowUI()
     setCentralWidget(mainWidget);
 
     // add the local renderer group
-    DisplayGroupGraphicsViewProxy * dggv = new DisplayGroupGraphicsViewProxy(g_displayGroupManager);
+    DisplayGroupGraphicsViewProxy * dggv = new DisplayGroupGraphicsViewProxy(displayGroup_);
     mainWidget->addTab((QWidget *)dggv->getGraphicsView(), "Display group 0");
     // Forward background touch events
     connect(dggv->getGraphicsView(), SIGNAL(backgroundTap(QPointF)),
@@ -317,7 +309,7 @@ void MasterWindow::setupMasterWindowUI()
     addDockWidget(Qt::LeftDockWidgetArea, contentsDockWidget);
 
     // add the list widget
-    DisplayGroupListWidgetProxy * dglwp = new DisplayGroupListWidgetProxy(g_displayGroupManager);
+    DisplayGroupListWidgetProxy * dglwp = new DisplayGroupListWidgetProxy(displayGroup_);
     contentsLayout->addWidget(dglwp->getListWidget());
 }
 
@@ -327,7 +319,7 @@ void MasterWindow::openContent()
 
     if(!filename.isEmpty())
     {
-        const bool success = ContentLoader(g_displayGroupManager).load(filename);
+        const bool success = ContentLoader(displayGroup_).load(filename);
 
         if ( !success )
         {
@@ -384,7 +376,7 @@ void MasterWindow::addContentDirectory(const QString& directoryName, unsigned in
         const QPointF position(x_coord*w + 0.5*w, y_coord*h + 0.5*h);
         const QSizeF windowSize(w, h);
 
-        const bool success = ContentLoader(g_displayGroupManager).load(filename, position, windowSize);
+        const bool success = ContentLoader(displayGroup_).load(filename, position, windowSize);
 
         if(success)
         {
@@ -400,7 +392,7 @@ void MasterWindow::addContentDirectory(const QString& directoryName, unsigned in
 
 void MasterWindow::openContentsDirectory()
 {
-    QString directoryName = QFileDialog::getExistingDirectory(this);
+    const QString directoryName = QFileDialog::getExistingDirectory(this);
 
     if(!directoryName.isEmpty())
     {
@@ -418,6 +410,11 @@ void MasterWindow::showBackgroundWidget()
     {
         backgroundWidget_ = new BackgroundWidget(this);
         backgroundWidget_->setModal(true);
+
+        connect(backgroundWidget_, SIGNAL(backgroundColorChanged(QColor)),
+                displayGroup_.get(), SLOT(setBackgroundColor(QColor)));
+        connect(backgroundWidget_, SIGNAL(backgroundContentChanged(ContentPtr)),
+                displayGroup_.get(), SLOT(setBackgroundContent(ContentPtr)));
     }
 
     backgroundWidget_->show();
@@ -426,18 +423,13 @@ void MasterWindow::showBackgroundWidget()
 void MasterWindow::openWebBrowser()
 {
     bool ok;
-    QString url = QInputDialog::getText(this, tr("New WebBrowser Content"),
-                                         tr("URL:"), QLineEdit::Normal,
-                                         WEBBROWSER_DEFAULT_URL, &ok);
+    const QString url = QInputDialog::getText(this, tr("New WebBrowser Content"),
+                                              tr("URL:"), QLineEdit::Normal,
+                                              WEBBROWSER_DEFAULT_URL, &ok);
     if (ok && !url.isEmpty())
     {
         emit openWebBrowser(QPointF(.5,.5), QSize(), url);
     }
-}
-
-void MasterWindow::clearContents()
-{
-    g_displayGroupManager->setContentWindowManagers(ContentWindowManagerPtrs());
 }
 
 void MasterWindow::saveState()
@@ -453,18 +445,19 @@ void MasterWindow::saveState()
             filename.append(".dcx");
         }
 
-        bool success = StateSerializationHelper(g_displayGroupManager).save(filename);
+        bool success = StateSerializationHelper(displayGroup_).save(filename);
 
         if(!success)
         {
-            QMessageBox::warning(this, "Error", "Could not save state file.", QMessageBox::Ok, QMessageBox::Ok);
+            QMessageBox::warning(this, "Error", "Could not save state file.",
+                                 QMessageBox::Ok, QMessageBox::Ok);
         }
     }
 }
 
 void MasterWindow::loadState()
 {
-    QString filename = QFileDialog::getOpenFileName(this, "Load State", "", "State files (*.dcx)");
+    const QString filename = QFileDialog::getOpenFileName(this, "Load State", "", "State files (*.dcx)");
 
     if(!filename.isEmpty())
     {
@@ -474,9 +467,10 @@ void MasterWindow::loadState()
 
 void MasterWindow::loadState(const QString& filename)
 {
-    if( !StateSerializationHelper(g_displayGroupManager).load(filename ))
+    if( !StateSerializationHelper(displayGroup_).load(filename ))
     {
-        QMessageBox::warning(this, "Error", "Could not load state file.", QMessageBox::Ok, QMessageBox::Ok);
+        QMessageBox::warning(this, "Error", "Could not load state file.",
+                             QMessageBox::Ok, QMessageBox::Ok);
     }
 }
 
@@ -576,7 +570,7 @@ void MasterWindow::dropEvent(QDropEvent* dropEvt)
     const QStringList& pathList = extractValidContentUrls(dropEvt->mimeData());
     foreach (QString url, pathList)
     {
-        ContentLoader(g_displayGroupManager).load(url);
+        ContentLoader(displayGroup_).load(url);
     }
 
     const QStringList& dirList = extractFolderUrls(dropEvt->mimeData());

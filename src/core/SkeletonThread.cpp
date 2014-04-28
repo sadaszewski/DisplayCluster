@@ -44,7 +44,8 @@
 // an identifier for a UID that is not applicable
 const unsigned int NA_UID = 9999;
 
-SkeletonThread::SkeletonThread()
+SkeletonThread::SkeletonThread(DisplayGroupManagerPtr displayGroup)
+   : displayGroup_(displayGroup)
 {
     moveToThread(this);
 }
@@ -118,7 +119,7 @@ void SkeletonThread::updateSkeletons()
         {
             Skeleton skeleton = sensor_->getSkeleton(sensor_->getUID(i));
 
-            boost::shared_ptr<SkeletonState> state(new SkeletonState());
+            boost::shared_ptr<SkeletonState> state(new SkeletonState(displayGroup_));
             state->update(skeleton);
 
             states_.insert(std::pair<unsigned int, boost::shared_ptr<SkeletonState> >(sensor_->getUID(i), state));

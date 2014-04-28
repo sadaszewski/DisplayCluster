@@ -41,10 +41,13 @@
 
 #include "MPIChannel.h"
 #include "configuration/WallConfiguration.h"
+#include "Options.h"
 #include "MainWindow.h"
+#include "DisplayGroupManager.h"
 
 WallApplication::WallApplication(int& argc_, char** argv_, MPIChannelPtr mpiChannel)
     : Application(argc_, argv_)
+    , displayGroup_(new DisplayGroupManager)
 {
     WallConfiguration* config = new WallConfiguration(getConfigFilename(),
                                                       mpiChannel->getRank());
@@ -57,6 +60,12 @@ WallApplication::WallApplication(int& argc_, char** argv_, MPIChannelPtr mpiChan
 
     connect(mpiChannel.get(), SIGNAL(received(OptionsPtr)),
             this, SLOT(updateOptions(OptionsPtr)));
+
+    // setup connection so renderFrame() will be called continuously.
+    // Must be a queued connection to avoid infinite recursion.
+    connect(this, SIGNAL(frameFinished()),
+            this, SLOT(renderFrame()), Qt::QueuedConnection);
+    renderFrame();
 }
 
 WallApplication::~WallApplication()
@@ -69,9 +78,31 @@ WallApplication::~WallApplication()
     g_mainWindow = 0;
 }
 
+void WallApplication::renderFrame()
+{
+    g_mpiChannel->receiveMessages(g_mainWindow->getPixelStreamFactory());
+
+    // synchronize clock right after receiving messages to ensure we have an
+    // accurate time for rendering, etc. below
+    g_mpiChannel->synchronizeClock();
+
+    // All processes swap windows sychronously
+    g_mainWindow->updateGLWindows(displayGroup_);
+    g_mpiChannel->globalBarrier();
+    g_mainWindow->swapBuffers();
+
+    displayGroup_->advanceContents();
+
+    g_mainWindow->clearStaleFactoryObjects();
+
+    ++g_frameCount;
+
+    emit(frameFinished());
+}
+
 void WallApplication::updateDisplayGroup(DisplayGroupManagerPtr displayGroup)
 {
-    g_displayGroupManager = displayGroup;
+    displayGroup_ = displayGroup;
 }
 
 void WallApplication::updateOptions(OptionsPtr options)

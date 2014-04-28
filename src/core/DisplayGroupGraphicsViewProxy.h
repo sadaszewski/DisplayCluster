@@ -50,7 +50,7 @@ class DisplayGroupGraphicsViewProxy : public DisplayGroupInterface
 
     public:
 
-        DisplayGroupGraphicsViewProxy(DisplayGroupManagerPtr displayGroupManager);
+        DisplayGroupGraphicsViewProxy(DisplayGroupManagerPtr displayGroup);
         ~DisplayGroupGraphicsViewProxy();
 
         DisplayGroupGraphicsView * getGraphicsView();

@@ -63,7 +63,6 @@ GLWindow::GLWindow(int tileIndex)
     , bottom_(0)
     , top_(0)
 {
-    // disable automatic buffer swapping
     setAutoBufferSwap(false);
 }
 
@@ -78,14 +77,12 @@ GLWindow::GLWindow(int tileIndex, QRect windowRect, QGLWidget * shareWidget)
 {
     setGeometry(windowRect);
 
-    // make sure sharing succeeded
-    if(shareWidget != 0 && isSharing() != true)
+    if(shareWidget && !isSharing())
     {
         put_flog(LOG_FATAL, "failed to share OpenGL context");
         exit(-1);
     }
 
-    // disable automatic buffer swapping
     setAutoBufferSwap(false);
 }
 
@@ -96,36 +93,6 @@ GLWindow::~GLWindow()
 int GLWindow::getTileIndex() const
 {
     return tileIndex_;
-}
-
-Factory<Texture> & GLWindow::getTextureFactory()
-{
-    return textureFactory_;
-}
-
-Factory<DynamicTexture> & GLWindow::getDynamicTextureFactory()
-{
-    return dynamicTextureFactory_;
-}
-
-Factory<PDF> & GLWindow::getPDFFactory()
-{
-    return pdfFactory_;
-}
-
-Factory<SVG> & GLWindow::getSVGFactory()
-{
-    return svgFactory_;
-}
-
-Factory<Movie> & GLWindow::getMovieFactory()
-{
-    return movieFactory_;
-}
-
-Factory<PixelStream> & GLWindow::getPixelStreamFactory()
-{
-    return pixelStreamFactory_;
 }
 
 void GLWindow::insertPurgeTextureId(GLuint textureId)
@@ -154,7 +121,10 @@ void GLWindow::initializeGL()
 
 void GLWindow::paintGL()
 {
-    setOrthographicView(g_displayGroupManager->getBackgroundColor());
+    if (!displayGroup_)
+        return;
+
+    setOrthographicView(displayGroup_->getBackgroundColor());
 
     OptionsPtr options = g_configuration->getOptions();
 
@@ -165,49 +135,19 @@ void GLWindow::paintGL()
         return;
     }
 
-    renderBackgroundContent(g_displayGroupManager->getBackgroundContentWindowManager());
-    renderContentWindows(g_displayGroupManager->getContentWindowManagers());
+    renderBackgroundContent(displayGroup_->getBackgroundContentWindowManager());
+    renderContentWindows(displayGroup_->getContentWindowManagers());
 
     // Show the FPS for each window
     if (options->getShowStreamingStatistics())
         drawFps();
 
     // Markers should be rendered last since they're blended
-    renderMarkers(g_displayGroupManager->getMarkers());
+    renderMarkers(displayGroup_->getMarkers());
 
 #if ENABLE_SKELETON_SUPPORT
     if(options->getShowSkeletons())
-    {
-        // render perspective overlay for skeletons
-
-        // setPersectiveView() may change the viewport!
-        glPushAttrib(GL_VIEWPORT_BIT | GL_ENABLE_BIT | GL_CURRENT_BIT);
-
-        // set the height of the skeleton view to a fraction of the total display height
-        // set the width to maintain a 16/9 aspect ratio
-        double skeletonViewHeight = 0.4;
-        double skeletonViewWidth = 16./9. * (double)configuration_->getTotalHeight() / (double)configuration_->getTotalWidth() * skeletonViewHeight;
-
-        // view at the center bottom
-        if(setPerspectiveView(0.5 * (1. - skeletonViewWidth), 1. - skeletonViewHeight, skeletonViewWidth, skeletonViewHeight) == true)
-        {
-            // enable depth testing, lighting, color tracking, and normal normalization (since we're scaling)
-            glEnable(GL_DEPTH_TEST);
-            glEnable(GL_LIGHTING);
-            glEnable(GL_COLOR_MATERIAL);
-            glEnable(GL_NORMALIZE);
-
-            // get and render skeletons
-            std::vector< boost::shared_ptr<SkeletonState> > skeletons = g_displayGroupManager->getSkeletons();
-
-            for(unsigned int i = 0; i < skeletons.size(); i++)
-            {
-                skeletons[i]->render();
-            }
-        }
-
-        glPopAttrib();
-    }
+        renderSkeletons(displayGroup_->getSkeletons());
 #endif
 }
 
@@ -404,6 +344,35 @@ bool GLWindow::setPerspectiveView(double x, double y, double w, double h)
 
     return true;
 }
+
+void GLWindow::renderSkeletons(const std::vector< boost::shared_ptr<SkeletonState> >& skeletons)
+{
+    // render perspective overlay for skeletons
+
+    // setPersectiveView() may change the viewport!
+    glPushAttrib(GL_VIEWPORT_BIT | GL_ENABLE_BIT | GL_CURRENT_BIT);
+
+    // set the height of the skeleton view to a fraction of the total display height
+    // set the width to maintain a 16/9 aspect ratio
+    double skeletonViewHeight = 0.4;
+    double skeletonViewWidth = 16./9. / configuration_->getAspectRatio() * skeletonViewHeight;
+
+    // view at the center bottom
+    if(setPerspectiveView(0.5 * (1. - skeletonViewWidth), 1. - skeletonViewHeight, skeletonViewWidth, skeletonViewHeight))
+    {
+        // enable depth testing, lighting, color tracking, and normal normalization (since we're scaling)
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_LIGHTING);
+        glEnable(GL_COLOR_MATERIAL);
+        glEnable(GL_NORMALIZE);
+
+        for(unsigned int i = 0; i < skeletons.size(); i++)
+            skeletons[i]->render();
+    }
+
+    glPopAttrib();
+}
+
 #endif
 
 bool GLWindow::isRegionVisible(const QRectF& region) const
@@ -426,17 +395,9 @@ void GLWindow::drawRectangle(double x, double y, double w, double h)
     glEnd();
 }
 
-void GLWindow::finalize()
+void GLWindow::setDisplayGroup(DisplayGroupManagerPtr displayGroup)
 {
-    textureFactory_.clear();
-    dynamicTextureFactory_.clear();
-    pdfFactory_.clear();
-    svgFactory_.clear();
-    movieFactory_.clear();
-    pixelStreamFactory_.clear();
-
-    // The factories need to be cleared before we purge the textures
-    purgeTextures();
+    displayGroup_ = displayGroup;
 }
 
 void GLWindow::renderTestPattern()

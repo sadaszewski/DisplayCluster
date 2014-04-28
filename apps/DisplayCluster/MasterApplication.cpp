@@ -72,6 +72,7 @@
 MasterApplication::MasterApplication(int& argc_, char** argv_, MPIChannelPtr mpiChannel)
     : Application(argc_, argv_)
     , masterWindow_(0)
+    , displayGroup_(new DisplayGroupManager)
     , networkListener_(0)
     , pixelStreamerLauncher_(0)
     , pixelStreamWindowManager_(0)
@@ -88,10 +89,10 @@ MasterApplication::MasterApplication(int& argc_, char** argv_, MPIChannelPtr mpi
     g_configuration = config;
 
     if( argc_ == 2 )
-        StateSerializationHelper(g_displayGroupManager).load( argv_[1] );
+        StateSerializationHelper(displayGroup_).load( argv_[1] );
 
     // Distribute the DisplayGroup through MPI whenever it is modified
-    connect(g_displayGroupManager.get(),SIGNAL(modified(DisplayGroupManagerPtr)),
+    connect(displayGroup_.get(), SIGNAL(modified(DisplayGroupManagerPtr)),
             mpiChannel.get(), SLOT(send(DisplayGroupManagerPtr)));
 
     // Distribute the options when they are updated
@@ -113,10 +114,9 @@ MasterApplication::~MasterApplication()
     joystickThread_ = 0;
 #endif
 
-    // Clear all windows - was in DisplayGroupManager::sendQuit()
-    g_displayGroupManager->setContentWindowManagers( ContentWindowManagerPtrs() );
+    // Clear all ContentWindows
+    displayGroup_->clear();
 
-    // destruct the main window
     delete masterWindow_;
     masterWindow_ = 0;
 
@@ -140,9 +140,9 @@ MasterApplication::~MasterApplication()
 
 void MasterApplication::init(const MasterConfiguration* config)
 {
-    masterWindow_ = new MasterWindow();
+    masterWindow_ = new MasterWindow(displayGroup_);
 
-    pixelStreamWindowManager_ = new PixelStreamWindowManager(*g_displayGroupManager);
+    pixelStreamWindowManager_ = new PixelStreamWindowManager(*displayGroup_);
 
     initPixelStreamLauncher();
     startNetworkListener(config);
@@ -166,8 +166,8 @@ void MasterApplication::startNetworkListener(const MasterConfiguration* configur
     networkListener_ = new NetworkListener(*pixelStreamWindowManager_);
 
     CommandHandler& handler = networkListener_->getCommandHandler();
-    handler.registerCommandHandler(new FileCommandHandler(g_displayGroupManager, *pixelStreamWindowManager_));
-    handler.registerCommandHandler(new SessionCommandHandler(*g_displayGroupManager));
+    handler.registerCommandHandler(new FileCommandHandler(displayGroup_, *pixelStreamWindowManager_));
+    handler.registerCommandHandler(new SessionCommandHandler(*displayGroup_));
 
     const QString& url = configuration->getWebBrowserDefaultURL();
     handler.registerCommandHandler(new WebbrowserCommandHandler(
@@ -183,12 +183,12 @@ void MasterApplication::startWebservice(const int webServicePort)
 
     webServiceServer_ = new WebServiceServer(webServicePort);
 
-    DisplayGroupManagerAdapterPtr adapter(new DisplayGroupManagerAdapter(g_displayGroupManager));
+    DisplayGroupManagerAdapterPtr adapter(new DisplayGroupManagerAdapter(displayGroup_));
     TextInputHandler* textInputHandler = new TextInputHandler(adapter);
     webServiceServer_->addHandler("/dcapi/textinput", dcWebservice::HandlerPtr(textInputHandler));
 
     textInputHandler->moveToThread(webServiceServer_);
-    textInputDispatcher_ = new TextInputDispatcher(g_displayGroupManager);
+    textInputDispatcher_ = new TextInputDispatcher(displayGroup_);
     textInputDispatcher_->connect(textInputHandler, SIGNAL(receivedKeyInput(char)),
                          SLOT(sendKeyEventToActiveWindow(char)));
 
@@ -198,8 +198,9 @@ void MasterApplication::startWebservice(const int webServicePort)
 void MasterApplication::restoreBackground(const MasterConfiguration* configuration)
 {
     // Must be done after everything else is setup (or in the MainWindow constructor)
-    g_displayGroupManager->setBackgroundColor( configuration->getBackgroundColor( ));
-    g_displayGroupManager->setBackgroundContentFromUri( configuration->getBackgroundUri( ));
+    displayGroup_->setBackgroundColor( configuration->getBackgroundColor( ));
+    ContentPtr content = ContentFactory::getContent( configuration->getBackgroundUri( ));
+    displayGroup_->setBackgroundContent( content );
 }
 
 void MasterApplication::initPixelStreamLauncher()
@@ -226,7 +227,7 @@ void MasterApplication::startJoystickThread()
     }
 
     // create thread to monitor joystick events (all joysticks handled in same event queue)
-    JoystickThread * joystickThread_ = new JoystickThread();
+    JoystickThread * joystickThread_ = new JoystickThread(displayGroup_);
     joystickThread_->start();
 
     // wait for thread to start
@@ -240,7 +241,7 @@ void MasterApplication::startJoystickThread()
 #if ENABLE_SKELETON_SUPPORT
 void MasterApplication::startSkeletonThread()
 {
-    skeletonThread_ = new SkeletonThread();
+    skeletonThread_ = new SkeletonThread(displayGroup_);
     skeletonThread_->start();
 
     // wait for thread to start
@@ -249,11 +250,11 @@ void MasterApplication::startSkeletonThread()
         usleep(1000);
     }
 
-    connect(g_mainWindow, SIGNAL(enableSkeletonTracking()), skeletonThread_, SLOT(startTimer()));
-    connect(g_mainWindow, SIGNAL(disableSkeletonTracking()), skeletonThread_, SLOT(stopTimer()));
+    connect(masterWindow_, SIGNAL(enableSkeletonTracking()), skeletonThread_, SLOT(startTimer()));
+    connect(masterWindow_, SIGNAL(disableSkeletonTracking()), skeletonThread_, SLOT(stopTimer()));
 
     connect(skeletonThread_, SIGNAL(skeletonsUpdated(std::vector< boost::shared_ptr<SkeletonState> >)),
-            g_displayGroupManager.get(), SLOT(setSkeletons(std::vector<boost::shared_ptr<SkeletonState> >)),
+            displayGroup_.get(), SLOT(setSkeletons(std::vector<boost::shared_ptr<SkeletonState> >)),
             Qt::QueuedConnection);
 }
 #endif

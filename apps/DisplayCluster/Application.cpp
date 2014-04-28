@@ -49,8 +49,6 @@
 Application::Application(int &argc_, char **argv_)
     : QApplication(argc_, argv_)
 {
-    g_displayGroupManager.reset( new DisplayGroupManager );
-
     QObject::connect(this, SIGNAL(lastWindowClosed()),
                      this, SLOT(quit()));
 }
