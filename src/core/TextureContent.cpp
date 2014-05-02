@@ -41,6 +41,7 @@
 #include "Texture.h"
 #include "MainWindow.h"
 #include "GLWindow.h"
+#include "Factories.h"
 
 #include <boost/serialization/export.hpp>
 #include "serializationHelpers.h"
@@ -71,12 +72,14 @@ const QStringList& TextureContent::getSupportedExtensions()
     return extensions;
 }
 
-void TextureContent::getFactoryObjectDimensions(int &width, int &height)
+void TextureContent::getFactoryObjectDimensions(FactoriesPtr factories,
+                                                int &width, int &height)
 {
-    g_mainWindow->getTextureFactory().getObject(getURI())->getDimensions(width, height);
+    factories->getTextureFactory().getObject(getURI())->getDimensions(width, height);
 }
 
-void TextureContent::renderFactoryObject(ContentWindowManagerPtr, const QRectF& texCoords)
+void TextureContent::renderFactoryObject(FactoriesPtr factories,
+                                         const QRectF& texCoords)
 {
-    g_mainWindow->getTextureFactory().getObject(getURI())->render(texCoords);
+    factories->getTextureFactory().getObject(getURI())->render(texCoords);
 }

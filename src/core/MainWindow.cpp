@@ -81,34 +81,9 @@ GLWindowPtr MainWindow::getActiveGLWindow()
     return activeGLWindow_;
 }
 
-Factory<Texture> & MainWindow::getTextureFactory()
+size_t MainWindow::getGLWindowCount() const
 {
-    return textureFactory_;
-}
-
-Factory<DynamicTexture> & MainWindow::getDynamicTextureFactory()
-{
-    return dynamicTextureFactory_;
-}
-
-Factory<PDF> & MainWindow::getPDFFactory()
-{
-    return pdfFactory_;
-}
-
-Factory<SVG> & MainWindow::getSVGFactory()
-{
-    return svgFactory_;
-}
-
-Factory<Movie> & MainWindow::getMovieFactory()
-{
-    return movieFactory_;
-}
-
-Factory<PixelStream> & MainWindow::getPixelStreamFactory()
-{
-    return pixelStreamFactory_;
+    return glWindows_.size();
 }
 
 bool MainWindow::isRegionVisible(const QRectF& region) const
@@ -121,12 +96,11 @@ bool MainWindow::isRegionVisible(const QRectF& region) const
     return false;
 }
 
-void MainWindow::updateGLWindows(DisplayGroupManagerPtr displayGroup)
+void MainWindow::updateGLWindows()
 {
     for(size_t i=0; i<glWindows_.size(); i++)
     {
         activeGLWindow_ = glWindows_[i];
-        glWindows_[i]->setDisplayGroup(displayGroup);
         glWindows_[i]->updateGL();
     }
 }
@@ -135,30 +109,4 @@ void MainWindow::swapBuffers()
 {
     for(size_t i=0; i<glWindows_.size(); i++)
         glWindows_[i]->swapBuffers();
-}
-
-void MainWindow::clearStaleFactoryObjects()
-{
-    textureFactory_.clearStaleObjects();
-    dynamicTextureFactory_.clearStaleObjects();
-    pdfFactory_.clearStaleObjects();
-    svgFactory_.clearStaleObjects();
-    movieFactory_.clearStaleObjects();
-    pixelStreamFactory_.clearStaleObjects();
-    pdfFactory_.clearStaleObjects();
-
-    glWindows_[0]->purgeTextures();
-}
-
-void MainWindow::finalize()
-{
-    textureFactory_.clear();
-    dynamicTextureFactory_.clear();
-    pdfFactory_.clear();
-    svgFactory_.clear();
-    movieFactory_.clear();
-    pixelStreamFactory_.clear();
-    pdfFactory_.clear();
-
-    glWindows_[0]->purgeTextures();
 }

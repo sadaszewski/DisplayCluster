@@ -38,10 +38,8 @@
 /*********************************************************************/
 
 #include "PDFContent.h"
-#include "MainWindow.h"
-#include "GLWindow.h"
-#include "globals.h"
 #include "PDF.h"
+#include "Factories.h"
 
 #include "serializationHelpers.h"
 #include <boost/serialization/export.hpp>
@@ -104,13 +102,20 @@ void PDFContent::previousPage()
     }
 }
 
-void PDFContent::getFactoryObjectDimensions(int &width, int &height)
+void PDFContent::getFactoryObjectDimensions(FactoriesPtr factories,
+                                            int &width, int &height)
+
 {
-    g_mainWindow->getPDFFactory().getObject(getURI())->getDimensions(width, height);
+    factories->getPDFFactory().getObject(getURI())->getDimensions(width, height);
 }
 
-void PDFContent::renderFactoryObject(ContentWindowManagerPtr, const QRectF& texCoords)
+void PDFContent::advance(FactoriesPtr factories, ContentWindowManagerPtr)
 {
-    g_mainWindow->getPDFFactory().getObject(getURI())->setPage(pageNumber_);
-    g_mainWindow->getPDFFactory().getObject(getURI())->render(texCoords);
+    factories->getPDFFactory().getObject(getURI())->setPage(pageNumber_);
+}
+
+void PDFContent::renderFactoryObject(FactoriesPtr factories,
+                                     const QRectF& texCoords)
+{
+    factories->getPDFFactory().getObject(getURI())->render(texCoords);
 }

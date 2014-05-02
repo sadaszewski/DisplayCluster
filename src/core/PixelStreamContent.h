@@ -56,9 +56,10 @@ class PixelStreamContent : public Content
         **/
         virtual bool readMetadata();
 
-        virtual void getFactoryObjectDimensions(int &width, int &height);
+        virtual void getFactoryObjectDimensions(FactoriesPtr factories,
+                                                int &width, int &height);
 
-        virtual void advance(ContentWindowManagerPtr);
+        virtual void advance(FactoriesPtr factories, ContentWindowManagerPtr);
 
     private:
         friend class boost::serialization::access;
@@ -70,7 +71,8 @@ class PixelStreamContent : public Content
             ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Content);
         }
 
-        virtual void renderFactoryObject(ContentWindowManagerPtr window, const QRectF& texCoords);
+        virtual void renderFactoryObject(FactoriesPtr factories,
+                                         const QRectF& texCoords);
 };
 
 #endif

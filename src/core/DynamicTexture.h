@@ -91,10 +91,8 @@ public:
     /**
      * Render the dynamic texture.
      * @param texCoords The area of the full scale texture to render
-     * @param loadOnDemand Load the texture if not already available
-     * @param considerChildren Attempt to use the children objects for rendering
      */
-    void render(const QRectF& texCoords, bool loadOnDemand=true, bool considerChildren=true);
+    virtual void render(const QRectF& texCoords);
 
     /**
      * Recursively clear children of this object which have not been rendered recently.
@@ -156,6 +154,13 @@ private:
     std::vector<DynamicTexturePtr> children_; // Children in the image pyramid
     uint64_t renderChildrenFrameIndex_; // Used for garbage-collecting unused child objects
 
+    /**
+     * Render the dynamic texture.
+     * @param texCoords The area of the full scale texture to render
+     * @param loadOnDemand Load the texture if not already available
+     * @param considerChildren Attempt to use the children objects for rendering
+     */
+    void render_(const QRectF& texCoords, bool loadOnDemand=true, bool considerChildren=true);
 
     /** Is this object the root element. */
     bool isRoot() const;

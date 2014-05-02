@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
+/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
 /*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -37,66 +37,82 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef PDFCONTENT_H
-#define PDFCONTENT_H
+#include "DisplayGroupRenderer.h"
 
-#include "Content.h"
-#include <boost/serialization/base_object.hpp>
+#include "DisplayGroupManager.h"
+#include "ContentWindowManager.h"
+#include "Marker.h"
 
-class PDFContent : public Content
+DisplayGroupRenderer::DisplayGroupRenderer(DisplayGroupManagerPtr displayGroup,
+                                           FactoriesPtr factories)
+    : factories_(factories)
+    , displayGroup_(displayGroup)
 {
-    Q_OBJECT
+}
 
-public:
-    /**
-     * Consturctor
-     * @param uri The uri of the pdf document
-    **/
-    PDFContent(const QString& uri = "");
+void DisplayGroupRenderer::render()
+{
+    renderBackgroundContent(displayGroup_->getBackgroundContentWindowManager());
+    renderContentWindows(displayGroup_->getContentWindowManagers());
 
-    /** Get the content type **/
-    CONTENT_TYPE getType();
+    // Markers should be rendered last since they're blended
+    renderMarkers(displayGroup_->getMarkers());
+}
 
-    /**
-     * Reaad PDF informations from the source URI.
-     * @return true on success, false if the URI is invalid or an error occured.
-    **/
-    virtual bool readMetadata();
+void DisplayGroupRenderer::setDisplayGroup(DisplayGroupManagerPtr displayGroup)
+{
+    displayGroup_ = displayGroup;
+}
 
-    void getFactoryObjectDimensions(FactoriesPtr factories,
-                                    int &width, int &height);
-
-    static const QStringList& getSupportedExtensions();
-
-    /** Rank0 : go to next page **/
-    void nextPage();
-
-    /** Rank0 : go to previous page **/
-    void previousPage();
-
-signals:
-    /** Emitted when the page number is changed **/
-    void pageChanged();
-
-private:
-    friend class boost::serialization::access;
-
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int)
+void DisplayGroupRenderer::renderBackgroundContent(ContentWindowManagerPtr backgroundContentWindow)
+{
+    // Render background content window
+    if (backgroundContentWindow)
     {
-        // serialize base class information (with NVP for xml archives)
-        ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Content);
-        ar & boost::serialization::make_nvp("pageNumber", pageNumber_);
+        glPushMatrix();
+        glTranslatef(0., 0., -1.f + std::numeric_limits<float>::epsilon());
+
+        windowRenderer_.render(backgroundContentWindow, factories_);
+
+        glPopMatrix();
     }
+}
 
-    // These informations are needed on Rank0
-    int pageNumber_;
-    int pageCount_;
+void DisplayGroupRenderer::renderContentWindows(ContentWindowManagerPtrs contentWindowManagers)
+{
+    const unsigned int windowCount = contentWindowManagers.size();
+    unsigned int i = 0;
+    for(ContentWindowManagerPtrs::iterator it = contentWindowManagers.begin(); it != contentWindowManagers.end(); ++it)
+    {
+        // It is currently not possible to cull windows that are invisible as this conflics
+        // with the "garbage collection" mechanism for Contents. In fact, "stale" objects are objects
+        // which have not been rendered for more than one frame (implicitly: objects without a window)
+        // and those are destroyed by Factory::clearStaleObjects(). It is currently the only way to
+        // remove a Content.
+        //if ( isRegionVisible( (*it)->getCoordinates( )))
+        {
+            // the visible depths are in the range (-1,1); make the content window depths be in the range (-1,0)
+            const float zCoordinate = -(float)(windowCount - i) / (float)(windowCount + 1);
 
-    virtual void advance(FactoriesPtr factories, ContentWindowManagerPtr window);
+            glPushMatrix();
+            glTranslatef(0.f, 0.f, zCoordinate);
 
-    virtual void renderFactoryObject(FactoriesPtr factories,
-                                     const QRectF& texCoords);
-};
+            windowRenderer_.render(*it, factories_);
 
-#endif // PDFCONTENT_H
+            glPopMatrix();
+        }
+
+        ++i;
+    }
+}
+
+void DisplayGroupRenderer::renderMarkers(const MarkerPtrs& markers)
+{
+    for(MarkerPtrs::const_iterator it = markers.begin(); it != markers.end(); ++it)
+    {
+        // only render recently active markers
+        if((*it)->isActive())
+            markerRenderer_.render(*it);
+    }
+}
+

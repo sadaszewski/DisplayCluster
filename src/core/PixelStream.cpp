@@ -67,6 +67,9 @@ void PixelStream::getDimensions(int &width, int &height) const
 
 void PixelStream::preRenderUpdate(const QRectF& windowRect)
 {
+    // Store the window coordinates for the rendering pass
+    contentWindowRect_ = windowRect;
+
     if( isDecodingInProgress( ))
         return;
 
@@ -160,7 +163,7 @@ void PixelStream::decodeVisibleTextures(const QRectF& windowRect)
     }
 }
 
-void PixelStream::render(const QRectF&, const QRectF& windowRect)
+void PixelStream::render(const QRectF&)
 {
     updateRenderedFrameIndex();
 
@@ -172,7 +175,7 @@ void PixelStream::render(const QRectF&, const QRectF& windowRect)
 
     for(std::vector<PixelStreamSegmentRendererPtr>::iterator it=segmentRenderers_.begin(); it != segmentRenderers_.end(); ++it)
     {
-        if (isVisible( (*it)->getRect(), windowRect ))
+        if (isVisible( (*it)->getRect(), contentWindowRect_ ))
         {
             (*it)->render(showSegmentBorders, showSegmentStatistics);
         }
@@ -197,7 +200,7 @@ void PixelStream::adjustSegmentRendererCount(const size_t count)
     {
         segmentRenderers_.clear();
         for (size_t i=0; i<count; ++i)
-            segmentRenderers_.push_back( PixelStreamSegmentRendererPtr(new PixelStreamSegmentRenderer(uri_)) );
+            segmentRenderers_.push_back( PixelStreamSegmentRendererPtr(new PixelStreamSegmentRenderer(renderContext_)) );
     }
 }
 
@@ -230,7 +233,7 @@ bool PixelStream::isVisible(const QRect& segment, const QRectF& windowRect)
     const double segmentW = (double)segment.width() / (double)width_ * windowRect.width();
     const double segmentH = (double)segment.height() / (double)height_ * windowRect.height();
 
-    return g_mainWindow->isRegionVisible(QRectF(segmentX, segmentY, segmentW, segmentH));
+    return renderContext_->isRegionVisible(QRectF(segmentX, segmentY, segmentW, segmentH));
 }
 
 bool PixelStream::isVisible(const dc::PixelStreamSegment& segment, const QRectF& windowRect)

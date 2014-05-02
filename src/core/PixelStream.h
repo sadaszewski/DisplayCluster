@@ -65,7 +65,7 @@ public:
     void getDimensions(int &width, int &height) const;
 
     void preRenderUpdate(const QRectF& windowRect);
-    void render(const QRectF& texCoords, const QRectF& windowRect);
+    void render(const QRectF& texCoords);
 
     void insertNewFrame(const PixelStreamSegments& segments);
 
@@ -88,6 +88,9 @@ private:
 
     // For each segment, object for image decoding, rendering and storing parameters
     std::vector<PixelStreamSegmentRendererPtr> segmentRenderers_;
+
+    // The coordinates of the ContentWindow of this PixelStream
+    QRectF contentWindowRect_;
 
     void updateRenderers(const PixelStreamSegments& segments);
     void updateVisibleTextures(const QRectF& windowRect);

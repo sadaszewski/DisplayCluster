@@ -44,6 +44,7 @@
 #include "GLWindow.h"
 #include <boost/serialization/export.hpp>
 #include "serializationHelpers.h"
+#include "Factories.h"
 
 BOOST_CLASS_EXPORT_GUID(MovieContent, "MovieContent")
 
@@ -69,12 +70,13 @@ const QStringList& MovieContent::getSupportedExtensions()
     return extensions;
 }
 
-void MovieContent::getFactoryObjectDimensions(int &width, int &height)
+void MovieContent::getFactoryObjectDimensions(FactoriesPtr factories,
+                                              int &width, int &height)
 {
-    g_mainWindow->getMovieFactory().getObject(getURI())->getDimensions(width, height);
+    factories->getMovieFactory().getObject(getURI())->getDimensions(width, height);
 }
 
-void MovieContent::advance(ContentWindowManagerPtr window)
+void MovieContent::advance(FactoriesPtr factories, ContentWindowManagerPtr window)
 {
     if( blockAdvance_ )
         return;
@@ -84,15 +86,17 @@ void MovieContent::advance(ContentWindowManagerPtr window)
     window->getCoordinates(x, y, w, h);
 
     // skip a frame if the Content rectangle is not visible in ANY windows; otherwise decode normally
-    const bool skip = !g_mainWindow->isRegionVisible(QRectF(x, y, w, h));
+    //const bool skip = !g_mainWindow->isRegionVisible(QRectF(x, y, w, h));
+    const bool skip = false;
 
-    boost::shared_ptr< Movie > movie = g_mainWindow->getMovieFactory().getObject(getURI());
+    boost::shared_ptr< Movie > movie = factories->getMovieFactory().getObject(getURI());
     movie->setPause( window->getControlState() & STATE_PAUSED );
     movie->setLoop( window->getControlState() & STATE_LOOP );
     movie->nextFrame(skip);
 }
 
-void MovieContent::renderFactoryObject(ContentWindowManagerPtr, const QRectF& texCoords)
+void MovieContent::renderFactoryObject(FactoriesPtr factories,
+                                       const QRectF& texCoords)
 {
-    g_mainWindow->getMovieFactory().getObject(getURI())->render(texCoords);
+    factories->getMovieFactory().getObject(getURI())->render(texCoords);
 }

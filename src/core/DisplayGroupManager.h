@@ -101,9 +101,6 @@ public slots:
     virtual void removeContentWindowManager(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface * source=NULL);
     virtual void moveContentWindowManagerToFront(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface * source=NULL);
 
-    /** Advance all contents */
-    void advanceContents();
-
     /**
      * Set the background content.
      * @param content The content to set.

@@ -99,10 +99,12 @@ list(APPEND SRCS
     ContentType.cpp
     ContentInteractionDelegate.cpp
     ContentWindowManager.cpp
+    ContentWindowRenderer.cpp
     ContentWindowInterface.cpp
     ContentWindowGraphicsItem.cpp
     ContentWindowListWidgetItem.cpp
     DisplayGroupManager.cpp
+    DisplayGroupRenderer.cpp
     DisplayGroupInterface.cpp
     DisplayGroupGraphicsScene.cpp
     DisplayGroupGraphicsViewProxy.cpp
@@ -110,6 +112,8 @@ list(APPEND SRCS
     DisplayGroupListWidgetProxy.cpp
     DynamicTexture.cpp
     DynamicTextureContent.cpp
+    Factory.hpp
+    Factories.cpp
     FactoryObject.cpp
     FileCommandHandler.cpp
     FpsCounter.cpp
@@ -126,6 +130,7 @@ list(APPEND SRCS
     ImageJpegDecompressor.cpp
     MainWindow.cpp
     Marker.cpp
+    MarkerRenderer.cpp
     Movie.cpp
     MovieContent.cpp
     MPIChannel.cpp

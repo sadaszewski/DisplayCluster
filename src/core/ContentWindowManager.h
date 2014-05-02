@@ -81,9 +81,6 @@ class ContentWindowManager : public ContentWindowInterface, public boost::enable
         QPointF getWindowCenterPosition() const;
         void centerPositionAround(const QPointF& position, const bool constrainToWindowBorders);
 
-        // GLWindow rendering
-        void render();
-
     signals:
         /** Emitted when the Content signals that it has been modified */
         void contentModified();

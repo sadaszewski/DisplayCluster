@@ -39,6 +39,25 @@
 #include "FactoryObject.h"
 #include "globals.h"
 
+FactoryObject::FactoryObject()
+    : renderContext_(0)
+{
+}
+
+FactoryObject::~FactoryObject()
+{
+}
+
+void FactoryObject::setRenderContext(MainWindow* renderContext)
+{
+    renderContext_ = renderContext;
+}
+
+MainWindow*FactoryObject::getRenderContext() const
+{
+    return renderContext_;
+}
+
 uint64_t FactoryObject::getRenderedFrameIndex() const
 {
     return renderedFrameIndex_;

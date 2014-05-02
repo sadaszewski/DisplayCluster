@@ -39,53 +39,39 @@
 #ifndef MARKER_H
 #define MARKER_H
 
-// this is a fraction of the tiled display width of 1
-#define MARKER_WIDTH 0.0025
-
-// number of seconds before a marker stops being rendered
-#define MARKER_TIMEOUT_SECONDS 5
-
-#include <QtGui>
-#include <QGLWidget>
+#include <QObject>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/date_time/posix_time/time_serialize.hpp>
 
-class Marker : public QObject {
+class Marker : public QObject
+{
     Q_OBJECT
 
-    public:
+public:
+    Marker();
 
-        Marker();
-        ~Marker();
+    void setPosition(float x, float y);
+    void getPosition(float &x, float &y);
 
-        void setPosition(float x, float y);
-        void getPosition(float &x, float &y);
+    bool isActive();
 
-        bool getActive();
+signals:
+    void positionChanged();
 
-        void render();
+private:
+    friend class boost::serialization::access;
 
-        void releaseTexture();
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int)
+    {
+        ar & x_;
+        ar & y_;
+        ar & updatedTimestamp_;
+    }
 
-    signals:
-        void positionChanged();
-
-    private:
-        friend class boost::serialization::access;
-
-        template<class Archive>
-        void serialize(Archive & ar, const unsigned int)
-        {
-            ar & x_;
-            ar & y_;
-            ar & updatedTimestamp_;
-        }
-
-        float x_;
-        float y_;
-        boost::posix_time::ptime updatedTimestamp_;
-
-        static GLuint textureId_;
+    float x_;
+    float y_;
+    boost::posix_time::ptime updatedTimestamp_;
 };
 
 #endif

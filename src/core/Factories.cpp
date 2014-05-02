@@ -1,5 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
+/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -36,57 +37,66 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef FACTORY_OBJECT_H
-#define FACTORY_OBJECT_H
+#include "Factories.h"
 
-#include <stdint.h>
-class QRectF;
-class MainWindow;
-
-class FactoryObject
+Factories::Factories(MainWindow& renderContext)
+    : textureFactory_(renderContext)
+    , dynamicTextureFactory_(renderContext)
+    , pdfFactory_(renderContext)
+    , svgFactory_(renderContext)
+    , movieFactory_(renderContext)
+    , pixelStreamFactory_(renderContext)
 {
-public:
-    /** Constructor */
-    FactoryObject();
+}
 
-    /** Destructor */
-    virtual ~FactoryObject();
+void Factories::clearStaleFactoryObjects()
+{
+    textureFactory_.clearStaleObjects();
+    dynamicTextureFactory_.clearStaleObjects();
+    pdfFactory_.clearStaleObjects();
+    svgFactory_.clearStaleObjects();
+    movieFactory_.clearStaleObjects();
+    pixelStreamFactory_.clearStaleObjects();
+    pdfFactory_.clearStaleObjects();
+}
 
-    /**
-     * Set the render context to render the object on Rank 1-N
-     * @param renderContext The render context
-     */
-    void setRenderContext(MainWindow* renderContext);
+void Factories::clear()
+{
+    textureFactory_.clear();
+    dynamicTextureFactory_.clear();
+    pdfFactory_.clear();
+    svgFactory_.clear();
+    movieFactory_.clear();
+    pixelStreamFactory_.clear();
+    pdfFactory_.clear();
+}
 
-    /** Get the render context (only set on Rank 1-N) */
-    MainWindow* getRenderContext() const;
+Factory<Texture> & Factories::getTextureFactory()
+{
+    return textureFactory_;
+}
 
-    /**
-     * Get the current frame index for this Object.
-     * Used by the Factory to check if the object is still being used/referenced
-     * by a ContentWindow.
-     */
-    uint64_t getRenderedFrameIndex() const;
+Factory<DynamicTexture> & Factories::getDynamicTextureFactory()
+{
+    return dynamicTextureFactory_;
+}
 
-    /**
-     * Render the FactoryObject
-     * @param textCoord The region of the texture to render
-     */
-    virtual void render(const QRectF& textCoord) = 0;
+Factory<PDF> & Factories::getPDFFactory()
+{
+    return pdfFactory_;
+}
 
-protected:
-    /**
-     * Must be called everytime a derived object is rendered.
-     * Failing that, it will be garbage collected by the factory.
-     */
-    void updateRenderedFrameIndex();
+Factory<SVG> & Factories::getSVGFactory()
+{
+    return svgFactory_;
+}
 
-    /** A reference to the render context. */
-    MainWindow* renderContext_;
+Factory<Movie> & Factories::getMovieFactory()
+{
+    return movieFactory_;
+}
 
-private:
-    /** Frame index when object was last rendered. */
-    uint64_t renderedFrameIndex_;
-};
-
-#endif
+Factory<PixelStream> & Factories::getPixelStreamFactory()
+{
+    return pixelStreamFactory_;
+}

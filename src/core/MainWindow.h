@@ -42,13 +42,7 @@
 #include "config.h"
 #include "types.h"
 
-#include "Factory.hpp"
-#include "Texture.h"
-#include "DynamicTexture.h"
-#include "PDF.h"
-#include "SVG.h"
-#include "Movie.h"
-#include "PixelStream.h"
+#include <QRectF>
 
 class WallConfiguration;
 
@@ -60,34 +54,18 @@ public:
 
     GLWindowPtr getGLWindow(const int index=0);
     GLWindowPtr getActiveGLWindow();
+    size_t getGLWindowCount() const;
 
     bool isRegionVisible(const QRectF& region) const;
 
-    void finalize();
-
-    void updateGLWindows(DisplayGroupManagerPtr displayGroup);
+    void updateGLWindows();
     void swapBuffers();
-    void clearStaleFactoryObjects();
-
-    Factory<Texture> & getTextureFactory();
-    Factory<DynamicTexture> & getDynamicTextureFactory();
-    Factory<PDF> &getPDFFactory();
-    Factory<SVG> & getSVGFactory();
-    Factory<Movie> & getMovieFactory();
-    Factory<PixelStream> & getPixelStreamFactory();
 
 private:
     void setupWallOpenGLWindows(const WallConfiguration* configuration);
 
     GLWindowPtrs glWindows_;
     GLWindowPtr activeGLWindow_;
-
-    Factory<Texture> textureFactory_;
-    Factory<DynamicTexture> dynamicTextureFactory_;
-    Factory<PDF> pdfFactory_;
-    Factory<SVG> svgFactory_;
-    Factory<Movie> movieFactory_;
-    Factory<PixelStream> pixelStreamFactory_;
 };
 
 #endif

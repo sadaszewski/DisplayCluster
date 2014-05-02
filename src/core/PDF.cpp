@@ -100,12 +100,11 @@ void PDF::deleteTexture()
 {
     if (textureId_)
     {
-        g_mainWindow->getGLWindow()->deleteTexture(textureId_);
+        renderContext_->getGLWindow()->deleteTexture(textureId_);
         textureId_ = 0;
         textureRect_ = QRect();
     }
 }
-
 
 void PDF::openDocument(QString filename)
 {
@@ -160,8 +159,8 @@ void PDF::render(const QRectF& texCoords)
     updateRenderedFrameIndex();
 
     // get on-screen and full rectangle corresponding to the window
-    QRectF screenRect = g_mainWindow->getGLWindow()->getProjectedPixelRect(true);
-    QRectF fullRect = g_mainWindow->getGLWindow()->getProjectedPixelRect(false);
+    QRectF screenRect = renderContext_->getGLWindow()->getProjectedPixelRect(true);
+    QRectF fullRect = renderContext_->getGLWindow()->getProjectedPixelRect(false);
 
     // if we're not visible or we don't have a valid SVG, we're done...
     if(screenRect.isEmpty())
@@ -254,7 +253,7 @@ void PDF::generateTexture(QRectF screenRect, QRectF fullRect, const QRectF& texC
     {
         // Lets recreate a texture of the appropriate size
         deleteTexture();
-        textureId_ = g_mainWindow->getGLWindow()->bindTexture(image, GL_TEXTURE_2D, GL_RGBA, QGLContext::NoBindOption);
+        textureId_ = renderContext_->getGLWindow()->bindTexture(image, GL_TEXTURE_2D, GL_RGBA, QGLContext::NoBindOption);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);

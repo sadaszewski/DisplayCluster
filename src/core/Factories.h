@@ -1,5 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
+/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -36,57 +37,44 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef FACTORY_OBJECT_H
-#define FACTORY_OBJECT_H
+#ifndef FACTORIES_H
+#define FACTORIES_H
 
-#include <stdint.h>
-class QRectF;
-class MainWindow;
+#include "Factory.hpp"
+#include "Texture.h"
+#include "DynamicTexture.h"
+#include "PDF.h"
+#include "SVG.h"
+#include "Movie.h"
+#include "PixelStream.h"
 
-class FactoryObject
+class Factories
 {
 public:
     /** Constructor */
-    FactoryObject();
+    Factories(MainWindow& renderContext);
 
-    /** Destructor */
-    virtual ~FactoryObject();
+    /** Garbarge-collect unused objects. */
+    void clearStaleFactoryObjects();
 
-    /**
-     * Set the render context to render the object on Rank 1-N
-     * @param renderContext The render context
-     */
-    void setRenderContext(MainWindow* renderContext);
+    /** Force clear all Factories (useful on shutdown). */
+    void clear();
 
-    /** Get the render context (only set on Rank 1-N) */
-    MainWindow* getRenderContext() const;
-
-    /**
-     * Get the current frame index for this Object.
-     * Used by the Factory to check if the object is still being used/referenced
-     * by a ContentWindow.
-     */
-    uint64_t getRenderedFrameIndex() const;
-
-    /**
-     * Render the FactoryObject
-     * @param textCoord The region of the texture to render
-     */
-    virtual void render(const QRectF& textCoord) = 0;
-
-protected:
-    /**
-     * Must be called everytime a derived object is rendered.
-     * Failing that, it will be garbage collected by the factory.
-     */
-    void updateRenderedFrameIndex();
-
-    /** A reference to the render context. */
-    MainWindow* renderContext_;
+    /** Getters */
+    Factory<Texture> & getTextureFactory();
+    Factory<DynamicTexture> & getDynamicTextureFactory();
+    Factory<PDF> & getPDFFactory();
+    Factory<SVG> & getSVGFactory();
+    Factory<Movie> & getMovieFactory();
+    Factory<PixelStream> & getPixelStreamFactory();
 
 private:
-    /** Frame index when object was last rendered. */
-    uint64_t renderedFrameIndex_;
+    Factory<Texture> textureFactory_;
+    Factory<DynamicTexture> dynamicTextureFactory_;
+    Factory<PDF> pdfFactory_;
+    Factory<SVG> svgFactory_;
+    Factory<Movie> movieFactory_;
+    Factory<PixelStream> pixelStreamFactory_;
 };
 
-#endif
+#endif // FACTORIES_H

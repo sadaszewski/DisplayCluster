@@ -56,7 +56,8 @@ class TextureContent : public Content
         **/
         virtual bool readMetadata();
 
-        void getFactoryObjectDimensions(int &width, int &height);
+        void getFactoryObjectDimensions(FactoriesPtr factories,
+                                        int &width, int &height);
 
         static const QStringList& getSupportedExtensions();
 
@@ -70,7 +71,8 @@ class TextureContent : public Content
             ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Content);
         }
 
-        virtual void renderFactoryObject(ContentWindowManagerPtr window, const QRectF& texCoords);
+        virtual void renderFactoryObject(FactoriesPtr factories,
+                                         const QRectF& texCoords);
 };
 
 #endif

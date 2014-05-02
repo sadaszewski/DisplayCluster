@@ -37,10 +37,9 @@
 /*********************************************************************/
 
 #include "SVG.h"
-#include "globals.h"
 #include "log.h"
-#include "MainWindow.h"
 #include "GLWindow.h"
+#include "MainWindow.h"
 
 #include <cmath>
 
@@ -107,18 +106,18 @@ void SVG::render(const QRectF& texCoords)
     updateRenderedFrameIndex();
 
     // get on-screen and full rectangle corresponding to the window in pixel units
-    const QRectF screenRect = g_mainWindow->getGLWindow()->getProjectedPixelRect(true);
-    const QRectF fullRect = g_mainWindow->getGLWindow()->getProjectedPixelRect(false); // maps to [tX, tY, tW, tH]
+    const QRectF screenRect = renderContext_->getGLWindow()->getProjectedPixelRect(true);
+    const QRectF fullRect = renderContext_->getGLWindow()->getProjectedPixelRect(false); // maps to [tX, tY, tW, tH]
 
     // If we're not visible or we don't have a valid SVG, we're done.
     if(screenRect.isEmpty() || !svgRenderer_.isValid())
     {
-        textureData_.erase(g_mainWindow->getActiveGLWindow()->getTileIndex());
+        textureData_.erase(renderContext_->getActiveGLWindow()->getTileIndex());
         return;
     }
 
     // Get the texture for the current GLWindow
-    SVGTextureData& textureData = textureData_[g_mainWindow->getActiveGLWindow()->getTileIndex()];
+    SVGTextureData& textureData = textureData_[renderContext_->getActiveGLWindow()->getTileIndex()];
 
     const QRectF textureRect = computeTextureRect(screenRect, fullRect, texCoords);
     const QSize textureSize(round(screenRect.width()), round(screenRect.height()));

@@ -44,6 +44,7 @@
 #include "configuration/WallConfiguration.h"
 #include "ContentWindowManager.h"
 #include "DisplayGroupManager.h"
+#include "DisplayGroupRenderer.h"
 #include "MainWindow.h"
 #include "log.h"
 #include <QtOpenGL>
@@ -112,6 +113,11 @@ void GLWindow::purgeTextures()
     purgeTextureIds_.clear();
 }
 
+void GLWindow::addRenderable(DisplayGroupRendererPtr renderable)
+{
+    renderables_.append(renderable);
+}
+
 void GLWindow::initializeGL()
 {
     // enable depth testing; disable lighting
@@ -121,29 +127,25 @@ void GLWindow::initializeGL()
 
 void GLWindow::paintGL()
 {
-    if (!displayGroup_)
-        return;
-
-    setOrthographicView(displayGroup_->getBackgroundColor());
-
     OptionsPtr options = g_configuration->getOptions();
 
-    // if the show test pattern option is enabled, render the test pattern and return
+    // TODO Move background color to Options!!
+    //clear(options->getBackgroundColor());
+    clear(QColor(Qt::black));
+    setOrthographicView();
+
     if(options->getShowTestPattern())
     {
         renderTestPattern();
         return;
     }
 
-    renderBackgroundContent(displayGroup_->getBackgroundContentWindowManager());
-    renderContentWindows(displayGroup_->getContentWindowManagers());
+    foreach (DisplayGroupRendererPtr renderable, renderables_) {
+        renderable->render();
+    }
 
-    // Show the FPS for each window
     if (options->getShowStreamingStatistics())
         drawFps();
-
-    // Markers should be rendered last since they're blended
-    renderMarkers(displayGroup_->getMarkers());
 
 #if ENABLE_SKELETON_SUPPORT
     if(options->getShowSkeletons())
@@ -162,56 +164,13 @@ void GLWindow::resizeGL(int w, int h)
     update();
 }
 
-void GLWindow::renderBackgroundContent(ContentWindowManagerPtr backgroundContentWindow)
+void GLWindow::clear(const QColor& clearColor)
 {
-    // Render background content window
-    if (backgroundContentWindow)
-    {
-        glPushMatrix();
-        glTranslatef(0., 0., -1.f + std::numeric_limits<float>::epsilon());
-
-        backgroundContentWindow->render();
-
-        glPopMatrix();
-    }
+    glClearColor(clearColor.redF(), clearColor.greenF(), clearColor.blueF(), clearColor.alpha());
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void GLWindow::renderContentWindows(ContentWindowManagerPtrs contentWindowManagers)
-{
-    const unsigned int windowCount = contentWindowManagers.size();
-    unsigned int i = 0;
-    for(ContentWindowManagerPtrs::iterator it = contentWindowManagers.begin(); it != contentWindowManagers.end(); ++it)
-    {
-        // It is currently not possible to cull windows that are invisible as this conflics
-        // with the "garbage collection" mechanism for Contents. In fact, "stale" objects are objects
-        // which have not been rendered for more than one frame (implicitly: objects without a window)
-        // and those are destroyed by Factory::clearStaleObjects(). It is currently the only way to
-        // remove a Content.
-        //if ( isRegionVisible( (*it)->getCoordinates( )))
-        {
-            // the visible depths are in the range (-1,1); make the content window depths be in the range (-1,0)
-            const float zCoordinate = -(float)(windowCount - i) / (float)(windowCount + 1);
-
-            glPushMatrix();
-            glTranslatef(0.f, 0.f, zCoordinate);
-
-            (*it)->render();
-            glPopMatrix();
-        }
-
-        ++i;
-    }
-}
-
-void GLWindow::renderMarkers(const MarkerPtrs& markers)
-{
-    for(MarkerPtrs::const_iterator it = markers.begin(); it != markers.end(); ++it)
-    {
-        (*it)->render();
-    }
-}
-
-void GLWindow::setOrthographicView(const QColor& clearColor)
+void GLWindow::setOrthographicView()
 {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -251,9 +210,6 @@ void GLWindow::setOrthographicView(const QColor& clearColor)
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    glClearColor(clearColor.redF(), clearColor.greenF(), clearColor.blueF(), clearColor.alpha());
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 #if ENABLE_SKELETON_SUPPORT
@@ -395,11 +351,6 @@ void GLWindow::drawRectangle(double x, double y, double w, double h)
     glEnd();
 }
 
-void GLWindow::setDisplayGroup(DisplayGroupManagerPtr displayGroup)
-{
-    displayGroup_ = displayGroup;
-}
-
 void GLWindow::renderTestPattern()
 {
     glPushAttrib(GL_CURRENT_BIT | GL_LINE_BIT);
@@ -478,7 +429,6 @@ void GLWindow::drawFps()
 
     glPopAttrib();
 }
-
 
 QRectF GLWindow::getProjectedPixelRect(const bool clampToWindowArea)
 {

@@ -61,16 +61,20 @@ public:
     virtual ~WallApplication();
 
 signals:
+    /** Emitted when a frame is finished to trigger the next frame. */
     void frameFinished();
 
 private slots:
     void renderFrame();
-
     void updateDisplayGroup(DisplayGroupManagerPtr displayGroup);
     void updateOptions(OptionsPtr options);
 
 private:
     DisplayGroupManagerPtr displayGroup_;
+    DisplayGroupRendererPtr displayGroupRenderer_;
+    FactoriesPtr factories_;
+
+    void advanceContent();
 };
 
 #endif // WALLAPPLICATION_H

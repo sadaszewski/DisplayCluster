@@ -45,8 +45,8 @@
 #include "MainWindow.h"
 #include "GLWindow.h"
 
-PixelStreamSegmentRenderer::PixelStreamSegmentRenderer(const QString &uri)
-    : uri_(uri)
+PixelStreamSegmentRenderer::PixelStreamSegmentRenderer(MainWindow* renderContext)
+    : renderContext_(renderContext)
     , textureId_ (0)
     , textureWidth_(0)
     , textureHeight_(0)
@@ -222,5 +222,5 @@ void PixelStreamSegmentRenderer::drawSegmentStatistics()
 
     glDisable(GL_DEPTH_TEST);
     glColor4f(1.,0.,0.,1.);
-    g_mainWindow->getActiveGLWindow()->renderText(0.1, 0.95, 0., segmentStatistics->toString(), font);
+    renderContext_->getActiveGLWindow()->renderText(0.1, 0.95, 0., segmentStatistics->toString(), font);
 }

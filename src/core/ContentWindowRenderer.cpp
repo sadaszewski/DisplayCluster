@@ -1,0 +1,185 @@
+/*********************************************************************/
+/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
+/* All rights reserved.                                              */
+/*                                                                   */
+/* Redistribution and use in source and binary forms, with or        */
+/* without modification, are permitted provided that the following   */
+/* conditions are met:                                               */
+/*                                                                   */
+/*   1. Redistributions of source code must retain the above         */
+/*      copyright notice, this list of conditions and the following  */
+/*      disclaimer.                                                  */
+/*                                                                   */
+/*   2. Redistributions in binary form must reproduce the above      */
+/*      copyright notice, this list of conditions and the following  */
+/*      disclaimer in the documentation and/or other materials       */
+/*      provided with the distribution.                              */
+/*                                                                   */
+/*    THIS  SOFTWARE IS PROVIDED  BY THE  UNIVERSITY OF  TEXAS AT    */
+/*    AUSTIN  ``AS IS''  AND ANY  EXPRESS OR  IMPLIED WARRANTIES,    */
+/*    INCLUDING, BUT  NOT LIMITED  TO, THE IMPLIED  WARRANTIES OF    */
+/*    MERCHANTABILITY  AND FITNESS FOR  A PARTICULAR  PURPOSE ARE    */
+/*    DISCLAIMED.  IN  NO EVENT SHALL THE UNIVERSITY  OF TEXAS AT    */
+/*    AUSTIN OR CONTRIBUTORS BE  LIABLE FOR ANY DIRECT, INDIRECT,    */
+/*    INCIDENTAL,  SPECIAL, EXEMPLARY,  OR  CONSEQUENTIAL DAMAGES    */
+/*    (INCLUDING, BUT  NOT LIMITED TO,  PROCUREMENT OF SUBSTITUTE    */
+/*    GOODS  OR  SERVICES; LOSS  OF  USE,  DATA,  OR PROFITS;  OR    */
+/*    BUSINESS INTERRUPTION) HOWEVER CAUSED  AND ON ANY THEORY OF    */
+/*    LIABILITY, WHETHER  IN CONTRACT, STRICT  LIABILITY, OR TORT    */
+/*    (INCLUDING NEGLIGENCE OR OTHERWISE)  ARISING IN ANY WAY OUT    */
+/*    OF  THE  USE OF  THIS  SOFTWARE,  EVEN  IF ADVISED  OF  THE    */
+/*    POSSIBILITY OF SUCH DAMAGE.                                    */
+/*                                                                   */
+/* The views and conclusions contained in the software and           */
+/* documentation are those of the authors and should not be          */
+/* interpreted as representing official policies, either expressed   */
+/* or implied, of The University of Texas at Austin.                 */
+/*********************************************************************/
+
+#include "ContentWindowRenderer.h"
+
+#include "globals.h"
+#include "configuration/Configuration.h"
+#include "Options.h"
+#include "ContentWindowManager.h"
+#include "Content.h"
+#include "GLWindow.h"
+
+ContentWindowRenderer::ContentWindowRenderer()
+{
+}
+
+void ContentWindowRenderer::render(ContentWindowManagerPtr window, FactoriesPtr factories)
+{
+    bool showWindowBorders = true;
+    bool showZoomContext = false;
+
+    if(g_configuration)
+    {
+        showWindowBorders = g_configuration->getOptions()->getShowWindowBorders();
+        showZoomContext = g_configuration->getOptions()->getShowZoomContext();
+    }
+
+    renderContent(window, factories, showZoomContext);
+
+    if(showWindowBorders || window->selected())
+        renderWindowBorder(window);
+}
+
+void ContentWindowRenderer::renderWindowBorder(ContentWindowManagerPtr window)
+{
+    double horizontalBorder = 5. / (double)g_configuration->getTotalHeight(); // 5 pixels
+
+    // enlarge the border if we're highlighted
+    if(window->getHighlighted())
+        horizontalBorder *= 4.;
+
+    double verticalBorder = horizontalBorder / g_configuration->getAspectRatio();
+
+    glPushAttrib(GL_CURRENT_BIT);
+
+    // color the border based on window state
+    if(window->selected())
+        glColor4f(1,0,0,1);
+    else
+        glColor4f(1,1,1,1);
+
+    const QRectF coordinates = window->getCoordinates();
+    GLWindow::drawRectangle(coordinates.x()-verticalBorder, coordinates.y()-horizontalBorder,
+                            coordinates.width()+2.*verticalBorder, coordinates.height()+2.*horizontalBorder);
+
+    glPopAttrib();
+}
+
+void ContentWindowRenderer::renderContent(ContentWindowManagerPtr window,
+                                          FactoriesPtr factories,
+                                          const bool showZoomContext)
+{
+    double x, y, w, h;
+    window->getCoordinates(x, y, w, h);
+
+    double centerX, centerY;
+    window->getCenter(centerX, centerY);
+
+    double zoom = window->getZoom();
+
+    // calculate texture coordinates
+    float tX = centerX - 0.5 / zoom;
+    float tY = centerY - 0.5 / zoom;
+    float tW = 1./zoom;
+    float tH = 1./zoom;
+
+    // transform to a normalize coordinate system so the content
+    // can be rendered at (x,y,w,h) = (0,0,1,1)
+    glPushMatrix();
+
+    glTranslatef(x, y, 0.);
+    glScalef(w, h, 1.);
+
+    // render the factory object
+    window->getContent()->renderFactoryObject(factories, QRectF(tX, tY, tW, tH));
+
+    // render the context view
+    if(showZoomContext && zoom > 1.)
+    {
+        float sizeFactor = 0.25;
+        float padding = 0.02;
+        float deltaZ = 0.001;
+        float alpha = 0.5;
+        float borderPixels = 5.;
+
+        glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT | GL_LINE_BIT);
+        glPushMatrix();
+
+        // position at lower left
+        glTranslatef(padding, 1. - sizeFactor - padding, deltaZ);
+        glScalef(sizeFactor, sizeFactor, 1.);
+
+        // render border rectangle
+        glColor4f(1,1,1,1);
+
+        glLineWidth(borderPixels);
+
+        glBegin(GL_LINE_LOOP);
+
+        glVertex2d(0., 0.);
+        glVertex2d(1., 0.);
+        glVertex2d(1., 1.);
+        glVertex2d(0., 1.);
+
+        glEnd();
+
+        // render the factory object (full view)
+        glTranslatef(0., 0., deltaZ);
+        window->getContent()->renderFactoryObject(factories, QRectF(0., 0., 1., 1.));
+
+        // draw context rectangle border
+        glTranslatef(0., 0., deltaZ);
+
+        glLineWidth(borderPixels);
+
+        glBegin(GL_LINE_LOOP);
+
+        glVertex2d(tX, tY);
+        glVertex2d(tX + tW, tY);
+        glVertex2d(tX + tW, tY + tH);
+        glVertex2d(tX, tY + tH);
+
+        glEnd();
+
+        // draw context rectangle blended
+        glTranslatef(0., 0., deltaZ);
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        glColor4f(1.,1.,1., alpha);
+        GLWindow::drawRectangle(tX, tY, tW, tH);
+
+        glPopMatrix();
+        glPopAttrib();
+    }
+
+    glPopMatrix();
+}

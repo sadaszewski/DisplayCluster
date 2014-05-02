@@ -125,6 +125,9 @@ public:
      */
     void sendContentsDimensionsRequest(ContentWindowManagerPtrs contentWindows);
 
+    /** Set the factories on Rank1 to respond to Content Dimensions request */
+    void setFactories(FactoriesPtr factories);
+
 public slots:
     /**
      * Rank0: send the given DisplayGroup to ranks 1-N
@@ -173,6 +176,7 @@ private:
     void receiveContentsDimensionsRequest();
     // Storing the DisplayGroup (on Rank1) to serve contentDimensionsRequests
     DisplayGroupManagerPtr displayGroup_;
+    FactoriesPtr factories_;
 };
 
 #endif // MPICHANNEL_H

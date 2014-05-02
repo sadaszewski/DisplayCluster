@@ -1,5 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
+/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -36,57 +37,35 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef FACTORY_OBJECT_H
-#define FACTORY_OBJECT_H
+#ifndef DISPLAYGROUPRENDERER_H
+#define DISPLAYGROUPRENDERER_H
 
-#include <stdint.h>
-class QRectF;
-class MainWindow;
+#include "types.h"
 
-class FactoryObject
+#include "ContentWindowRenderer.h"
+#include "MarkerRenderer.h"
+
+class DisplayGroupRenderer
 {
 public:
     /** Constructor */
-    FactoryObject();
+    DisplayGroupRenderer(DisplayGroupManagerPtr displayGroup, FactoriesPtr factories);
 
-    /** Destructor */
-    virtual ~FactoryObject();
+    /** Render the DisplayGroup */
+    void render();
 
-    /**
-     * Set the render context to render the object on Rank 1-N
-     * @param renderContext The render context
-     */
-    void setRenderContext(MainWindow* renderContext);
-
-    /** Get the render context (only set on Rank 1-N) */
-    MainWindow* getRenderContext() const;
-
-    /**
-     * Get the current frame index for this Object.
-     * Used by the Factory to check if the object is still being used/referenced
-     * by a ContentWindow.
-     */
-    uint64_t getRenderedFrameIndex() const;
-
-    /**
-     * Render the FactoryObject
-     * @param textCoord The region of the texture to render
-     */
-    virtual void render(const QRectF& textCoord) = 0;
-
-protected:
-    /**
-     * Must be called everytime a derived object is rendered.
-     * Failing that, it will be garbage collected by the factory.
-     */
-    void updateRenderedFrameIndex();
-
-    /** A reference to the render context. */
-    MainWindow* renderContext_;
+    /** Set the DisplayGroup to render. */
+    void setDisplayGroup(DisplayGroupManagerPtr displayGroup);
 
 private:
-    /** Frame index when object was last rendered. */
-    uint64_t renderedFrameIndex_;
+    FactoriesPtr factories_;
+    DisplayGroupManagerPtr displayGroup_;
+    ContentWindowRenderer windowRenderer_;
+    MarkerRenderer markerRenderer_;
+
+    void renderBackgroundContent(ContentWindowManagerPtr backgroundContentWindow);
+    void renderContentWindows(ContentWindowManagerPtrs contentWindowManagers);
+    void renderMarkers(const MarkerPtrs& markers);
 };
 
-#endif
+#endif // DISPLAYGROUPRENDERER_H

@@ -43,7 +43,11 @@
 #include "configuration/WallConfiguration.h"
 #include "Options.h"
 #include "MainWindow.h"
+#include "Factories.h"
+#include "GLWindow.h"
 #include "DisplayGroupManager.h"
+#include "ContentWindowManager.h"
+#include "DisplayGroupRenderer.h"
 
 WallApplication::WallApplication(int& argc_, char** argv_, MPIChannelPtr mpiChannel)
     : Application(argc_, argv_)
@@ -54,6 +58,15 @@ WallApplication::WallApplication(int& argc_, char** argv_, MPIChannelPtr mpiChan
     g_configuration = config;
 
     g_mainWindow = new MainWindow(config);
+
+    factories_.reset(new Factories(*g_mainWindow));
+    displayGroupRenderer_.reset(new DisplayGroupRenderer(displayGroup_, factories_));
+
+    if (mpiChannel->getRank() == 1)
+        mpiChannel->setFactories(factories_);
+
+    for (size_t i = 0; i < g_mainWindow->getGLWindowCount(); ++i)
+        g_mainWindow->getGLWindow(i)->addRenderable(displayGroupRenderer_);
 
     connect(mpiChannel.get(), SIGNAL(received(DisplayGroupManagerPtr)),
             this, SLOT(updateDisplayGroup(DisplayGroupManagerPtr)));
@@ -70,39 +83,54 @@ WallApplication::WallApplication(int& argc_, char** argv_, MPIChannelPtr mpiChan
 
 WallApplication::~WallApplication()
 {
-    // call finalize cleanup actions
-    g_mainWindow->finalize();
+    // Must be done before destructing the GLWindows to release GL objects
+    factories_->clear();
 
-    // destruct the main window
     delete g_mainWindow;
     g_mainWindow = 0;
 }
 
 void WallApplication::renderFrame()
 {
-    g_mpiChannel->receiveMessages(g_mainWindow->getPixelStreamFactory());
+    g_mpiChannel->receiveMessages(factories_->getPixelStreamFactory());
 
     // synchronize clock right after receiving messages to ensure we have an
     // accurate time for rendering, etc. below
     g_mpiChannel->synchronizeClock();
 
     // All processes swap windows sychronously
-    g_mainWindow->updateGLWindows(displayGroup_);
+    g_mainWindow->updateGLWindows();
     g_mpiChannel->globalBarrier();
     g_mainWindow->swapBuffers();
 
-    displayGroup_->advanceContents();
+    advanceContent();
 
-    g_mainWindow->clearStaleFactoryObjects();
+    factories_->clearStaleFactoryObjects();
+    g_mainWindow->getGLWindow()->purgeTextures();
 
     ++g_frameCount;
 
     emit(frameFinished());
 }
 
+void WallApplication::advanceContent()
+{
+    ContentWindowManagerPtrs contentWindowManagers = displayGroup_->getContentWindowManagers();
+    for(unsigned int i=0; i<contentWindowManagers.size(); i++)
+    {
+        // note that if we have multiple ContentWindowManagers corresponding to a single Content object,
+        // we will call advance() multiple times per frame on that Content object...
+        contentWindowManagers[i]->getContent()->advance(factories_, contentWindowManagers[i]);
+    }
+    ContentWindowManagerPtr backgroundContent = displayGroup_->getBackgroundContentWindowManager();
+    if (backgroundContent)
+        backgroundContent->getContent()->advance(factories_, backgroundContent);
+}
+
 void WallApplication::updateDisplayGroup(DisplayGroupManagerPtr displayGroup)
 {
     displayGroup_ = displayGroup;
+    displayGroupRenderer_->setDisplayGroup(displayGroup);
 }
 
 void WallApplication::updateOptions(OptionsPtr options)

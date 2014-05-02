@@ -37,10 +37,8 @@
 /*********************************************************************/
 
 #include "SVGContent.h"
-#include "globals.h"
 #include "SVG.h"
-#include "MainWindow.h"
-#include "GLWindow.h"
+#include "Factories.h"
 
 #include <boost/serialization/export.hpp>
 #include "serializationHelpers.h"
@@ -69,12 +67,14 @@ const QStringList& SVGContent::getSupportedExtensions()
     return extensions;
 }
 
-void SVGContent::getFactoryObjectDimensions(int &width, int &height)
+void SVGContent::getFactoryObjectDimensions(FactoriesPtr factories,
+                                            int &width, int &height)
 {
-    g_mainWindow->getSVGFactory().getObject(getURI())->getDimensions(width, height);
+    factories->getSVGFactory().getObject(getURI())->getDimensions(width, height);
 }
 
-void SVGContent::renderFactoryObject(ContentWindowManagerPtr, const QRectF& texCoords)
+void SVGContent::renderFactoryObject(FactoriesPtr factories,
+                                     const QRectF& texCoords)
 {
-    g_mainWindow->getSVGFactory().getObject(getURI())->render(texCoords);
+    factories->getSVGFactory().getObject(getURI())->render(texCoords);
 }

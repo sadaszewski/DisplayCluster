@@ -43,6 +43,7 @@
 #include <boost/noncopyable.hpp>
 
 class FpsCounter;
+class MainWindow;
 
 /**
  * Render a single PixelStream Segment
@@ -53,9 +54,9 @@ class PixelStreamSegmentRenderer : public boost::noncopyable
 {
 public:
     /** Construct a renderer.
-     * @param Unique identifier for the stream to which this segment belongs
+     * @param renderContext A reference to the rendering context
      */
-    PixelStreamSegmentRenderer(const QString& uri);
+    PixelStreamSegmentRenderer(MainWindow* renderContext);
 
     /** Destruct a renderer. */
     ~PixelStreamSegmentRenderer();
@@ -98,8 +99,8 @@ public:
     bool render(bool showSegmentBorders, bool showSegmentStatistics);
 
 private:
-    // pixel stream identifier
-    QString uri_;
+    /** A reference to the render context. */
+    MainWindow* renderContext_;
 
     // texture
     GLuint textureId_;

@@ -42,27 +42,27 @@
 #include "FactoryObject.h"
 #include <QGLWidget>
 
-class Texture : public FactoryObject {
+class Texture : public FactoryObject
+{
+public:
+    Texture(QString uri);
+    ~Texture();
 
-    public:
+    void getDimensions(int &width, int &height);
+    void render(const QRectF& texCoords);
 
-        Texture(QString uri);
-        ~Texture();
+private:
+    // image location
+    QString uri_;
 
-        void getDimensions(int &width, int &height);
-        void render(const QRectF& texCoords);
+    // original image dimensions
+    int imageWidth_;
+    int imageHeight_;
 
-    private:
+    // texture information
+    GLuint textureId_;
 
-        // image location
-        QString uri_;
-
-        // original image dimensions
-        int imageWidth_;
-        int imageHeight_;
-
-        // texture information
-        GLuint textureId_;
+    bool generateTexture();
 };
 
 #endif

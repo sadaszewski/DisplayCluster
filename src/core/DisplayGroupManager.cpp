@@ -85,11 +85,6 @@ MarkerPtrs DisplayGroupManager::getMarkers() const
 void DisplayGroupManager::deleteMarkers()
 {
     QMutexLocker locker(&markersMutex_);
-
-    if( markers_.empty( ))
-        return;
-
-    markers_[0]->releaseTexture();
     markers_.clear();
 }
 
@@ -216,20 +211,6 @@ void DisplayGroupManager::setBackgroundColor(QColor color)
     backgroundColor_ = color;
 
     emit modified(shared_from_this());
-}
-
-void DisplayGroupManager::advanceContents()
-{
-    // note that if we have multiple ContentWindowManagers corresponding to a single Content object,
-    // we will call advance() multiple times per frame on that Content object...
-    for(unsigned int i=0; i<contentWindowManagers_.size(); i++)
-    {
-        contentWindowManagers_[i]->getContent()->advance(contentWindowManagers_[i]);
-    }
-    if (backgroundContent_)
-    {
-        backgroundContent_->getContent()->advance(backgroundContent_);
-    }
 }
 
 void DisplayGroupManager::sendDisplayGroup()

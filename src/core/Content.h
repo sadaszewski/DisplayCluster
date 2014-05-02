@@ -52,6 +52,7 @@
 #include <boost/serialization/nvp.hpp>
 
 class ContentWindowManager;
+class Factories;
 
 /**
  * An abstract Content displayed in a ContentWindowManager.
@@ -85,14 +86,16 @@ class Content : public QObject
 
         void getDimensions(int &width, int &height);
         void setDimensions(int width, int height);
-        virtual void getFactoryObjectDimensions(int &width, int &height) = 0;
-        void render(ContentWindowManagerPtr window, const bool showZoomContext);
+        virtual void getFactoryObjectDimensions(FactoriesPtr factories,
+                                                int &width, int &height) = 0;
         void blockAdvance( bool block ) { blockAdvance_ = block; }
 
         // virtual method for implementing actions on advancing to a new frame
         // useful when a process has multiple GLWindows
-        virtual void advance(ContentWindowManagerPtr) { }
+        virtual void advance(FactoriesPtr, ContentWindowManagerPtr) { }
 
+        virtual void renderFactoryObject(FactoriesPtr factories,
+                                         const QRectF& texCoords) = 0;
     signals:
 
         /** Emitted when dimensions have changed */
@@ -117,9 +120,6 @@ class Content : public QObject
         int width_;
         int height_;
         bool blockAdvance_;
-
-        virtual void renderFactoryObject(ContentWindowManagerPtr window,
-                                         const QRectF& texCoords) = 0;
 };
 
 BOOST_SERIALIZATION_ASSUME_ABSTRACT(Content)

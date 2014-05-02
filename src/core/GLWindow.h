@@ -41,6 +41,7 @@
 
 #include <QGLWidget>
 #include <QMutex>
+#include <QList>
 
 #include "types.h"
 #include "FpsCounter.h"
@@ -57,13 +58,13 @@ public:
     /** Get the unique tile index identifier. */
     int getTileIndex() const;
 
-    /** Set the DisplayGroup to render. */
-    void setDisplayGroup(DisplayGroupManagerPtr displayGroup);
-
     // TODO See if we can remove this method of deleting textures.
     // It is only used in DynamicTexture.
     void insertPurgeTextureId(GLuint textureId);
     void purgeTextures();
+
+    /** Add a renderable, currently only supports DisplayGroupRenderer. */
+    void addRenderable(DisplayGroupRendererPtr renderable);
 
     /**
      * Is the given region visible in this window.
@@ -90,7 +91,6 @@ protected:
 
 private:
     const WallConfiguration* configuration_;
-    DisplayGroupManagerPtr displayGroup_;
 
     int tileIndex_;
 
@@ -108,11 +108,10 @@ private:
 
     FpsCounter fpsCounter;
 
-    void renderBackgroundContent(ContentWindowManagerPtr backgroundContentWindow);
-    void renderContentWindows(ContentWindowManagerPtrs contentWindowManagers);
-    void renderMarkers(const MarkerPtrs& markers);
+    QList<DisplayGroupRendererPtr> renderables_;
 
-    void setOrthographicView(const QColor& clearColor);
+    void clear(const QColor& clearColor);
+    void setOrthographicView();
 #if ENABLE_SKELETON_SUPPORT
     bool setPerspectiveView(double x=0., double y=0., double w=1., double h=1.);
     void renderSkeletons(const std::vector< boost::shared_ptr<SkeletonState> >& skeletons);

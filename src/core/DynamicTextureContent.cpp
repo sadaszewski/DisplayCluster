@@ -39,9 +39,8 @@
 #include "DynamicTextureContent.h"
 #include "globals.h"
 #include "DynamicTexture.h"
-#include "MainWindow.h"
-#include "GLWindow.h"
 #include "serializationHelpers.h"
+#include "Factories.h"
 
 #include <boost/serialization/export.hpp>
 
@@ -73,21 +72,23 @@ const QStringList& DynamicTextureContent::getSupportedExtensions()
     return extensions;
 }
 
-void DynamicTextureContent::advance(ContentWindowManagerPtr)
+void DynamicTextureContent::getFactoryObjectDimensions(FactoriesPtr factories,
+                                                       int &width, int &height)
+{
+    factories->getDynamicTextureFactory().getObject(getURI())->getDimensions(width, height);
+}
+
+void DynamicTextureContent::advance(FactoriesPtr factories, ContentWindowManagerPtr)
 {
     if( blockAdvance_ )
         return;
 
     // recall that advance() is called after rendering and before g_frameCount is incremented for the current frame
-    g_mainWindow->getDynamicTextureFactory().getObject(getURI())->clearOldChildren(g_frameCount);
+    factories->getDynamicTextureFactory().getObject(getURI())->clearOldChildren(g_frameCount);
 }
 
-void DynamicTextureContent::getFactoryObjectDimensions(int &width, int &height)
+void DynamicTextureContent::renderFactoryObject(FactoriesPtr factories,
+                                                const QRectF& texCoords)
 {
-    g_mainWindow->getDynamicTextureFactory().getObject(getURI())->getDimensions(width, height);
-}
-
-void DynamicTextureContent::renderFactoryObject(ContentWindowManagerPtr, const QRectF& texCoords)
-{
-    g_mainWindow->getDynamicTextureFactory().getObject(getURI())->render(texCoords);
+    factories->getDynamicTextureFactory().getObject(getURI())->render(texCoords);
 }

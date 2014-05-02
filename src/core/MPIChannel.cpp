@@ -333,6 +333,11 @@ void MPIChannel::sendContentsDimensionsRequest(ContentWindowManagerPtrs contentW
         contentWindows[i]->getContent()->setDimensions(dimensions[i].first, dimensions[i].second);
 }
 
+void MPIChannel::setFactories(FactoriesPtr factories)
+{
+    factories_ = factories;
+}
+
 void MPIChannel::synchronizeClock()
 {
     if(getRank() == 1)
@@ -500,12 +505,18 @@ void MPIChannel::receiveContentsDimensionsRequest()
     else
         put_flog(LOG_ERROR, "Cannot send content dimensions before a DisplayGroup was received!");
 
+    if (!factories_)
+    {
+        put_flog(LOG_FATAL, "Cannot send content dimensions before setFactories was called!");
+        return;
+    }
+
     std::vector<std::pair<int, int> > dimensions;
 
     for(size_t i=0; i<contentWindows.size(); ++i)
     {
         int w,h;
-        contentWindows[i]->getContent()->getFactoryObjectDimensions(w, h);
+        contentWindows[i]->getContent()->getFactoryObjectDimensions(factories_, w, h);
 
         dimensions.push_back(std::pair<int,int>(w,h));
     }

@@ -46,6 +46,7 @@
 #include <algorithm>
 #include <fstream>
 #include <boost/tokenizer.hpp>
+#include <QDir>
 #include <QImageReader>
 #include <QtConcurrentRun>
 
@@ -82,6 +83,7 @@ DynamicTexture::DynamicTexture(const QString& uri, DynamicTexturePtr parent,
     // if we're a child...
     if(parent)
     {
+        setRenderContext(parent->getRenderContext());
         depth_ = parent->depth_ + 1;
 
         // append childIndex to parent's path to form this object's path
@@ -111,7 +113,7 @@ DynamicTexture::~DynamicTexture()
     if(textureId_)
     {
         // let the OpenGL window delete the texture, so the destructor can occur in any thread...
-        g_mainWindow->getGLWindow()->insertPurgeTextureId(textureId_);
+        renderContext_->getGLWindow()->insertPurgeTextureId(textureId_);
         textureId_ = 0;
     }
 }
@@ -339,7 +341,12 @@ void DynamicTexture::getDimensions(int &width, int &height)
     height = imageSize_.height();
 }
 
-void DynamicTexture::render(const QRectF& texCoords, bool loadOnDemand, bool considerChildren)
+void DynamicTexture::render(const QRectF& texCoords)
+{
+    render_(texCoords);
+}
+
+void DynamicTexture::render_(const QRectF& texCoords, bool loadOnDemand, bool considerChildren)
 {
     if(isRoot())
     {
@@ -382,7 +389,7 @@ void DynamicTexture::render(const QRectF& texCoords, bool loadOnDemand, bool con
         // render from parent if we can
         DynamicTexturePtr parent = parent_.lock();
         if(parent)
-            parent->render(getImageRegionInParentImage(texCoords), false, false);
+            parent->render_(getImageRegionInParentImage(texCoords), false, false);
     }
     else
     {
@@ -729,14 +736,14 @@ double DynamicTexture::getProjectedPixelArea(const bool onScreenOnly)
             if(xWin[i][0] < 0.)
                 xWin[i][0] = 0.;
 
-            if(xWin[i][0] > (double)g_mainWindow->getGLWindow()->width())
-                xWin[i][0] = (double)g_mainWindow->getGLWindow()->width();
+            if(xWin[i][0] > (double)renderContext_->getGLWindow()->width())
+                xWin[i][0] = (double)renderContext_->getGLWindow()->width();
 
             if(xWin[i][1] < 0.)
                 xWin[i][1] = 0.;
 
-            if(xWin[i][1] > (double)g_mainWindow->getGLWindow()->height())
-                xWin[i][1] = (double)g_mainWindow->getGLWindow()->height();
+            if(xWin[i][1] > (double)renderContext_->getGLWindow()->height())
+                xWin[i][1] = (double)renderContext_->getGLWindow()->height();
         }
     }
 

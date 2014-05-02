@@ -56,7 +56,8 @@ class DynamicTextureContent : public Content
         **/
         virtual bool readMetadata();
 
-        void getFactoryObjectDimensions(int &width, int &height);
+        void getFactoryObjectDimensions(FactoriesPtr factories,
+                                        int &width, int &height);
 
         static const QStringList& getSupportedExtensions();
 
@@ -70,9 +71,10 @@ class DynamicTextureContent : public Content
             ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Content);
         }
 
-        virtual void advance(ContentWindowManagerPtr window);
+        virtual void advance(FactoriesPtr factories, ContentWindowManagerPtr window);
 
-        virtual void renderFactoryObject(ContentWindowManagerPtr window, const QRectF& texCoords);
+        virtual void renderFactoryObject(FactoriesPtr factories,
+                                         const QRectF& texCoords);
 };
 
 #endif

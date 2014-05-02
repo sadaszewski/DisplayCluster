@@ -154,7 +154,7 @@ Movie::Movie(QString uri)
     QImage image(avCodecContext_->width, avCodecContext_->height, QImage::Format_RGB32);
     image.fill(0);
 
-    textureId_ = g_mainWindow->getGLWindow()->bindTexture(image, GL_TEXTURE_2D, GL_RGBA, QGLContext::LinearFilteringBindOption);
+    textureId_ = renderContext_->getGLWindow()->bindTexture(image, GL_TEXTURE_2D, GL_RGBA, QGLContext::LinearFilteringBindOption);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -169,7 +169,7 @@ Movie::Movie(QString uri)
 Movie::~Movie()
 {
     if(textureId_)
-        g_mainWindow->getGLWindow()->deleteTexture(textureId_);
+        renderContext_->getGLWindow()->deleteTexture(textureId_);
 
     avcodec_close( avCodecContext_ );
 

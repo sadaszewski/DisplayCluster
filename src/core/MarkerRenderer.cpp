@@ -1,5 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
+/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -36,57 +37,91 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef FACTORY_OBJECT_H
-#define FACTORY_OBJECT_H
+#include "MarkerRenderer.h"
 
-#include <stdint.h>
-class QRectF;
-class MainWindow;
+#include "Marker.h"
 
-class FactoryObject
+#include "globals.h"
+#include "configuration/Configuration.h"
+
+#include "MainWindow.h"
+#include "GLWindow.h"
+#include "log.h"
+
+#define MARKER_IMAGE_FILENAME ":/img/marker.png"
+
+// this is a fraction of the tiled display width of 1
+#define MARKER_WIDTH 0.0025
+
+MarkerRenderer::MarkerRenderer()
+    : textureId_(0)
 {
-public:
-    /** Constructor */
-    FactoryObject();
+}
 
-    /** Destructor */
-    virtual ~FactoryObject();
+bool MarkerRenderer::generateTexture()
+{
+    const QImage image(MARKER_IMAGE_FILENAME);
 
-    /**
-     * Set the render context to render the object on Rank 1-N
-     * @param renderContext The render context
-     */
-    void setRenderContext(MainWindow* renderContext);
+    if(image.isNull())
+    {
+        put_flog(LOG_ERROR, "error loading marker texture '%s'", MARKER_IMAGE_FILENAME);
+        return false;
+    }
 
-    /** Get the render context (only set on Rank 1-N) */
-    MainWindow* getRenderContext() const;
+    textureId_ = g_mainWindow->getGLWindow()->bindTexture(image, GL_TEXTURE_2D, GL_RGBA, QGLContext::DefaultBindOption);
+    return true;
+}
 
-    /**
-     * Get the current frame index for this Object.
-     * Used by the Factory to check if the object is still being used/referenced
-     * by a ContentWindow.
-     */
-    uint64_t getRenderedFrameIndex() const;
+void MarkerRenderer::releaseTexture()
+{
+    g_mainWindow->getGLWindow()->deleteTexture(textureId_);
+    textureId_ = 0;
+}
 
-    /**
-     * Render the FactoryObject
-     * @param textCoord The region of the texture to render
-     */
-    virtual void render(const QRectF& textCoord) = 0;
+void MarkerRenderer::render(MarkerPtr marker)
+{
+    if (!textureId_ && !generateTexture())
+        return;
 
-protected:
-    /**
-     * Must be called everytime a derived object is rendered.
-     * Failing that, it will be garbage collected by the factory.
-     */
-    void updateRenderedFrameIndex();
+    float x, y;
+    marker->getPosition(x, y);
 
-    /** A reference to the render context. */
-    MainWindow* renderContext_;
+    // marker height needs to be scaled by the tiled display aspect ratio
+    const float tiledDisplayAspect = g_configuration->getAspectRatio();
+    const float markerHeight = MARKER_WIDTH * tiledDisplayAspect;
 
-private:
-    /** Frame index when object was last rendered. */
-    uint64_t renderedFrameIndex_;
-};
+    // draw the texture
+    glPushAttrib(GL_ENABLE_BIT | GL_TEXTURE_BIT);
 
-#endif
+    // disable depth testing and enable blending
+    glDisable(GL_DEPTH_TEST);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // enable texturing
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, textureId_);
+
+    glPushMatrix();
+    glTranslated(x, y, 0.);
+
+    glBegin(GL_QUADS);
+
+    glTexCoord2f(0,0);
+    glVertex2f(-MARKER_WIDTH,-markerHeight);
+
+    glTexCoord2f(1,0);
+    glVertex2f(MARKER_WIDTH,-markerHeight);
+
+    glTexCoord2f(1,1);
+    glVertex2f(MARKER_WIDTH,markerHeight);
+
+    glTexCoord2f(0,1);
+    glVertex2f(-MARKER_WIDTH,markerHeight);
+
+    glEnd();
+
+    glPopMatrix();
+    glPopAttrib();
+}
