@@ -128,7 +128,6 @@ list(APPEND SRCS
     ../log.cpp
     ../MessageHeader.cpp
     ImageJpegDecompressor.cpp
-    MainWindow.cpp
     Marker.cpp
     MarkerRenderer.cpp
     Movie.cpp
@@ -145,6 +144,7 @@ list(APPEND SRCS
     PixelStreamSegmentDecoder.cpp
     PixelStreamSegmentRenderer.cpp
     PixelStreamWindowManager.cpp
+    RenderContext.cpp
     SessionCommandHandler.cpp
     State.cpp
     StatePreview.cpp

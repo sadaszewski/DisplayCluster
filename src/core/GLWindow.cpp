@@ -45,7 +45,7 @@
 #include "ContentWindowManager.h"
 #include "DisplayGroupManager.h"
 #include "DisplayGroupRenderer.h"
-#include "MainWindow.h"
+#include "RenderContext.h"
 #include "log.h"
 #include <QtOpenGL>
 #include <boost/shared_ptr.hpp>

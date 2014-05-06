@@ -53,6 +53,7 @@
 // Will be removed when implementing DISCL-21
 #include "ContentWindowManager.h"
 #include "Content.h"
+#include "Factories.h"
 
 MPIChannel::MPIChannel(int argc, char * argv[])
     : mpiRank(-1)
@@ -170,7 +171,7 @@ void MPIChannel::calibrateTimestampOffset()
     }
 }
 
-void MPIChannel::receiveMessages(Factory<PixelStream>& pixelStreamFactory)
+void MPIChannel::receiveMessages()
 {
     if(mpiRank == 0)
     {
@@ -215,7 +216,7 @@ void MPIChannel::receiveMessages(Factory<PixelStream>& pixelStreamFactory)
             }
             else if(mh.type == MESSAGE_TYPE_PIXELSTREAM)
             {
-                receivePixelStreams(mh, pixelStreamFactory);
+                receivePixelStreams(mh);
             }
             else if(mh.type == MESSAGE_TYPE_QUIT)
             {
@@ -516,7 +517,8 @@ void MPIChannel::receiveContentsDimensionsRequest()
     for(size_t i=0; i<contentWindows.size(); ++i)
     {
         int w,h;
-        contentWindows[i]->getContent()->getFactoryObjectDimensions(factories_, w, h);
+        FactoryObjectPtr object = factories_->getFactoryObject(contentWindows[i]->getContent());
+        object->getDimensions(w, h);
 
         dimensions.push_back(std::pair<int,int>(w,h));
     }
@@ -584,8 +586,7 @@ void MPIChannel::send(const std::vector<PixelStreamSegment> & segments, const QS
     MPI_Bcast((void *)serializedString.data(), size, MPI_BYTE, 0, MPI_COMM_WORLD);
 }
 
-void MPIChannel::receivePixelStreams(const MessageHeader& messageHeader,
-                                     Factory<PixelStream>& pixelStreamFactory)
+void MPIChannel::receivePixelStreams(const MessageHeader& messageHeader)
 {
     if(mpiRank < 1)
     {
@@ -617,5 +618,6 @@ void MPIChannel::receivePixelStreams(const MessageHeader& messageHeader,
     boost::archive::binary_iarchive ia(iss);
     ia >> segments;
 
+    Factory<PixelStream>& pixelStreamFactory = factories_->getPixelStreamFactory();
     pixelStreamFactory.getObject(uri)->insertNewFrame(segments);
 }

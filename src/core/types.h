@@ -55,6 +55,7 @@ class MPIChannel;
 class PixelStreamWindowManager;
 class Factories;
 class DisplayGroupRenderer;
+class FactoryObject;
 
 typedef boost::shared_ptr< Content > ContentPtr;
 typedef boost::shared_ptr< ContentWindowManager > ContentWindowManagerPtr;
@@ -67,6 +68,7 @@ typedef boost::shared_ptr<GLWindow> GLWindowPtr;
 typedef boost::shared_ptr<MPIChannel> MPIChannelPtr;
 typedef boost::shared_ptr<Factories> FactoriesPtr;
 typedef boost::shared_ptr<DisplayGroupRenderer> DisplayGroupRendererPtr;
+typedef boost::shared_ptr<FactoryObject> FactoryObjectPtr;
 
 typedef std::vector< ContentWindowManagerPtr > ContentWindowManagerPtrs;
 typedef std::vector<MarkerPtr> MarkerPtrs;

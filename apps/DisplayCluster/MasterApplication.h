@@ -67,6 +67,7 @@ public:
     virtual ~MasterApplication();
 
 private:
+    MPIChannelPtr mpiChannel_;
     MasterWindow* masterWindow_;
     DisplayGroupManagerPtr displayGroup_;
     NetworkListener* networkListener_;

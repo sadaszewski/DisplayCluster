@@ -44,9 +44,11 @@
 #include "Marker.h"
 
 DisplayGroupRenderer::DisplayGroupRenderer(DisplayGroupManagerPtr displayGroup,
+                                           RenderContext& renderContext,
                                            FactoriesPtr factories)
     : factories_(factories)
     , displayGroup_(displayGroup)
+    , markerRenderer_(renderContext)
 {
 }
 

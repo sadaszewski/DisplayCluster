@@ -45,6 +45,7 @@
 #include "ContentWindowManager.h"
 #include "Content.h"
 #include "GLWindow.h"
+#include "Factories.h"
 
 ContentWindowRenderer::ContentWindowRenderer()
 {
@@ -118,7 +119,8 @@ void ContentWindowRenderer::renderContent(ContentWindowManagerPtr window,
     glScalef(w, h, 1.);
 
     // render the factory object
-    window->getContent()->renderFactoryObject(factories, QRectF(tX, tY, tW, tH));
+    FactoryObjectPtr object = factories->getFactoryObject(window->getContent());
+    object->render(QRectF(tX, tY, tW, tH));
 
     // render the context view
     if(showZoomContext && zoom > 1.)
@@ -152,7 +154,7 @@ void ContentWindowRenderer::renderContent(ContentWindowManagerPtr window,
 
         // render the factory object (full view)
         glTranslatef(0., 0., deltaZ);
-        window->getContent()->renderFactoryObject(factories, QRectF(0., 0., 1., 1.));
+        object->render(QRectF(0., 0., 1., 1.));
 
         // draw context rectangle border
         glTranslatef(0., 0., deltaZ);

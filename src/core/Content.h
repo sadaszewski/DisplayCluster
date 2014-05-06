@@ -86,16 +86,12 @@ class Content : public QObject
 
         void getDimensions(int &width, int &height);
         void setDimensions(int width, int height);
-        virtual void getFactoryObjectDimensions(FactoriesPtr factories,
-                                                int &width, int &height) = 0;
         void blockAdvance( bool block ) { blockAdvance_ = block; }
 
         // virtual method for implementing actions on advancing to a new frame
         // useful when a process has multiple GLWindows
         virtual void advance(FactoriesPtr, ContentWindowManagerPtr) { }
 
-        virtual void renderFactoryObject(FactoriesPtr factories,
-                                         const QRectF& texCoords) = 0;
     signals:
 
         /** Emitted when dimensions have changed */

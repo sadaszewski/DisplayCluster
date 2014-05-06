@@ -39,7 +39,7 @@
 #include "Movie.h"
 #include "globals.h"
 #include "MPIChannel.h"
-#include "MainWindow.h"
+#include "RenderContext.h"
 #include "GLWindow.h"
 #include "log.h"
 
@@ -196,7 +196,7 @@ void Movie::initFFMPEGGlobalState()
     }
 }
 
-void Movie::getDimensions(int &width, int &height)
+void Movie::getDimensions(int &width, int &height) const
 {
     width = avCodecContext_->width;
     height = avCodecContext_->height;
@@ -204,8 +204,6 @@ void Movie::getDimensions(int &width, int &height)
 
 void Movie::render(const QRectF& texCoords)
 {
-    updateRenderedFrameIndex();
-
     if(!textureId_)
         return;
 

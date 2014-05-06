@@ -56,9 +56,6 @@ class TextureContent : public Content
         **/
         virtual bool readMetadata();
 
-        void getFactoryObjectDimensions(FactoriesPtr factories,
-                                        int &width, int &height);
-
         static const QStringList& getSupportedExtensions();
 
     private:
@@ -70,9 +67,6 @@ class TextureContent : public Content
             // serialize base class information (with NVP for xml archives)
             ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Content);
         }
-
-        virtual void renderFactoryObject(FactoriesPtr factories,
-                                         const QRectF& texCoords);
 };
 
 #endif

@@ -49,7 +49,8 @@ class DisplayGroupRenderer
 {
 public:
     /** Constructor */
-    DisplayGroupRenderer(DisplayGroupManagerPtr displayGroup, FactoriesPtr factories);
+    DisplayGroupRenderer(DisplayGroupManagerPtr displayGroup,
+                         RenderContext& renderContext, FactoriesPtr factories);
 
     /** Render the DisplayGroup */
     void render();

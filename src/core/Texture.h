@@ -48,7 +48,7 @@ public:
     Texture(QString uri);
     ~Texture();
 
-    void getDimensions(int &width, int &height);
+    void getDimensions(int &width, int &height) const;
     void render(const QRectF& texCoords);
 
 private:

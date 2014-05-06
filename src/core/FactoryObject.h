@@ -41,7 +41,7 @@
 
 #include <stdint.h>
 class QRectF;
-class MainWindow;
+class RenderContext;
 
 class FactoryObject
 {
@@ -53,20 +53,11 @@ public:
     virtual ~FactoryObject();
 
     /**
-     * Set the render context to render the object on Rank 1-N
-     * @param renderContext The render context
+     * Get the dimensions of the full resolution texture.
+     * @param width Returned width
+     * @param height Returned height
      */
-    void setRenderContext(MainWindow* renderContext);
-
-    /** Get the render context (only set on Rank 1-N) */
-    MainWindow* getRenderContext() const;
-
-    /**
-     * Get the current frame index for this Object.
-     * Used by the Factory to check if the object is still being used/referenced
-     * by a ContentWindow.
-     */
-    uint64_t getRenderedFrameIndex() const;
+    virtual void getDimensions(int &width, int &height) const = 0;
 
     /**
      * Render the FactoryObject
@@ -74,19 +65,35 @@ public:
      */
     virtual void render(const QRectF& textCoord) = 0;
 
-protected:
+    /**
+     * Set the render context to render the object on Rank 1-N
+     * @param renderContext The render context
+     */
+    void setRenderContext(RenderContext* renderContext);
+
+    /** Get the render context (only set on Rank 1-N) */
+    RenderContext* getRenderContext() const;
+
+    /**
+     * Get the current frame index for this Object.
+     * Used by the Factory to check if the object is still being used/referenced
+     * by a ContentWindow.
+     */
+    uint64_t getFrameIndex() const;
+
     /**
      * Must be called everytime a derived object is rendered.
      * Failing that, it will be garbage collected by the factory.
      */
-    void updateRenderedFrameIndex();
+    void setFrameIndex(const uint64_t frameIndex);
 
+protected:
     /** A reference to the render context. */
-    MainWindow* renderContext_;
+    RenderContext* renderContext_;
 
 private:
     /** Frame index when object was last rendered. */
-    uint64_t renderedFrameIndex_;
+    uint64_t frameIndex_;
 };
 
 #endif

@@ -102,20 +102,7 @@ void PDFContent::previousPage()
     }
 }
 
-void PDFContent::getFactoryObjectDimensions(FactoriesPtr factories,
-                                            int &width, int &height)
-
-{
-    factories->getPDFFactory().getObject(getURI())->getDimensions(width, height);
-}
-
 void PDFContent::advance(FactoriesPtr factories, ContentWindowManagerPtr)
 {
     factories->getPDFFactory().getObject(getURI())->setPage(pageNumber_);
-}
-
-void PDFContent::renderFactoryObject(FactoriesPtr factories,
-                                     const QRectF& texCoords)
-{
-    factories->getPDFFactory().getObject(getURI())->render(texCoords);
 }

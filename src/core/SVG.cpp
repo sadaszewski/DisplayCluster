@@ -39,7 +39,7 @@
 #include "SVG.h"
 #include "log.h"
 #include "GLWindow.h"
-#include "MainWindow.h"
+#include "RenderContext.h"
 
 #include <cmath>
 
@@ -71,7 +71,7 @@ SVG::~SVG()
     // no need to delete textures, that's handled in FBO destructor
 }
 
-void SVG::getDimensions(int &width, int &height)
+void SVG::getDimensions(int &width, int &height) const
 {
     width = width_;
     height = height_;
@@ -103,8 +103,6 @@ bool SVG::setImageData(QByteArray imageData)
 
 void SVG::render(const QRectF& texCoords)
 {
-    updateRenderedFrameIndex();
-
     // get on-screen and full rectangle corresponding to the window in pixel units
     const QRectF screenRect = renderContext_->getGLWindow()->getProjectedPixelRect(true);
     const QRectF fullRect = renderContext_->getGLWindow()->getProjectedPixelRect(false); // maps to [tX, tY, tW, tH]

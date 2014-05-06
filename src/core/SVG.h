@@ -68,7 +68,7 @@ public:
     SVG(QString uri);
     ~SVG();
 
-    void getDimensions(int &width, int &height);
+    void getDimensions(int &width, int &height) const;
     bool setImageData(QByteArray imageData);
     void render(const QRectF& texCoords);
 

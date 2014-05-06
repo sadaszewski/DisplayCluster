@@ -43,7 +43,7 @@
 #include <boost/noncopyable.hpp>
 
 class FpsCounter;
-class MainWindow;
+class RenderContext;
 
 /**
  * Render a single PixelStream Segment
@@ -56,7 +56,7 @@ public:
     /** Construct a renderer.
      * @param renderContext A reference to the rendering context
      */
-    PixelStreamSegmentRenderer(MainWindow* renderContext);
+    PixelStreamSegmentRenderer(RenderContext* renderContext);
 
     /** Destruct a renderer. */
     ~PixelStreamSegmentRenderer();
@@ -100,7 +100,7 @@ public:
 
 private:
     /** A reference to the render context. */
-    MainWindow* renderContext_;
+    RenderContext* renderContext_;
 
     // texture
     GLuint textureId_;

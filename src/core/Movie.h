@@ -73,7 +73,7 @@ class Movie : public FactoryObject {
 
         static void initFFMPEGGlobalState();
 
-        void getDimensions(int &width, int &height);
+        void getDimensions(int &width, int &height) const;
         void render(const QRectF& texCoords);
         void nextFrame(bool skip);
         void setPause(const bool pause);

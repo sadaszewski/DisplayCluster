@@ -51,7 +51,7 @@
 #endif
 
 #include "globals.h"
-#include "MainWindow.h"
+#include "RenderContext.h"
 #include "GLWindow.h"
 #include "log.h"
 
@@ -156,8 +156,6 @@ void PDF::getDimensions(int &width, int &height) const
 
 void PDF::render(const QRectF& texCoords)
 {
-    updateRenderedFrameIndex();
-
     // get on-screen and full rectangle corresponding to the window
     QRectF screenRect = renderContext_->getGLWindow()->getProjectedPixelRect(true);
     QRectF fullRect = renderContext_->getGLWindow()->getProjectedPixelRect(false);

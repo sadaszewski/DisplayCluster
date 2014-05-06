@@ -71,6 +71,7 @@
 
 MasterApplication::MasterApplication(int& argc_, char** argv_, MPIChannelPtr mpiChannel)
     : Application(argc_, argv_)
+    , mpiChannel_(mpiChannel)
     , masterWindow_(0)
     , displayGroup_(new DisplayGroupManager)
     , networkListener_(0)
@@ -93,11 +94,11 @@ MasterApplication::MasterApplication(int& argc_, char** argv_, MPIChannelPtr mpi
 
     // Distribute the DisplayGroup through MPI whenever it is modified
     connect(displayGroup_.get(), SIGNAL(modified(DisplayGroupManagerPtr)),
-            mpiChannel.get(), SLOT(send(DisplayGroupManagerPtr)));
+            mpiChannel_.get(), SLOT(send(DisplayGroupManagerPtr)));
 
     // Distribute the options when they are updated
     connect(config->getOptions().get(), SIGNAL(updated(OptionsPtr)),
-            mpiChannel.get(), SLOT(send(OptionsPtr)));
+            mpiChannel_.get(), SLOT(send(OptionsPtr)));
 
     init(config);
 }

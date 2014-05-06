@@ -36,21 +36,20 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef MAIN_WINDOW_H
-#define MAIN_WINDOW_H
+#ifndef RENDERCONTEXT_H
+#define RENDERCONTEXT_H
 
-#include "config.h"
 #include "types.h"
 
 #include <QRectF>
 
 class WallConfiguration;
 
-class MainWindow
+class RenderContext
 {
 public:
-    MainWindow(const WallConfiguration* configuration);
-    ~MainWindow();
+    RenderContext(const WallConfiguration* configuration);
+    ~RenderContext();
 
     GLWindowPtr getGLWindow(const int index=0);
     GLWindowPtr getActiveGLWindow();
@@ -62,7 +61,7 @@ public:
     void swapBuffers();
 
 private:
-    void setupWallOpenGLWindows(const WallConfiguration* configuration);
+    void setupOpenGLWindows(const WallConfiguration* configuration);
 
     GLWindowPtrs glWindows_;
     GLWindowPtr activeGLWindow_;

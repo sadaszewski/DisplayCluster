@@ -41,7 +41,7 @@
 #include "globals.h"
 #include "configuration/Configuration.h"
 #include "MPIChannel.h"
-#include "MainWindow.h"
+#include "RenderContext.h"
 #include "EventReceiver.h"
 #include "MPIChannel.h"
 

@@ -86,7 +86,7 @@ public:
      * @param width Returned width
      * @param height Returned height
      */
-    void getDimensions(int &width, int &height);
+    void getDimensions(int &width, int &height) const;
 
     /**
      * Render the dynamic texture.
@@ -98,7 +98,7 @@ public:
      * Recursively clear children of this object which have not been rendered recently.
      * @param currentFrameIndex The current frame index
      */
-    void clearOldChildren(const uint64_t currentFrameIndex);
+    void clearOldChildren();
 
     /**
      * Generate an image Pyramid from the current uri and save it to the disk.
@@ -144,7 +144,7 @@ private:
     std::vector<int> treePath_; // To construct the image name for each object
     int depth_; // The depth of the object in the image pyramid
 
-    QFuture<void> loadImageThread_; // Future for asychronous image loading
+    mutable QFuture<void> loadImageThread_; // Future for asychronous image loading
     bool loadImageThreadStarted_; // True if the texture loading has been started
 
     QImage scaledImage_; // for texture upload to GPU
@@ -152,7 +152,7 @@ private:
     QSize imageSize_; // full scale image dimensions
 
     std::vector<DynamicTexturePtr> children_; // Children in the image pyramid
-    uint64_t renderChildrenFrameIndex_; // Used for garbage-collecting unused child objects
+    bool renderedChildren_; // Used for garbage-collecting unused child objects
 
     /**
      * Render the dynamic texture.

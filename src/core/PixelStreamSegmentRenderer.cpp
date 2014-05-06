@@ -42,10 +42,10 @@
 #include "FpsCounter.h"
 
 #include "globals.h"
-#include "MainWindow.h"
+#include "RenderContext.h"
 #include "GLWindow.h"
 
-PixelStreamSegmentRenderer::PixelStreamSegmentRenderer(MainWindow* renderContext)
+PixelStreamSegmentRenderer::PixelStreamSegmentRenderer(RenderContext* renderContext)
     : renderContext_(renderContext)
     , textureId_ (0)
     , textureWidth_(0)

@@ -36,21 +36,21 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#include "MainWindow.h"
+#include "RenderContext.h"
 
 #include "configuration/WallConfiguration.h"
 #include "GLWindow.h"
 
-MainWindow::MainWindow(const WallConfiguration* configuration)
+RenderContext::RenderContext(const WallConfiguration* configuration)
 {
-    setupWallOpenGLWindows(configuration);
+    setupOpenGLWindows(configuration);
 }
 
-MainWindow::~MainWindow()
+RenderContext::~RenderContext()
 {
 }
 
-void MainWindow::setupWallOpenGLWindows(const WallConfiguration* configuration)
+void RenderContext::setupOpenGLWindows(const WallConfiguration* configuration)
 {
     for(int i=0; i<configuration->getScreenCount(); ++i)
     {
@@ -71,22 +71,22 @@ void MainWindow::setupWallOpenGLWindows(const WallConfiguration* configuration)
     }
 }
 
-GLWindowPtr MainWindow::getGLWindow(const int index)
+GLWindowPtr RenderContext::getGLWindow(const int index)
 {
     return glWindows_[index];
 }
 
-GLWindowPtr MainWindow::getActiveGLWindow()
+GLWindowPtr RenderContext::getActiveGLWindow()
 {
     return activeGLWindow_;
 }
 
-size_t MainWindow::getGLWindowCount() const
+size_t RenderContext::getGLWindowCount() const
 {
     return glWindows_.size();
 }
 
-bool MainWindow::isRegionVisible(const QRectF& region) const
+bool RenderContext::isRegionVisible(const QRectF& region) const
 {
     for(unsigned int i=0; i<glWindows_.size(); i++)
     {
@@ -96,7 +96,7 @@ bool MainWindow::isRegionVisible(const QRectF& region) const
     return false;
 }
 
-void MainWindow::updateGLWindows()
+void RenderContext::updateGLWindows()
 {
     for(size_t i=0; i<glWindows_.size(); i++)
     {
@@ -105,7 +105,7 @@ void MainWindow::updateGLWindows()
     }
 }
 
-void MainWindow::swapBuffers()
+void RenderContext::swapBuffers()
 {
     for(size_t i=0; i<glWindows_.size(); i++)
         glWindows_[i]->swapBuffers();

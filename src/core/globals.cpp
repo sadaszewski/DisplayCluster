@@ -40,5 +40,3 @@
 
 MPIChannelPtr g_mpiChannel;
 Configuration * g_configuration = NULL;
-MainWindow * g_mainWindow = NULL;
-uint64_t g_frameCount = 0; // Used to garbage collect FactoryObjects which are no longer being rendered

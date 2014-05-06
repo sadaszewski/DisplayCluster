@@ -63,9 +63,6 @@ public:
     **/
     virtual bool readMetadata();
 
-    void getFactoryObjectDimensions(FactoriesPtr factories,
-                                    int &width, int &height);
-
     static const QStringList& getSupportedExtensions();
 
     /** Rank0 : go to next page **/
@@ -94,9 +91,6 @@ private:
     int pageCount_;
 
     virtual void advance(FactoriesPtr factories, ContentWindowManagerPtr window);
-
-    virtual void renderFactoryObject(FactoriesPtr factories,
-                                     const QRectF& texCoords);
 };
 
 #endif // PDFCONTENT_H

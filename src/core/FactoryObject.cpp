@@ -48,22 +48,22 @@ FactoryObject::~FactoryObject()
 {
 }
 
-void FactoryObject::setRenderContext(MainWindow* renderContext)
+void FactoryObject::setRenderContext(RenderContext* renderContext)
 {
     renderContext_ = renderContext;
 }
 
-MainWindow*FactoryObject::getRenderContext() const
+RenderContext*FactoryObject::getRenderContext() const
 {
     return renderContext_;
 }
 
-uint64_t FactoryObject::getRenderedFrameIndex() const
+uint64_t FactoryObject::getFrameIndex() const
 {
-    return renderedFrameIndex_;
+    return frameIndex_;
 }
 
-void FactoryObject::updateRenderedFrameIndex()
+void FactoryObject::setFrameIndex(const uint64_t frameIndex)
 {
-    renderedFrameIndex_ = g_frameCount;
+    frameIndex_ = frameIndex;
 }

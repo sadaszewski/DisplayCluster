@@ -39,7 +39,7 @@
 #include "Texture.h"
 #include "globals.h"
 #include "log.h"
-#include "MainWindow.h"
+#include "RenderContext.h"
 #include "GLWindow.h"
 
 Texture::Texture(QString uri)
@@ -64,7 +64,7 @@ Texture::~Texture()
         renderContext_->getGLWindow()->deleteTexture(textureId_);
 }
 
-void Texture::getDimensions(int &width, int &height)
+void Texture::getDimensions(int &width, int &height) const
 {
     width = imageWidth_;
     height = imageHeight_;
@@ -94,8 +94,6 @@ void Texture::render(const QRectF& texCoords)
 {
     if(!textureId_ && !generateTexture())
         return;
-
-    updateRenderedFrameIndex();
 
     // draw the texture
     glPushAttrib(GL_ENABLE_BIT | GL_TEXTURE_BIT);

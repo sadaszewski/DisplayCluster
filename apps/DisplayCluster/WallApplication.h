@@ -43,6 +43,7 @@
 #include "Application.h"
 
 class WallConfiguration;
+class RenderContext;
 
 class WallApplication : public Application
 {
@@ -70,6 +71,8 @@ private slots:
     void updateOptions(OptionsPtr options);
 
 private:
+    MPIChannelPtr mpiChannel_;
+    RenderContext* renderContext_;
     DisplayGroupManagerPtr displayGroup_;
     DisplayGroupRendererPtr displayGroupRenderer_;
     FactoriesPtr factories_;

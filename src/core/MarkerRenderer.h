@@ -44,17 +44,26 @@
 
 #include "types.h"
 
+class RenderContext;
+
 class MarkerRenderer
 {
 public:
-    MarkerRenderer();
+    /**
+     * Set the render context to render the object on Rank 1-N
+     * @param renderContext The render context to create/release GL textures
+     */
+    MarkerRenderer(RenderContext& renderContext);
 
+    /** Render a Marker */
     void render(MarkerPtr marker);
-    bool generateTexture();
-    void releaseTexture();
 
 private:
+    RenderContext& renderContext_;
     GLuint textureId_;
+
+    bool generateTexture();
+    void releaseTexture();
 };
 
 #endif // MARKERRENDERER_H

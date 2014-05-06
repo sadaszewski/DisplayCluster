@@ -38,7 +38,7 @@
 
 #include "DynamicTexture.h"
 #include "globals.h"
-#include "MainWindow.h"
+#include "RenderContext.h"
 #include "GLWindow.h"
 #include "vector.h"
 #include "log.h"
@@ -78,7 +78,7 @@ DynamicTexture::DynamicTexture(const QString& uri, DynamicTexturePtr parent,
     , depth_(0)
     , loadImageThreadStarted_(false)
     , textureId_(0)
-    , renderChildrenFrameIndex_(0)
+    , renderedChildren_(false)
 {
     // if we're a child...
     if(parent)
@@ -329,7 +329,7 @@ void DynamicTexture::loadImage(const bool convertToGLFormat)
     }
 }
 
-void DynamicTexture::getDimensions(int &width, int &height)
+void DynamicTexture::getDimensions(int &width, int &height) const
 {
     // if we don't have a width and height, and the load image thread is running, wait for it to finish
     if(imageSize_.isEmpty() && loadImageThreadStarted_)
@@ -348,11 +348,6 @@ void DynamicTexture::render(const QRectF& texCoords)
 
 void DynamicTexture::render_(const QRectF& texCoords, bool loadOnDemand, bool considerChildren)
 {
-    if(isRoot())
-    {
-        updateRenderedFrameIndex();
-    }
-
     if(considerChildren &&
             getProjectedPixelArea(true) > 0. &&
             getProjectedPixelArea(false) > TEXTURE_SIZE*TEXTURE_SIZE &&
@@ -445,10 +440,10 @@ void DynamicTexture::renderTexturedUnitQuad(const QRectF& texCoords)
     glPopAttrib();
 }
 
-void DynamicTexture::clearOldChildren(const uint64_t currentFrameIndex)
+void DynamicTexture::clearOldChildren()
 {
     // clear children if renderChildrenFrameCount_ < minFrameCount
-    if(!children_.empty() && renderChildrenFrameIndex_ < currentFrameIndex && getThreadsDoneDescending())
+    if(!children_.empty() && renderedChildren_ && getThreadsDoneDescending())
     {
         children_.clear();
     }
@@ -456,8 +451,10 @@ void DynamicTexture::clearOldChildren(const uint64_t currentFrameIndex)
     // run on my children (if i still have any)
     for(unsigned int i=0; i<children_.size(); i++)
     {
-        children_[i]->clearOldChildren(currentFrameIndex);
+        children_[i]->clearOldChildren();
     }
+
+    renderedChildren_ = false;
 }
 
 bool DynamicTexture::makePyramidFolder(const QString& pyramidFolder)
@@ -642,7 +639,7 @@ void DynamicTexture::uploadTexture()
 void DynamicTexture::renderChildren(const QRectF& texCoords)
 {
     // mark this object as having rendered children in this frame
-    renderChildrenFrameIndex_ = g_frameCount;
+    renderedChildren_ = true;
 
     // children rectangles
     const float inf = 1000000.;

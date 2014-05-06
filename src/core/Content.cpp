@@ -37,12 +37,6 @@
 /*********************************************************************/
 
 #include "Content.h"
-#include "ContentWindowManager.h"
-#include "DisplayGroupManager.h"
-#include "globals.h"
-#include "GLWindow.h"
-#include "log.h"
-#include <QGLWidget>
 
 Content::Content(QString uri)
     : uri_(uri)

@@ -52,9 +52,25 @@ class Factories
 {
 public:
     /** Constructor */
-    Factories(MainWindow& renderContext);
+    Factories(RenderContext& renderContext);
 
-    /** Garbarge-collect unused objects. */
+    /**
+     * Get the factory object associated to a given Content.
+     *
+     * If the object does not exist, it is created.
+     * Objects not accessed during two consecutive frames are deleted using
+     * a garbage collection mechanism.
+     * @see clearStaleFactoryObjects()
+     */
+    FactoryObjectPtr getFactoryObject(ContentPtr content);
+
+    /**
+     * Garbarge-collect unused objects.
+     *
+     * Only call this function once per frame.
+     * This will delete all FactoryObjects which have not been accessed since
+     * this method was last called.
+     */
     void clearStaleFactoryObjects();
 
     /** Force clear all Factories (useful on shutdown). */
@@ -69,6 +85,8 @@ public:
     Factory<PixelStream> & getPixelStreamFactory();
 
 private:
+    uint64_t frameIndex_;
+
     Factory<Texture> textureFactory_;
     Factory<DynamicTexture> dynamicTextureFactory_;
     Factory<PDF> pdfFactory_;

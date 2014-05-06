@@ -42,7 +42,7 @@
 #include "MPIChannel.h"
 #include "configuration/WallConfiguration.h"
 #include "Options.h"
-#include "MainWindow.h"
+#include "RenderContext.h"
 #include "Factories.h"
 #include "GLWindow.h"
 #include "DisplayGroupManager.h"
@@ -51,27 +51,30 @@
 
 WallApplication::WallApplication(int& argc_, char** argv_, MPIChannelPtr mpiChannel)
     : Application(argc_, argv_)
+    , mpiChannel_(mpiChannel)
+    , renderContext_(0)
     , displayGroup_(new DisplayGroupManager)
 {
     WallConfiguration* config = new WallConfiguration(getConfigFilename(),
-                                                      mpiChannel->getRank());
+                                                      mpiChannel_->getRank());
     g_configuration = config;
 
-    g_mainWindow = new MainWindow(config);
+    renderContext_ = new RenderContext(config);
 
-    factories_.reset(new Factories(*g_mainWindow));
-    displayGroupRenderer_.reset(new DisplayGroupRenderer(displayGroup_, factories_));
+    factories_.reset(new Factories(*renderContext_));
+    displayGroupRenderer_.reset(new DisplayGroupRenderer(displayGroup_,
+                                                         *renderContext_,
+                                                         factories_));
+    if (mpiChannel_->getRank() == 1)
+        mpiChannel_->setFactories(factories_);
 
-    if (mpiChannel->getRank() == 1)
-        mpiChannel->setFactories(factories_);
+    for (size_t i = 0; i < renderContext_->getGLWindowCount(); ++i)
+        renderContext_->getGLWindow(i)->addRenderable(displayGroupRenderer_);
 
-    for (size_t i = 0; i < g_mainWindow->getGLWindowCount(); ++i)
-        g_mainWindow->getGLWindow(i)->addRenderable(displayGroupRenderer_);
-
-    connect(mpiChannel.get(), SIGNAL(received(DisplayGroupManagerPtr)),
+    connect(mpiChannel_.get(), SIGNAL(received(DisplayGroupManagerPtr)),
             this, SLOT(updateDisplayGroup(DisplayGroupManagerPtr)));
 
-    connect(mpiChannel.get(), SIGNAL(received(OptionsPtr)),
+    connect(mpiChannel_.get(), SIGNAL(received(OptionsPtr)),
             this, SLOT(updateOptions(OptionsPtr)));
 
     // setup connection so renderFrame() will be called continuously.
@@ -86,29 +89,27 @@ WallApplication::~WallApplication()
     // Must be done before destructing the GLWindows to release GL objects
     factories_->clear();
 
-    delete g_mainWindow;
-    g_mainWindow = 0;
+    delete renderContext_;
+    renderContext_ = 0;
 }
 
 void WallApplication::renderFrame()
 {
-    g_mpiChannel->receiveMessages(factories_->getPixelStreamFactory());
+    mpiChannel_->receiveMessages();
 
     // synchronize clock right after receiving messages to ensure we have an
     // accurate time for rendering, etc. below
-    g_mpiChannel->synchronizeClock();
+    mpiChannel_->synchronizeClock();
 
     // All processes swap windows sychronously
-    g_mainWindow->updateGLWindows();
-    g_mpiChannel->globalBarrier();
-    g_mainWindow->swapBuffers();
+    renderContext_->updateGLWindows();
+    mpiChannel_->globalBarrier();
+    renderContext_->swapBuffers();
 
     advanceContent();
 
     factories_->clearStaleFactoryObjects();
-    g_mainWindow->getGLWindow()->purgeTextures();
-
-    ++g_frameCount;
+    renderContext_->getGLWindow()->purgeTextures();
 
     emit(frameFinished());
 }

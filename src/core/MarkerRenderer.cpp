@@ -44,7 +44,7 @@
 #include "globals.h"
 #include "configuration/Configuration.h"
 
-#include "MainWindow.h"
+#include "RenderContext.h"
 #include "GLWindow.h"
 #include "log.h"
 
@@ -53,29 +53,10 @@
 // this is a fraction of the tiled display width of 1
 #define MARKER_WIDTH 0.0025
 
-MarkerRenderer::MarkerRenderer()
-    : textureId_(0)
+MarkerRenderer::MarkerRenderer(RenderContext& renderContext)
+    : renderContext_(renderContext)
+    , textureId_(0)
 {
-}
-
-bool MarkerRenderer::generateTexture()
-{
-    const QImage image(MARKER_IMAGE_FILENAME);
-
-    if(image.isNull())
-    {
-        put_flog(LOG_ERROR, "error loading marker texture '%s'", MARKER_IMAGE_FILENAME);
-        return false;
-    }
-
-    textureId_ = g_mainWindow->getGLWindow()->bindTexture(image, GL_TEXTURE_2D, GL_RGBA, QGLContext::DefaultBindOption);
-    return true;
-}
-
-void MarkerRenderer::releaseTexture()
-{
-    g_mainWindow->getGLWindow()->deleteTexture(textureId_);
-    textureId_ = 0;
 }
 
 void MarkerRenderer::render(MarkerPtr marker)
@@ -124,4 +105,24 @@ void MarkerRenderer::render(MarkerPtr marker)
 
     glPopMatrix();
     glPopAttrib();
+}
+
+bool MarkerRenderer::generateTexture()
+{
+    const QImage image(MARKER_IMAGE_FILENAME);
+
+    if(image.isNull())
+    {
+        put_flog(LOG_ERROR, "error loading marker texture '%s'", MARKER_IMAGE_FILENAME);
+        return false;
+    }
+
+    textureId_ = renderContext_.getGLWindow()->bindTexture(image, GL_TEXTURE_2D, GL_RGBA, QGLContext::DefaultBindOption);
+    return true;
+}
+
+void MarkerRenderer::releaseTexture()
+{
+    renderContext_.getGLWindow()->deleteTexture(textureId_);
+    textureId_ = 0;
 }

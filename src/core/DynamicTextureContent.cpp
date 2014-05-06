@@ -72,23 +72,11 @@ const QStringList& DynamicTextureContent::getSupportedExtensions()
     return extensions;
 }
 
-void DynamicTextureContent::getFactoryObjectDimensions(FactoriesPtr factories,
-                                                       int &width, int &height)
-{
-    factories->getDynamicTextureFactory().getObject(getURI())->getDimensions(width, height);
-}
-
 void DynamicTextureContent::advance(FactoriesPtr factories, ContentWindowManagerPtr)
 {
     if( blockAdvance_ )
         return;
 
-    // recall that advance() is called after rendering and before g_frameCount is incremented for the current frame
-    factories->getDynamicTextureFactory().getObject(getURI())->clearOldChildren(g_frameCount);
-}
-
-void DynamicTextureContent::renderFactoryObject(FactoriesPtr factories,
-                                                const QRectF& texCoords)
-{
-    factories->getDynamicTextureFactory().getObject(getURI())->render(texCoords);
+    // recall that advance() is called after rendering
+    factories->getDynamicTextureFactory().getObject(getURI())->clearOldChildren();
 }

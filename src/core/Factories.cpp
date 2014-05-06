@@ -39,8 +39,11 @@
 
 #include "Factories.h"
 
-Factories::Factories(MainWindow& renderContext)
-    : textureFactory_(renderContext)
+#include "Content.h"
+
+Factories::Factories(RenderContext& renderContext)
+    : frameIndex_(0)
+    , textureFactory_(renderContext)
     , dynamicTextureFactory_(renderContext)
     , pdfFactory_(renderContext)
     , svgFactory_(renderContext)
@@ -51,13 +54,14 @@ Factories::Factories(MainWindow& renderContext)
 
 void Factories::clearStaleFactoryObjects()
 {
-    textureFactory_.clearStaleObjects();
-    dynamicTextureFactory_.clearStaleObjects();
-    pdfFactory_.clearStaleObjects();
-    svgFactory_.clearStaleObjects();
-    movieFactory_.clearStaleObjects();
-    pixelStreamFactory_.clearStaleObjects();
-    pdfFactory_.clearStaleObjects();
+    textureFactory_.clearStaleObjects(frameIndex_);
+    dynamicTextureFactory_.clearStaleObjects(frameIndex_);
+    pdfFactory_.clearStaleObjects(frameIndex_);
+    svgFactory_.clearStaleObjects(frameIndex_);
+    movieFactory_.clearStaleObjects(frameIndex_);
+    pixelStreamFactory_.clearStaleObjects(frameIndex_);
+
+    ++frameIndex_;
 }
 
 void Factories::clear()
@@ -68,7 +72,37 @@ void Factories::clear()
     svgFactory_.clear();
     movieFactory_.clear();
     pixelStreamFactory_.clear();
-    pdfFactory_.clear();
+}
+
+FactoryObjectPtr Factories::getFactoryObject(ContentPtr content)
+{
+    FactoryObjectPtr object;
+    switch (content->getType())
+    {
+    case CONTENT_TYPE_TEXTURE:
+        object = textureFactory_.getObject(content->getURI());
+        break;
+    case CONTENT_TYPE_DYNAMIC_TEXTURE:
+        object = dynamicTextureFactory_.getObject(content->getURI());
+        break;
+    case CONTENT_TYPE_PDF:
+        object = pdfFactory_.getObject(content->getURI());
+        break;
+    case CONTENT_TYPE_SVG:
+        object = svgFactory_.getObject(content->getURI());
+        break;
+    case CONTENT_TYPE_MOVIE:
+        object = movieFactory_.getObject(content->getURI());
+        break;
+    case CONTENT_TYPE_PIXEL_STREAM:
+        object = pixelStreamFactory_.getObject(content->getURI());
+        break;
+    default:
+        return FactoryObjectPtr();
+        break;
+    }
+    object->setFrameIndex(frameIndex_);
+    return object;
 }
 
 Factory<Texture> & Factories::getTextureFactory()

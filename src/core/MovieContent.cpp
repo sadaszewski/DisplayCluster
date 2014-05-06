@@ -40,7 +40,7 @@
 #include "globals.h"
 #include "Movie.h"
 #include "ContentWindowManager.h"
-#include "MainWindow.h"
+#include "RenderContext.h"
 #include "GLWindow.h"
 #include <boost/serialization/export.hpp>
 #include "serializationHelpers.h"
@@ -70,12 +70,6 @@ const QStringList& MovieContent::getSupportedExtensions()
     return extensions;
 }
 
-void MovieContent::getFactoryObjectDimensions(FactoriesPtr factories,
-                                              int &width, int &height)
-{
-    factories->getMovieFactory().getObject(getURI())->getDimensions(width, height);
-}
-
 void MovieContent::advance(FactoriesPtr factories, ContentWindowManagerPtr window)
 {
     if( blockAdvance_ )
@@ -93,10 +87,4 @@ void MovieContent::advance(FactoriesPtr factories, ContentWindowManagerPtr windo
     movie->setPause( window->getControlState() & STATE_PAUSED );
     movie->setLoop( window->getControlState() & STATE_LOOP );
     movie->nextFrame(skip);
-}
-
-void MovieContent::renderFactoryObject(FactoriesPtr factories,
-                                       const QRectF& texCoords)
-{
-    factories->getMovieFactory().getObject(getURI())->render(texCoords);
 }

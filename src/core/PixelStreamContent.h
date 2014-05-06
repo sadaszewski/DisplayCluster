@@ -56,9 +56,6 @@ class PixelStreamContent : public Content
         **/
         virtual bool readMetadata();
 
-        virtual void getFactoryObjectDimensions(FactoriesPtr factories,
-                                                int &width, int &height);
-
         virtual void advance(FactoriesPtr factories, ContentWindowManagerPtr);
 
     private:
@@ -70,9 +67,6 @@ class PixelStreamContent : public Content
             // serialize base class information (with NVP for xml archives)
             ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Content);
         }
-
-        virtual void renderFactoryObject(FactoriesPtr factories,
-                                         const QRectF& texCoords);
 };
 
 #endif

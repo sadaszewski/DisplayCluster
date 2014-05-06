@@ -54,20 +54,8 @@ bool PixelStreamContent::readMetadata()
     return true;
 }
 
-void PixelStreamContent::getFactoryObjectDimensions(FactoriesPtr factories,
-                                                    int &width, int &height)
-{
-    factories->getPixelStreamFactory().getObject(getURI())->getDimensions(width, height);
-}
-
 void PixelStreamContent::advance(FactoriesPtr factories, ContentWindowManagerPtr window)
 {
     const QRectF& windowRect = window->getCoordinates();
     factories->getPixelStreamFactory().getObject(getURI())->preRenderUpdate(windowRect);
-}
-
-void PixelStreamContent::renderFactoryObject(FactoriesPtr factories,
-                                             const QRectF& texCoords)
-{
-    factories->getPixelStreamFactory().getObject(getURI())->render(texCoords);
 }

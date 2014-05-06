@@ -44,13 +44,13 @@
 #include <QString>
 #include <QMutex>
 
-#include "globals.h"
+#include "RenderContext.h"
 
 template <class T>
 class Factory
 {
 public:
-    Factory(MainWindow& renderContext)
+    Factory(RenderContext& renderContext)
         : renderContext_(renderContext)
     {}
 
@@ -95,7 +95,7 @@ public:
         return map_.count(uri);
     }
 
-    void clearStaleObjects()
+    void clearStaleObjects(const uint64_t currentFrameIndex)
     {
         QMutexLocker locker(&mapMutex_);
 
@@ -103,20 +103,16 @@ public:
 
         while(it != map_.end())
         {
-            if(g_frameCount - it->second->getRenderedFrameIndex() > 1)
-            {
+            if(currentFrameIndex - it->second->getFrameIndex() > 1)
                 map_.erase(it++);  // note the post increment; increments the iterator but returns original value for erase
-            }
             else
-            {
                 ++it;
-            }
         }
     }
 
 private:
     // Render context for the FactoryObjects
-    MainWindow& renderContext_;
+    RenderContext& renderContext_;
 
     // mutex for thread-safe access to map
     QMutex mapMutex_;

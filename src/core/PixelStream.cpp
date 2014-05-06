@@ -42,7 +42,7 @@
 #include "configuration/Configuration.h"
 #include "Options.h"
 #include "MPIChannel.h"
-#include "MainWindow.h"
+#include "RenderContext.h"
 #include "GLWindow.h"
 #include "log.h"
 
@@ -165,8 +165,6 @@ void PixelStream::decodeVisibleTextures(const QRectF& windowRect)
 
 void PixelStream::render(const QRectF&)
 {
-    updateRenderedFrameIndex();
-
     const bool showSegmentBorders = g_configuration->getOptions()->getShowStreamingSegments();
     const bool showSegmentStatistics = g_configuration->getOptions()->getShowStreamingStatistics();
 

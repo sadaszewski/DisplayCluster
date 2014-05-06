@@ -96,9 +96,8 @@ public:
      * Will emit a signal if an object was reveived.
      * @see received(DisplayGroupManagerPtr)
      * @see received(OptionsPtr)
-     * @param pixelStreamFactory The target Factory for incomming PixelStreams.
      */
-    void receiveMessages(Factory<PixelStream>& pixelStreamFactory);
+    void receiveMessages();
 
     /**
      * Rank 0: Send pixel stream segments to ranks 1-N
@@ -170,8 +169,7 @@ private:
     // Ranks 1-n recieve data through MPI
     DisplayGroupManagerPtr receiveDisplayGroup(const MessageHeader& messageHeader);
     OptionsPtr receiveOptions(const MessageHeader& messageHeader);
-    void receivePixelStreams(const MessageHeader& messageHeader,
-                             Factory<PixelStream>& pixelStreamFactory);
+    void receivePixelStreams(const MessageHeader& messageHeader);
     // TODO remove content dimension requests (DISCL-21)
     void receiveContentsDimensionsRequest();
     // Storing the DisplayGroup (on Rank1) to serve contentDimensionsRequests

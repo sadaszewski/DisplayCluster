@@ -37,8 +37,6 @@
 /*********************************************************************/
 
 #include "SVGContent.h"
-#include "SVG.h"
-#include "Factories.h"
 
 #include <boost/serialization/export.hpp>
 #include "serializationHelpers.h"
@@ -65,16 +63,4 @@ const QStringList& SVGContent::getSupportedExtensions()
     }
 
     return extensions;
-}
-
-void SVGContent::getFactoryObjectDimensions(FactoriesPtr factories,
-                                            int &width, int &height)
-{
-    factories->getSVGFactory().getObject(getURI())->getDimensions(width, height);
-}
-
-void SVGContent::renderFactoryObject(FactoriesPtr factories,
-                                     const QRectF& texCoords)
-{
-    factories->getSVGFactory().getObject(getURI())->render(texCoords);
 }

@@ -56,9 +56,6 @@ class MovieContent : public Content
         **/
         virtual bool readMetadata();
 
-        void getFactoryObjectDimensions(FactoriesPtr factories,
-                                        int &width, int &height);
-
         static const QStringList& getSupportedExtensions();
 
     private:
@@ -72,9 +69,6 @@ class MovieContent : public Content
         }
 
         virtual void advance(FactoriesPtr factories, ContentWindowManagerPtr window);
-
-        virtual void renderFactoryObject(FactoriesPtr factories,
-                                         const QRectF& texCoords);
 };
 
 #endif
