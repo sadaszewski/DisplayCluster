@@ -37,10 +37,9 @@
 /*********************************************************************/
 
 #include "DisplayGroupInterface.h"
+
 #include "DisplayGroupManager.h"
 #include "ContentWindowManager.h"
-#include "Content.h"
-#include "globals.h"
 
 DisplayGroupInterface::DisplayGroupInterface(DisplayGroupManagerPtr displayGroupManager)
 {

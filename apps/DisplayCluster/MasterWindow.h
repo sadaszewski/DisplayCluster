@@ -45,25 +45,34 @@
 
 #include <QMainWindow>
 #include <QMimeData>
-#include <boost/shared_ptr.hpp>
 
 class MultiTouchListener;
 class BackgroundWidget;
 
+/**
+ * The main UI window for Master applications.
+ *
+ * It lets users control the contents displayed on the wall.
+ */
 class MasterWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    /** Constructor */
+    /** Constructor. */
     MasterWindow(DisplayGroupManagerPtr displayGroup);
 
-    /** Destructor */
+    /** Destructor. */
     ~MasterWindow();
 
 signals:
+    /** Emitted when users want to open a dock. */
     void openDock(QPointF pos, QSize size, QString rootDir);
+
+    /** Emitted when users want to hide the dock. */
     void hideDock();
+
+    /** Emitted when users want to open a webbrowser. */
     void openWebBrowser(QPointF pos, QSize size, QString url);
 
 #if ENABLE_SKELETON_SUPPORT
@@ -72,8 +81,11 @@ signals:
 #endif
 
 protected:
+    ///@{
+    /** Drag events re-implemented from QMainWindow. */
     void dragEnterEvent(QDragEnterEvent *event);
     void dropEvent(QDropEvent *event);
+    ///@}
 
 private slots:
     void openContent();

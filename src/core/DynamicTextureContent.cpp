@@ -46,6 +46,10 @@
 
 BOOST_CLASS_EXPORT_GUID(DynamicTextureContent, "DynamicTextureContent")
 
+DynamicTextureContent::DynamicTextureContent(QString uri)
+    : Content(uri)
+{}
+
 CONTENT_TYPE DynamicTextureContent::getType()
 {
     return CONTENT_TYPE_DYNAMIC_TEXTURE;

@@ -56,43 +56,43 @@
 #include "Factories.h"
 
 MPIChannel::MPIChannel(int argc, char * argv[])
-    : mpiRank(-1)
-    , mpiSize(-1)
+    : mpiRank_(-1)
+    , mpiSize_(-1)
 {
     MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &mpiRank);
-    MPI_Comm_size(MPI_COMM_WORLD, &mpiSize);
-    MPI_Comm_split(MPI_COMM_WORLD, mpiRank != 0, mpiRank, &mpiRenderComm);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpiRank_);
+    MPI_Comm_size(MPI_COMM_WORLD, &mpiSize_);
+    MPI_Comm_split(MPI_COMM_WORLD, mpiRank_ != 0, mpiRank_, &mpiRenderComm_);
 }
 
 MPIChannel::~MPIChannel()
 {
-    MPI_Comm_free(&mpiRenderComm);
+    MPI_Comm_free(&mpiRenderComm_);
     MPI_Finalize();
 }
 
 int MPIChannel::getRank() const
 {
-    return mpiRank;
+    return mpiRank_;
 }
 
 void MPIChannel::globalBarrier() const
 {
-    MPI_Barrier(mpiRenderComm);
+    MPI_Barrier(mpiRenderComm_);
 }
 
 int MPIChannel::globalSum(const int localValue) const
 {
     int globalValue = 0;
     MPI_Allreduce((void *)&localValue, (void *)&globalValue,
-                  1, MPI_INT, MPI_SUM, mpiRenderComm);
+                  1, MPI_INT, MPI_SUM, mpiRenderComm_);
     return globalValue;
 }
 
 boost::posix_time::ptime MPIChannel::getTime() const
 {
     // rank 0 will return a timestamp calibrated to rank 1's clock
-    if(mpiRank == 0)
+    if(mpiRank_ == 0)
         return boost::posix_time::microsec_clock::universal_time() + timestampOffset_;
 
     return timestamp_;
@@ -100,20 +100,20 @@ boost::posix_time::ptime MPIChannel::getTime() const
 
 void MPIChannel::calibrateTimestampOffset()
 {
-    if(mpiSize < 2)
+    if(mpiSize_ < 2)
     {
-        put_flog(LOG_DEBUG, "minimum 2 processes needed! (mpiSize == %i)", mpiSize);
+        put_flog(LOG_DEBUG, "minimum 2 processes needed! (mpiSize == %i)", mpiSize_);
         return;
     }
 
     // synchronize all processes
-    MPI_Barrier(mpiRenderComm);
+    MPI_Barrier(mpiRenderComm_);
 
     // get current timestamp immediately after
     boost::posix_time::ptime timestamp(boost::posix_time::microsec_clock::universal_time());
 
     // rank 1: send timestamp to rank 0
-    if(mpiRank == 1)
+    if(mpiRank_ == 1)
     {
         // serialize state
         std::ostringstream oss(std::ostringstream::binary);
@@ -136,7 +136,7 @@ void MPIChannel::calibrateTimestampOffset()
         MPI_Send((void *)serializedString.data(), size, MPI_BYTE, 0, 0, MPI_COMM_WORLD);
     }
     // rank 0: receive timestamp from rank 1
-    else if(mpiRank == 0)
+    else if(mpiRank_ == 0)
     {
         MessageHeader messageHeader;
 
@@ -154,7 +154,7 @@ void MPIChannel::calibrateTimestampOffset()
 
         if(iss.rdbuf()->pubsetbuf(buffer.data(), messageHeader.size) == NULL)
         {
-            put_flog(LOG_FATAL, "rank %i: error setting stream buffer", mpiRank);
+            put_flog(LOG_FATAL, "rank %i: error setting stream buffer", mpiRank_);
             return;
         }
 
@@ -173,7 +173,7 @@ void MPIChannel::calibrateTimestampOffset()
 
 void MPIChannel::receiveMessages()
 {
-    if(mpiRank == 0)
+    if(mpiRank_ == 0)
     {
         put_flog(LOG_FATAL, "called on rank 0");
         return;
@@ -186,7 +186,7 @@ void MPIChannel::receiveMessages()
 
     // check to see if all render processes have a message
     int allFlag;
-    MPI_Allreduce(&flag, &allFlag, 1, MPI_INT, MPI_LAND, mpiRenderComm);
+    MPI_Allreduce(&flag, &allFlag, 1, MPI_INT, MPI_LAND, mpiRenderComm_);
 
     // message header
     MessageHeader mh;
@@ -227,7 +227,7 @@ void MPIChannel::receiveMessages()
             // check to see if we have another message waiting for this process
             // and for all render processes
             MPI_Iprobe(0, 0, MPI_COMM_WORLD, &flag, &status);
-            MPI_Allreduce(&flag, &allFlag, 1, MPI_INT, MPI_LAND, mpiRenderComm);
+            MPI_Allreduce(&flag, &allFlag, 1, MPI_INT, MPI_LAND, mpiRenderComm_);
         }
 
         // at this point, we've received the last message available for all render processes
@@ -251,7 +251,7 @@ void MPIChannel::send(DisplayGroupManagerPtr displayGroup)
     mh.type = MESSAGE_TYPE_CONTENTS;
 
     // Send header via a send so we can probe it on the render processes
-    for(int i=1; i<mpiSize; ++i)
+    for(int i=1; i<mpiSize_; ++i)
         MPI_Send((void *)&mh, sizeof(MessageHeader), MPI_BYTE, i, 0, MPI_COMM_WORLD);
 
     // Broadcast the message
@@ -275,7 +275,7 @@ void MPIChannel::send(OptionsPtr options)
     mh.type = MESSAGE_TYPE_OPTIONS;
 
     // Send header via a send so we can probe it on the render processes
-    for(int i=1; i<mpiSize; ++i)
+    for(int i=1; i<mpiSize_; ++i)
         MPI_Send((void *)&mh, sizeof(MessageHeader), MPI_BYTE, i, 0, MPI_COMM_WORLD);
 
     // Broadcast the message
@@ -284,15 +284,15 @@ void MPIChannel::send(OptionsPtr options)
 
 void MPIChannel::sendContentsDimensionsRequest(ContentWindowManagerPtrs contentWindows)
 {
-    if(mpiSize < 2)
+    if(mpiSize_ < 2)
     {
-        put_flog(LOG_WARN, "cannot get contents dimension update for mpiSize == %i", mpiSize);
+        put_flog(LOG_WARN, "cannot get contents dimension update for mpiSize == %i", mpiSize_);
         return;
     }
 
-    if(mpiRank != 0)
+    if(mpiRank_ != 0)
     {
-        put_flog(LOG_ERROR, "called on rank: %i != 0", mpiRank);
+        put_flog(LOG_ERROR, "called on rank: %i != 0", mpiRank_);
         return;
     }
 
@@ -301,7 +301,7 @@ void MPIChannel::sendContentsDimensionsRequest(ContentWindowManagerPtrs contentW
     mh.type = MESSAGE_TYPE_CONTENTS_DIMENSIONS;
 
     // the header is sent via a send, so that we can probe it on the render processes
-    for(int i=1; i<mpiSize; i++)
+    for(int i=1; i<mpiSize_; i++)
         MPI_Send((void *)&mh, sizeof(MessageHeader), MPI_BYTE, i, 0, MPI_COMM_WORLD);
 
     // now, receive response from rank 1
@@ -319,7 +319,7 @@ void MPIChannel::sendContentsDimensionsRequest(ContentWindowManagerPtrs contentW
 
     if(iss.rdbuf()->pubsetbuf(buffer.data(), mh.size) == NULL)
     {
-        put_flog(LOG_FATAL, "rank %i: error setting stream buffer", mpiRank);
+        put_flog(LOG_FATAL, "rank %i: error setting stream buffer", mpiRank_);
         return;
     }
 
@@ -350,9 +350,9 @@ void MPIChannel::synchronizeClock()
 void MPIChannel::sendFrameClockUpdate()
 {
     // this should only be called by the rank 1 process
-    if(mpiRank != 1)
+    if(mpiRank_ != 1)
     {
-        put_flog(LOG_WARN, "called by rank %i != 1", mpiRank);
+        put_flog(LOG_WARN, "called by rank %i != 1", mpiRank_);
         return;
     }
 
@@ -377,13 +377,13 @@ void MPIChannel::sendFrameClockUpdate()
     mh.type = MESSAGE_TYPE_FRAME_CLOCK;
 
     // the header is sent via a send, so that we can probe it on the render processes
-    for(int i=2; i<mpiSize; i++)
+    for(int i=2; i<mpiSize_; i++)
     {
         MPI_Send((void *)&mh, sizeof(MessageHeader), MPI_BYTE, i, 0, MPI_COMM_WORLD);
     }
 
     // broadcast it
-    MPI_Bcast((void *)serializedString.data(), size, MPI_BYTE, 0, mpiRenderComm);
+    MPI_Bcast((void *)serializedString.data(), size, MPI_BYTE, 0, mpiRenderComm_);
 
     // update timestamp
     timestamp_ = timestamp;
@@ -392,7 +392,7 @@ void MPIChannel::sendFrameClockUpdate()
 void MPIChannel::receiveFrameClockUpdate()
 {
     // we shouldn't run the broadcast if we're rank 1
-    if(mpiRank == 1)
+    if(mpiRank_ == 1)
         return;
 
     // receive the message header
@@ -410,14 +410,14 @@ void MPIChannel::receiveFrameClockUpdate()
     std::vector<char> buffer(messageHeader.size);
 
     // read message into the buffer
-    MPI_Bcast((void *)buffer.data(), messageHeader.size, MPI_BYTE, 0, mpiRenderComm);
+    MPI_Bcast((void *)buffer.data(), messageHeader.size, MPI_BYTE, 0, mpiRenderComm_);
 
     // de-serialize...
     std::istringstream iss(std::istringstream::binary);
 
     if(iss.rdbuf()->pubsetbuf(buffer.data(), messageHeader.size) == NULL)
     {
-        put_flog(LOG_FATAL, "rank %i: error setting stream buffer", mpiRank);
+        put_flog(LOG_FATAL, "rank %i: error setting stream buffer", mpiRank_);
         return;
     }
 
@@ -431,15 +431,15 @@ void MPIChannel::sendQuit()
     mh.type = MESSAGE_TYPE_QUIT;
 
     // Send header via a send so that we can probe it on the render processes
-    for(int i=1; i<mpiSize; i++)
+    for(int i=1; i<mpiSize_; i++)
         MPI_Send((void *)&mh, sizeof(MessageHeader), MPI_BYTE, i, 0, MPI_COMM_WORLD);
 }
 
 DisplayGroupManagerPtr MPIChannel::receiveDisplayGroup(const MessageHeader& messageHeader)
 {
-    if(mpiRank < 1)
+    if(mpiRank_ < 1)
     {
-        put_flog(LOG_WARN, "called on rank %i < 1", mpiRank);
+        put_flog(LOG_WARN, "called on rank %i < 1", mpiRank_);
         return DisplayGroupManagerPtr();
     }
 
@@ -454,7 +454,7 @@ DisplayGroupManagerPtr MPIChannel::receiveDisplayGroup(const MessageHeader& mess
 
     if(iss.rdbuf()->pubsetbuf(buffer.data(), messageHeader.size) == NULL)
     {
-        put_flog(LOG_FATAL, "rank %i: error setting stream buffer", mpiRank);
+        put_flog(LOG_FATAL, "rank %i: error setting stream buffer", mpiRank_);
         return DisplayGroupManagerPtr();
     }
 
@@ -467,9 +467,9 @@ DisplayGroupManagerPtr MPIChannel::receiveDisplayGroup(const MessageHeader& mess
 
 OptionsPtr MPIChannel::receiveOptions(const MessageHeader& messageHeader)
 {
-    if(mpiRank < 1)
+    if(mpiRank_ < 1)
     {
-        put_flog(LOG_WARN, "called on rank %i < 1", mpiRank);
+        put_flog(LOG_WARN, "called on rank %i < 1", mpiRank_);
         return OptionsPtr();
     }
 
@@ -484,7 +484,7 @@ OptionsPtr MPIChannel::receiveOptions(const MessageHeader& messageHeader)
 
     if(iss.rdbuf()->pubsetbuf(buffer.data(), messageHeader.size) == NULL)
     {
-        put_flog(LOG_FATAL, "rank %i: error setting stream buffer", mpiRank);
+        put_flog(LOG_FATAL, "rank %i: error setting stream buffer", mpiRank_);
         return OptionsPtr();
     }
 
@@ -497,7 +497,7 @@ OptionsPtr MPIChannel::receiveOptions(const MessageHeader& messageHeader)
 
 void MPIChannel::receiveContentsDimensionsRequest()
 {
-    if(mpiRank != 1)
+    if(mpiRank_ != 1)
         return;
 
     ContentWindowManagerPtrs contentWindows;
@@ -547,9 +547,9 @@ void MPIChannel::receiveContentsDimensionsRequest()
 
 void MPIChannel::send(const std::vector<PixelStreamSegment> & segments, const QString& uri)
 {
-    if(mpiRank != 0)
+    if(mpiRank_ != 0)
     {
-        put_flog(LOG_WARN, "called on rank %i != 0", mpiRank);
+        put_flog(LOG_WARN, "called on rank %i != 0", mpiRank_);
         return;
     }
 
@@ -577,7 +577,7 @@ void MPIChannel::send(const std::vector<PixelStreamSegment> & segments, const QS
     strncpy(mh.uri, uri.toLocal8Bit().constData(), MESSAGE_HEADER_URI_LENGTH-1);
 
     // the header is sent via a send, so that we can probe it on the render processes
-    for(int i=1; i<mpiSize; i++)
+    for(int i=1; i<mpiSize_; i++)
     {
         MPI_Send((void *)&mh, sizeof(MessageHeader), MPI_BYTE, i, 0, MPI_COMM_WORLD);
     }
@@ -588,9 +588,9 @@ void MPIChannel::send(const std::vector<PixelStreamSegment> & segments, const QS
 
 void MPIChannel::receivePixelStreams(const MessageHeader& messageHeader)
 {
-    if(mpiRank < 1)
+    if(mpiRank_ < 1)
     {
-        put_flog(LOG_WARN, "called on rank %i < 1", mpiRank);
+        put_flog(LOG_WARN, "called on rank %i < 1", mpiRank_);
         return;
     }
 
@@ -608,7 +608,7 @@ void MPIChannel::receivePixelStreams(const MessageHeader& messageHeader)
 
     if(iss.rdbuf()->pubsetbuf(buffer.data(), messageHeader.size) == NULL)
     {
-        put_flog(LOG_FATAL, "rank %i: error setting stream buffer", mpiRank);
+        put_flog(LOG_FATAL, "rank %i: error setting stream buffer", mpiRank_);
         return;
     }
 

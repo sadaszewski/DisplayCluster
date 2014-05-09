@@ -44,6 +44,9 @@
 
 #include "globals.h"
 
+/**
+ * The base class for both Master and Wall main applications.
+ */
 class Application : public QApplication
 {
     Q_OBJECT

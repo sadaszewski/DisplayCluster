@@ -62,7 +62,7 @@ int main(int argc, char * argv[])
 #endif
 
     Application* app = 0;
-    if ((g_mpiChannel->getRank() == 0))
+    if ( g_mpiChannel->getRank() == 0 )
         app = new MasterApplication(argc, argv, g_mpiChannel);
     else
         app = new WallApplication(argc, argv, g_mpiChannel);

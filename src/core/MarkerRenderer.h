@@ -46,6 +46,9 @@
 
 class RenderContext;
 
+/**
+ * Renderer for Marker objects.
+ */
 class MarkerRenderer
 {
 public:

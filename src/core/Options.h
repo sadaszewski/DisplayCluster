@@ -40,19 +40,29 @@
 #define OPTIONS_H
 
 #include "config.h"
-#include <QObject>
-#include <boost/serialization/access.hpp>
-
 #include "types.h"
+#include "serializationHelpers.h"
+
+#include <QObject>
+#include <QColor>
+#include <boost/serialization/access.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
+/**
+ * Stores global display Options which can change during runtime.
+ *
+ * Can be serialized and distributed to the Wall applications.
+ */
 class Options : public QObject, public boost::enable_shared_from_this<Options>
 {
     Q_OBJECT
 
 public:
+    /** Constructor */
     Options();
 
+    //@{
+    /** Public getters */
     bool getShowWindowBorders() const;
     bool getShowTouchPoints() const;
     bool getShowMovieControls() const;
@@ -61,12 +71,15 @@ public:
     bool getShowZoomContext() const;
     bool getShowStreamingSegments() const;
     bool getShowStreamingStatistics() const;
-
+    QColor getBackgroundColor() const;
 #if ENABLE_SKELETON_SUPPORT
     bool getShowSkeletons() const;
 #endif
+    //@}
 
 public slots:
+    //@{
+    /** Public setters. @see updated() */
     void setShowWindowBorders(bool set);
     void setShowTouchPoints(bool set);
     void setShowMovieControls(bool set);
@@ -75,12 +88,14 @@ public slots:
     void setShowZoomContext(bool set);
     void setShowStreamingSegments(bool set);
     void setShowStreamingStatistics(bool set);
-
+    void setBackgroundColor(QColor color);
 #if ENABLE_SKELETON_SUPPORT
     void setShowSkeletons(bool set);
 #endif
+    //@}
 
 signals:
+    /** Emitted when a value is changed by one of the setters. */
     void updated(OptionsPtr);
 
 private:
@@ -97,6 +112,7 @@ private:
         ar & showZoomContext_;
         ar & showStreamingSegments_;
         ar & showStreamingStatistics_;
+        ar & backgroundColor_;
 #if ENABLE_SKELETON_SUPPORT
         ar & showSkeletons_;
 #endif
@@ -110,7 +126,7 @@ private:
     bool showZoomContext_;
     bool showStreamingSegments_;
     bool showStreamingStatistics_;
-
+    QColor backgroundColor_;
 #if ENABLE_SKELETON_SUPPORT
     bool showSkeletons_;
 #endif

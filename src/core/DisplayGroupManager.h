@@ -39,12 +39,10 @@
 #ifndef DISPLAY_GROUP_MANAGER_H
 #define DISPLAY_GROUP_MANAGER_H
 
-#include "DisplayGroupInterface.h"
-
 #include "config.h"
 #include "types.h"
 
-#include "serializationHelpers.h"
+#include "DisplayGroupInterface.h"
 #include "Marker.h"
 
 #if ENABLE_SKELETON_SUPPORT
@@ -52,12 +50,14 @@
 #endif
 
 #include <vector>
-#ifndef Q_MOC_RUN
-// https://bugreports.qt.nokia.com/browse/QTBUG-22829: When Qt moc runs on CGAL
-// files, do not process <boost/type_traits/has_operator.hpp>
-#  include <boost/enable_shared_from_this.hpp>
-#endif
+#include <QMutex>
+#include <boost/enable_shared_from_this.hpp>
 
+/**
+ * A collection of ContentWindows.
+ *
+ * Can be serialized and distributed to the Wall applications.
+ */
 class DisplayGroupManager : public DisplayGroupInterface,
         public boost::enable_shared_from_this<DisplayGroupManager>
 {
@@ -67,16 +67,26 @@ public:
     DisplayGroupManager();
     ~DisplayGroupManager();
 
+    /**
+     * Create and return a new Marker.
+     * The DisplayGroup keeps a reference on the returned object.
+     * @see getMarkers()
+     * @see deleteMarkers()
+     */
     MarkerPtr getNewMarker();
+
+    /** Get all the markers stored by the DisplayGroup. @see getNewMarker() */
     MarkerPtrs getMarkers() const;
+
+    /** Remove all internal references to the Markers. @see getNewMarker() */
     void deleteMarkers();
 
 #if ENABLE_SKELETON_SUPPORT
     std::vector< boost::shared_ptr<SkeletonState> > getSkeletons();
 #endif
 
-    QColor getBackgroundColor() const;
-    ContentWindowManagerPtr getBackgroundContentWindowManager() const;
+    /** Get the background content window. */
+    ContentWindowManagerPtr getBackgroundContentWindow() const;
 
     /**
      * Is the DisplayGroup empty.
@@ -96,10 +106,12 @@ signals:
     void modified(DisplayGroupManagerPtr displayGroup);
 
 public slots:
-    /** re-implemented from DisplayGroupInterface */
+    //@{
+    /** Re-implemented from DisplayGroupInterface */
     virtual void addContentWindowManager(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface * source=NULL);
     virtual void removeContentWindowManager(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface * source=NULL);
     virtual void moveContentWindowManagerToFront(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface * source=NULL);
+    //@}
 
     /**
      * Set the background content.
@@ -107,9 +119,6 @@ public slots:
      *                A null pointer removes the current background.
      */
     void setBackgroundContent(ContentPtr content);
-
-    /** Set the background color */
-    void setBackgroundColor(QColor color);
 
 #if ENABLE_SKELETON_SUPPORT
     void setSkeletons(std::vector<boost::shared_ptr<SkeletonState> > skeletons);
@@ -128,7 +137,6 @@ private:
         ar & markers_;
         ar & contentWindowManagers_;
         ar & backgroundContent_;
-        ar & backgroundColor_;
 #if ENABLE_SKELETON_SUPPORT
         ar & skeletons_;
 #endif
@@ -137,7 +145,6 @@ private:
     void watchChanges(ContentWindowManagerPtr contentWindow);
 
     ContentWindowManagerPtr backgroundContent_;
-    QColor backgroundColor_;
 
     mutable QMutex markersMutex_;
     MarkerPtrs markers_;

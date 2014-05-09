@@ -54,7 +54,7 @@ DisplayGroupRenderer::DisplayGroupRenderer(DisplayGroupManagerPtr displayGroup,
 
 void DisplayGroupRenderer::render()
 {
-    renderBackgroundContent(displayGroup_->getBackgroundContentWindowManager());
+    renderBackgroundContent(displayGroup_->getBackgroundContentWindow());
     renderContentWindows(displayGroup_->getContentWindowManagers());
 
     // Markers should be rendered last since they're blended

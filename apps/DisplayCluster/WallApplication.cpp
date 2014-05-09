@@ -123,7 +123,7 @@ void WallApplication::advanceContent()
         // we will call advance() multiple times per frame on that Content object...
         contentWindowManagers[i]->getContent()->advance(factories_, contentWindowManagers[i]);
     }
-    ContentWindowManagerPtr backgroundContent = displayGroup_->getBackgroundContentWindowManager();
+    ContentWindowManagerPtr backgroundContent = displayGroup_->getBackgroundContentWindow();
     if (backgroundContent)
         backgroundContent->getContent()->advance(factories_, backgroundContent);
 }

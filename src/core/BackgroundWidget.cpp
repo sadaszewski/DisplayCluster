@@ -41,21 +41,21 @@
 
 #include <QtGui>
 
-#include "globals.h"
 #include "configuration/Configuration.h"
 #include "ContentFactory.h"
 
-BackgroundWidget::BackgroundWidget(QWidget *widget_) :
-    QDialog(widget_)
+BackgroundWidget::BackgroundWidget(Configuration& configuration, QWidget *widget_)
+    : QDialog(widget_)
+    , configuration_(configuration)
 {
     setWindowTitle(tr("Background settings"));
 
-    int frameStyle = QFrame::Sunken | QFrame::Panel;
+    const int frameStyle = QFrame::Sunken | QFrame::Panel;
 
     // Get current variables
 
-    previousColor_ = g_configuration->getBackgroundColor();
-    previousBackgroundURI_ = g_configuration->getBackgroundUri();
+    previousColor_ = configuration_.getBackgroundColor();
+    previousBackgroundURI_ = configuration_.getBackgroundUri();
 
     // Color chooser
 
@@ -105,8 +105,11 @@ BackgroundWidget::BackgroundWidget(QWidget *widget_) :
 
 void BackgroundWidget::accept()
 {
-    if (g_configuration->save())
+    if (configuration_.save())
     {
+        previousColor_ = configuration_.getBackgroundColor();
+        previousBackgroundURI_ = configuration_.getBackgroundUri();
+
         QDialog::accept();
     }
     else
@@ -121,10 +124,11 @@ void BackgroundWidget::reject()
 {
     // Revert to saved settings
     colorLabel_->setText(previousColor_.name());
+    colorLabel_->setPalette(QPalette(previousColor_));
     backgroundLabel_->setText(previousBackgroundURI_);
 
-    g_configuration->setBackgroundColor(previousColor_);
-    g_configuration->setBackgroundUri(previousBackgroundURI_);
+    configuration_.setBackgroundColor(previousColor_);
+    configuration_.setBackgroundUri(previousBackgroundURI_);
 
     ContentPtr content = ContentFactory::getContent( previousBackgroundURI_ );
     emit backgroundContentChanged(content);
@@ -138,11 +142,12 @@ void BackgroundWidget::chooseColor()
     QColor color;
     color = QColorDialog::getColor(Qt::green, this);
 
-    if (color.isValid()) {
+    if (color.isValid())
+    {
         colorLabel_->setText(color.name());
         colorLabel_->setPalette(QPalette(color));
 
-        g_configuration->setBackgroundColor(color);
+        configuration_.setBackgroundColor(color);
         emit backgroundColorChanged(color);
     }
 }
@@ -160,7 +165,7 @@ void BackgroundWidget::openBackgroundContent()
     if(content)
     {
         backgroundLabel_->setText(filename);
-        g_configuration->setBackgroundUri(filename);
+        configuration_.setBackgroundUri(filename);
         emit backgroundContentChanged(content);
     }
     else
@@ -174,6 +179,6 @@ void BackgroundWidget::openBackgroundContent()
 void BackgroundWidget::removeBackground()
 {
     backgroundLabel_->setText("");
-    g_configuration->setBackgroundUri("");
+    configuration_.setBackgroundUri("");
     emit backgroundContentChanged(ContentPtr());
 }

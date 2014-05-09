@@ -45,6 +45,9 @@
 #include "ContentWindowRenderer.h"
 #include "MarkerRenderer.h"
 
+/**
+ * Renders a DisplayGroup.
+ */
 class DisplayGroupRenderer
 {
 public:
@@ -55,7 +58,7 @@ public:
     /** Render the DisplayGroup */
     void render();
 
-    /** Set the DisplayGroup to render. */
+    /** Set the DisplayGroup to render, replacing the previous one. */
     void setDisplayGroup(DisplayGroupManagerPtr displayGroup);
 
 private:

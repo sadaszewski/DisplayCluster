@@ -93,6 +93,11 @@ bool Options::getShowStreamingStatistics() const
     return showStreamingStatistics_;
 }
 
+QColor Options::getBackgroundColor() const
+{
+    return backgroundColor_;
+}
+
 #if ENABLE_SKELETON_SUPPORT
 bool Options::getShowSkeletons() const
 {
@@ -154,6 +159,15 @@ void Options::setShowStreamingStatistics(bool set)
     showStreamingStatistics_ = set;
 
     emit(updated(shared_from_this()));
+}
+
+void Options::setBackgroundColor(QColor color)
+{
+    if(color == backgroundColor_)
+        return;
+    backgroundColor_ = color;
+
+    emit (updated(shared_from_this()));
 }
 
 #if ENABLE_SKELETON_SUPPORT

@@ -48,11 +48,20 @@
 
 class WallConfiguration;
 
+/**
+ * An OpenGL window used by Wall applications to render contents.
+ */
 class GLWindow : public QGLWidget
 {
 public:
-    GLWindow(int tileIndex);
-    GLWindow(int tileIndex, QRect windowRect, QGLWidget * shareWidget = 0);
+    /**
+     * Create a new window.
+     * @param tileIndex A unique index associated with this window.
+     * @param windowRect The position and dimensions for the window.
+     * @param shareWidget An optional widget to share an existing GLContext.
+     *                    A new GLContext is allocated if not provided.
+     */
+    GLWindow(const int tileIndex, QRect windowRect, QGLWidget* shareWidget = 0);
     ~GLWindow();
 
     /** Get the unique tile index identifier. */
@@ -60,7 +69,9 @@ public:
 
     // TODO See if we can remove this method of deleting textures.
     // It is only used in DynamicTexture.
+    /** Insert the id of a texture to be deleted. */
     void insertPurgeTextureId(GLuint textureId);
+    /** Delete the textures added with insertPurgeTextureId()/ */
     void purgeTextures();
 
     /** Add a renderable, currently only supports DisplayGroupRenderer. */
@@ -75,7 +86,7 @@ public:
     bool isRegionVisible(const QRectF& region) const;
 
     /** Used by PDF and SVG renderers */
-    QRectF getProjectedPixelRect(const bool clampToWindowArea);
+    QRectF getProjectedPixelRect(const bool clampToWindowArea) const;
 
     /** Draw an un-textured rectangle.
      * @param x,y postion
@@ -84,10 +95,12 @@ public:
     static void drawRectangle(double x, double y, double w, double h);
 
 protected:
+    ///@{
     /** Overloaded methods from QGLWidget */
     virtual void initializeGL();
     virtual void paintGL();
     virtual void resizeGL(int w, int h);
+    ///@}
 
 private:
     const WallConfiguration* configuration_;
@@ -106,7 +119,7 @@ private:
     QMutex purgeTexturesMutex_;
     std::vector<GLuint> purgeTextureIds_;
 
-    FpsCounter fpsCounter;
+    FpsCounter fpsCounter_;
 
     QList<DisplayGroupRendererPtr> renderables_;
 

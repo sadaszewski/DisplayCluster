@@ -102,7 +102,7 @@ void ContentWindowManager::setContent(ContentPtr content)
     createInteractionDelegate();
 }
 
-ContentPtr ContentWindowManager::getContent()
+ContentPtr ContentWindowManager::getContent() const
 {
     return content_;
 }
@@ -134,7 +134,7 @@ void ContentWindowManager::createInteractionDelegate()
     }
 }
 
-DisplayGroupManagerPtr ContentWindowManager::getDisplayGroupManager()
+DisplayGroupManagerPtr ContentWindowManager::getDisplayGroupManager() const
 {
     return displayGroupManager_.lock();
 }
@@ -144,7 +144,7 @@ void ContentWindowManager::setDisplayGroupManager(DisplayGroupManagerPtr display
     displayGroupManager_ = displayGroupManager;
 }
 
-ContentInteractionDelegate& ContentWindowManager::getInteractionDelegate()
+ContentInteractionDelegate& ContentWindowManager::getInteractionDelegate() const
 {
     return *interactionDelegate_;
 }
@@ -175,10 +175,12 @@ void ContentWindowManager::close(ContentWindowInterface * source)
 
 QPointF ContentWindowManager::getWindowCenterPosition() const
 {
-    return QPointF(coordinates_.x() + 0.5 * coordinates_.width(), coordinates_.y() + 0.5 * coordinates_.height());
+    return QPointF(coordinates_.x() + 0.5 * coordinates_.width(),
+                   coordinates_.y() + 0.5 * coordinates_.height());
 }
 
-void ContentWindowManager::centerPositionAround(const QPointF& position, const bool constrainToWindowBorders)
+void ContentWindowManager::centerPositionAround(const QPointF& position,
+                                                const bool constrainToWindowBorders)
 {
     if(position.isNull())
         return;

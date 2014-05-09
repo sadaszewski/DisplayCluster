@@ -41,6 +41,7 @@
 
 #include "MasterWindow.h"
 #include "DisplayGroupManager.h"
+#include "ContentFactory.h"
 #include "configuration/MasterConfiguration.h"
 #include "MPIChannel.h"
 #include "Options.h"
@@ -92,11 +93,9 @@ MasterApplication::MasterApplication(int& argc_, char** argv_, MPIChannelPtr mpi
     if( argc_ == 2 )
         StateSerializationHelper(displayGroup_).load( argv_[1] );
 
-    // Distribute the DisplayGroup through MPI whenever it is modified
     connect(displayGroup_.get(), SIGNAL(modified(DisplayGroupManagerPtr)),
             mpiChannel_.get(), SLOT(send(DisplayGroupManagerPtr)));
 
-    // Distribute the options when they are updated
     connect(config->getOptions().get(), SIGNAL(updated(OptionsPtr)),
             mpiChannel_.get(), SLOT(send(OptionsPtr)));
 
@@ -199,7 +198,7 @@ void MasterApplication::startWebservice(const int webServicePort)
 void MasterApplication::restoreBackground(const MasterConfiguration* configuration)
 {
     // Must be done after everything else is setup (or in the MainWindow constructor)
-    displayGroup_->setBackgroundColor( configuration->getBackgroundColor( ));
+    configuration->getOptions()->setBackgroundColor( configuration->getBackgroundColor( ));
     ContentPtr content = ContentFactory::getContent( configuration->getBackgroundUri( ));
     displayGroup_->setBackgroundContent( content );
 }

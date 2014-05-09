@@ -45,6 +45,9 @@
 class WallConfiguration;
 class RenderContext;
 
+/**
+ * The main application for Wall processes.
+ */
 class WallApplication : public Application
 {
     Q_OBJECT

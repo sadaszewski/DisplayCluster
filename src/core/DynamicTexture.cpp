@@ -348,6 +348,8 @@ void DynamicTexture::render(const QRectF& texCoords)
 
 void DynamicTexture::render_(const QRectF& texCoords, bool loadOnDemand, bool considerChildren)
 {
+    renderedChildren_ = false;
+
     if(considerChildren &&
             getProjectedPixelArea(true) > 0. &&
             getProjectedPixelArea(false) > TEXTURE_SIZE*TEXTURE_SIZE &&
@@ -442,19 +444,12 @@ void DynamicTexture::renderTexturedUnitQuad(const QRectF& texCoords)
 
 void DynamicTexture::clearOldChildren()
 {
-    // clear children if renderChildrenFrameCount_ < minFrameCount
-    if(!children_.empty() && renderedChildren_ && getThreadsDoneDescending())
-    {
+    if(!renderedChildren_ && !children_.empty() && getThreadsDoneDescending())
         children_.clear();
-    }
 
     // run on my children (if i still have any)
     for(unsigned int i=0; i<children_.size(); i++)
-    {
         children_[i]->clearOldChildren();
-    }
-
-    renderedChildren_ = false;
 }
 
 bool DynamicTexture::makePyramidFolder(const QString& pyramidFolder)

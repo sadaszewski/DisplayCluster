@@ -39,15 +39,17 @@
 #ifndef DISPLAY_GROUP_INTERFACE_H
 #define DISPLAY_GROUP_INTERFACE_H
 
-#include "Content.h"
-#include <QtGui>
-#include <boost/shared_ptr.hpp>
+#include "types.h"
+
+#include <QObject>
+#include <QUuid>
 #include <boost/weak_ptr.hpp>
 
 class DisplayGroupManager;
 class ContentWindowManager;
 
-class DisplayGroupInterface : public QObject {
+class DisplayGroupInterface : public QObject
+{
     Q_OBJECT
 
     public:

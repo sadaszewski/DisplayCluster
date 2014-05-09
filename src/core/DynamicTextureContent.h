@@ -42,10 +42,17 @@
 #include "Content.h"
 #include <boost/serialization/base_object.hpp>
 
+/**
+ * The Content object for a dynamically loaded large scale image.
+ */
 class DynamicTextureContent : public Content
 {
     public:
-        DynamicTextureContent(QString uri = "") : Content(uri) { }
+        /**
+         * Create a DynamicTextureContent.
+         * @param uri The image or pyramid file.
+         */
+        DynamicTextureContent(QString uri = "");
 
         /** Get the content type **/
         CONTENT_TYPE getType();

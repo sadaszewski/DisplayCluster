@@ -48,6 +48,14 @@
 #include "Movie.h"
 #include "PixelStream.h"
 
+/**
+ * A set of Factory<T> for all valid ContentTypes.
+ *
+ * It is used on Wall processes to map Content objects received from the
+ * master application to FactoryObjects which hold the actual data.
+ * It implements a basic garbage collection strategy for FactoryObjects
+ * that are no longer referenced/accessed.
+ */
 class Factories
 {
 public:
@@ -73,16 +81,18 @@ public:
      */
     void clearStaleFactoryObjects();
 
-    /** Force clear all Factories (useful on shutdown). */
+    /** Clear all Factories (useful on shutdown). */
     void clear();
 
-    /** Getters */
+    //@{
+    /** Getters for specific Factory types. */
     Factory<Texture> & getTextureFactory();
     Factory<DynamicTexture> & getDynamicTextureFactory();
     Factory<PDF> & getPDFFactory();
     Factory<SVG> & getSVGFactory();
     Factory<Movie> & getMovieFactory();
     Factory<PixelStream> & getPixelStreamFactory();
+    //@}
 
 private:
     uint64_t frameIndex_;

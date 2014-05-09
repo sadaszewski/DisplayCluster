@@ -57,13 +57,13 @@ void Marker::setPosition(float x, float y)
     emit(positionChanged());
 }
 
-void Marker::getPosition(float &x, float &y)
+void Marker::getPosition(float &x, float &y) const
 {
     x = x_;
     y = y_;
 }
 
-bool Marker::isActive()
+bool Marker::isActive() const
 {
     if((g_mpiChannel->getTime() - updatedTimestamp_).total_seconds() > MARKER_TIMEOUT_SECONDS)
         return false;

@@ -408,11 +408,11 @@ void MasterWindow::showBackgroundWidget()
 {
     if(!backgroundWidget_)
     {
-        backgroundWidget_ = new BackgroundWidget(this);
+        backgroundWidget_ = new BackgroundWidget(*g_configuration, this);
         backgroundWidget_->setModal(true);
 
         connect(backgroundWidget_, SIGNAL(backgroundColorChanged(QColor)),
-                displayGroup_.get(), SLOT(setBackgroundColor(QColor)));
+                g_configuration->getOptions().get(), SLOT(setBackgroundColor(QColor)));
         connect(backgroundWidget_, SIGNAL(backgroundContentChanged(ContentPtr)),
                 displayGroup_.get(), SLOT(setBackgroundContent(ContentPtr)));
     }

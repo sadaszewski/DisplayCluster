@@ -56,18 +56,7 @@
     #include <GL/glu.h>
 #endif
 
-GLWindow::GLWindow(int tileIndex)
-    : configuration_(static_cast<WallConfiguration*>(g_configuration))
-    , tileIndex_(tileIndex)
-    , left_(0)
-    , right_(0)
-    , bottom_(0)
-    , top_(0)
-{
-    setAutoBufferSwap(false);
-}
-
-GLWindow::GLWindow(int tileIndex, QRect windowRect, QGLWidget * shareWidget)
+GLWindow::GLWindow(const int tileIndex, QRect windowRect, QGLWidget* shareWidget)
   : QGLWidget(0, shareWidget)
   , configuration_(static_cast<WallConfiguration*>(g_configuration))
   , tileIndex_(tileIndex)
@@ -129,9 +118,7 @@ void GLWindow::paintGL()
 {
     OptionsPtr options = g_configuration->getOptions();
 
-    // TODO Move background color to Options!!
-    //clear(options->getBackgroundColor());
-    clear(QColor(Qt::black));
+    clear(options->getBackgroundColor());
     setOrthographicView();
 
     if(options->getShowTestPattern())
@@ -414,7 +401,7 @@ void GLWindow::renderTestPattern()
 
 void GLWindow::drawFps()
 {
-    fpsCounter.tick();
+    fpsCounter_.tick();
 
     const int fontSize = 32;
     QFont textFont;
@@ -425,12 +412,12 @@ void GLWindow::drawFps()
     glDisable(GL_DEPTH_TEST);
     glColor4f(0.,0.,1.,1.);
 
-    renderText(10, fontSize, fpsCounter.toString(), textFont);
+    renderText(10, fontSize, fpsCounter_.toString(), textFont);
 
     glPopAttrib();
 }
 
-QRectF GLWindow::getProjectedPixelRect(const bool clampToWindowArea)
+QRectF GLWindow::getProjectedPixelRect(const bool clampToWindowArea) const
 {
     // get four corners in object space (recall we're in normalized 0->1 dimensions)
     const double corners[4][3] =

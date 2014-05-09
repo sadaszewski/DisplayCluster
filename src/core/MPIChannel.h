@@ -156,9 +156,9 @@ signals:
     void received(OptionsPtr options);
 
 private:
-    int mpiRank;
-    int mpiSize;
-    MPI_Comm mpiRenderComm;
+    int mpiRank_;
+    int mpiSize_;
+    MPI_Comm mpiRenderComm_;
 
     boost::posix_time::ptime timestamp_; // frame timing
     boost::posix_time::time_duration timestampOffset_; // rank1 - rank0 offset

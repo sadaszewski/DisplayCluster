@@ -181,7 +181,7 @@ void DisplayGroupManager::setBackgroundContent(ContentPtr content)
     emit modified(shared_from_this());
 }
 
-ContentWindowManagerPtr DisplayGroupManager::getBackgroundContentWindowManager() const
+ContentWindowManagerPtr DisplayGroupManager::getBackgroundContentWindow() const
 {
     return backgroundContent_;
 }
@@ -197,20 +197,6 @@ ContentWindowManagerPtr DisplayGroupManager::getActiveWindow() const
         return ContentWindowManagerPtr();
 
     return contentWindowManagers_.back();
-}
-
-QColor DisplayGroupManager::getBackgroundColor() const
-{
-    return backgroundColor_;
-}
-
-void DisplayGroupManager::setBackgroundColor(QColor color)
-{
-    if(color == backgroundColor_)
-        return;
-    backgroundColor_ = color;
-
-    emit modified(shared_from_this());
 }
 
 void DisplayGroupManager::sendDisplayGroup()

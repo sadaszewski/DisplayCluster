@@ -50,6 +50,9 @@ class WebServiceServer;
 class TextInputDispatcher;
 class MasterConfiguration;
 
+/**
+ * The main application for the Master process.
+ */
 class MasterApplication : public Application
 {
     Q_OBJECT

@@ -43,6 +43,11 @@
 class QRectF;
 class RenderContext;
 
+/**
+ * An interface for objects that store Content data on Wall processes.
+ *
+ * An implementation must exist for every valid ContentType.
+ */
 class FactoryObject
 {
 public:

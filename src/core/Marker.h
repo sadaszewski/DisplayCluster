@@ -43,19 +43,32 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/date_time/posix_time/time_serialize.hpp>
 
+/**
+ * A marker to represent touch points.
+ */
 class Marker : public QObject
 {
     Q_OBJECT
 
 public:
+    /** Constructor. */
     Marker();
 
+    /** Set the position */
     void setPosition(float x, float y);
-    void getPosition(float &x, float &y);
 
-    bool isActive();
+    /** Get the position. */
+    void getPosition(float &x, float &y) const;
+
+    /**
+     * Check if the marker is active.
+     * @return True if the marker position has been modified
+     *         during the last 5 seconds.
+     */
+    bool isActive() const;
 
 signals:
+    /** Emitted everytime the position is modified. */
     void positionChanged();
 
 private:
