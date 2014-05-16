@@ -152,6 +152,7 @@ private:
 #if ENABLE_SKELETON_SUPPORT
     std::vector<boost::shared_ptr<SkeletonState> > skeletons_;
 #endif
+
 };
 
 #endif

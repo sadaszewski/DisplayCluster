@@ -42,6 +42,8 @@
 
 #include "Application.h"
 
+#include <boost/date_time/posix_time/posix_time.hpp>
+
 class WallConfiguration;
 class RenderContext;
 
@@ -79,8 +81,13 @@ private:
     DisplayGroupManagerPtr displayGroup_;
     DisplayGroupRendererPtr displayGroupRenderer_;
     FactoriesPtr factories_;
+    boost::posix_time::ptime lastFrameTime_;
 
+    /** Update the content every frame. */
     void advanceContent();
+
+    /** Get the time since the last frame was rendered. */
+    boost::posix_time::time_duration getTimeSinceLastFrame() const;
 };
 
 #endif // WALLAPPLICATION_H

@@ -111,21 +111,34 @@ void WallApplication::renderFrame()
     factories_->clearStaleFactoryObjects();
     renderContext_->getGLWindow()->purgeTextures();
 
+    lastFrameTime_ = mpiChannel_->getTime();
+
     emit(frameFinished());
 }
 
 void WallApplication::advanceContent()
 {
-    ContentWindowManagerPtrs contentWindowManagers = displayGroup_->getContentWindowManagers();
-    for(unsigned int i=0; i<contentWindowManagers.size(); i++)
+    boost::posix_time::time_duration timeSinceLastFrame = getTimeSinceLastFrame();
+    ContentWindowManagerPtrs contentWindows = displayGroup_->getContentWindowManagers();
+    for(unsigned int i=0; i<contentWindows.size(); i++)
     {
         // note that if we have multiple ContentWindowManagers corresponding to a single Content object,
         // we will call advance() multiple times per frame on that Content object...
-        contentWindowManagers[i]->getContent()->advance(factories_, contentWindowManagers[i]);
+        contentWindows[i]->getContent()->advance(factories_, contentWindows[i], timeSinceLastFrame);
     }
     ContentWindowManagerPtr backgroundContent = displayGroup_->getBackgroundContentWindow();
     if (backgroundContent)
-        backgroundContent->getContent()->advance(factories_, backgroundContent);
+        backgroundContent->getContent()->advance(factories_, backgroundContent, timeSinceLastFrame);
+}
+
+boost::posix_time::time_duration WallApplication::getTimeSinceLastFrame() const
+{
+    boost::posix_time::ptime currentTime = mpiChannel_->getTime();
+
+    if (lastFrameTime_.is_not_a_date_time() || currentTime.is_not_a_date_time())
+        return boost::posix_time::time_duration(); // duration == 0
+
+    return currentTime - lastFrameTime_;
 }
 
 void WallApplication::updateDisplayGroup(DisplayGroupManagerPtr displayGroup)

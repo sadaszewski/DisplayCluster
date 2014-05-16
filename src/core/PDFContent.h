@@ -90,7 +90,7 @@ private:
     int pageNumber_;
     int pageCount_;
 
-    virtual void advance(FactoriesPtr factories, ContentWindowManagerPtr window);
+    virtual void advance(FactoriesPtr factories, ContentWindowManagerPtr window, const boost::posix_time::time_duration);
 };
 
 #endif // PDFCONTENT_H

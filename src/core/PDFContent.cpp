@@ -102,7 +102,7 @@ void PDFContent::previousPage()
     }
 }
 
-void PDFContent::advance(FactoriesPtr factories, ContentWindowManagerPtr)
+void PDFContent::advance(FactoriesPtr factories, ContentWindowManagerPtr, const boost::posix_time::time_duration)
 {
     factories->getPDFFactory().getObject(getURI())->setPage(pageNumber_);
 }

@@ -76,7 +76,7 @@ const QStringList& DynamicTextureContent::getSupportedExtensions()
     return extensions;
 }
 
-void DynamicTextureContent::advance(FactoriesPtr factories, ContentWindowManagerPtr)
+void DynamicTextureContent::advance(FactoriesPtr factories, ContentWindowManagerPtr, const boost::posix_time::time_duration)
 {
     if( blockAdvance_ )
         return;

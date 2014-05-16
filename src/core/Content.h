@@ -50,6 +50,7 @@
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/serialization/nvp.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 class ContentWindowManager;
 class Factories;
@@ -90,10 +91,9 @@ class Content : public QObject
 
         // virtual method for implementing actions on advancing to a new frame
         // useful when a process has multiple GLWindows
-        virtual void advance(FactoriesPtr, ContentWindowManagerPtr) { }
+        virtual void advance(FactoriesPtr, ContentWindowManagerPtr, const boost::posix_time::time_duration) { }
 
     signals:
-
         /** Emitted when dimensions have changed */
         void dimensionsChanged(int width, int height);
 

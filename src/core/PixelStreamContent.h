@@ -56,7 +56,7 @@ class PixelStreamContent : public Content
         **/
         virtual bool readMetadata();
 
-        virtual void advance(FactoriesPtr factories, ContentWindowManagerPtr);
+        virtual void advance(FactoriesPtr factories, ContentWindowManagerPtr window, const boost::posix_time::time_duration);
 
     private:
         friend class boost::serialization::access;

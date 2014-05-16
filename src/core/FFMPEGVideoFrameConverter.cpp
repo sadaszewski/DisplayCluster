@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
+/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
 /*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -37,30 +37,59 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#include "MovieThumbnailGenerator.h"
+#include "FFMPEGVideoFrameConverter.h"
 
-#include "FFMPEGMovie.h"
+#include "log.h"
 
-#define PREVIEW_RELATIVE_POSITION  0.5
-
-MovieThumbnailGenerator::MovieThumbnailGenerator(const QSize &size)
-    : ThumbnailGenerator(size)
+FFMPEGVideoFrameConverter::FFMPEGVideoFrameConverter(const AVCodecContext& videoCodecContext, const PixelFormat targetFormat)
+    : swsContext_(0)
+    , avFrameRGB_(0)
 {
+    // allocate video frame for RGB conversion
+    avFrameRGB_ = avcodec_alloc_frame();
+
+    if( !avFrameRGB_ )
+    {
+        put_flog(LOG_ERROR, "Error allocating frame");
+        return;
+    }
+
+    // alloc buffer for avFrameRGB_
+    if (avpicture_alloc( (AVPicture *)avFrameRGB_, targetFormat,
+                         videoCodecContext.width, videoCodecContext.height ) != 0)
+    {
+        put_flog(LOG_ERROR, "Error allocating frame");
+        return;
+    }
+
+    // create sws scaler context
+    swsContext_ = sws_getContext(videoCodecContext.width, videoCodecContext.height,
+                                 videoCodecContext.pix_fmt, videoCodecContext.width,
+                                 videoCodecContext.height, targetFormat, SWS_FAST_BILINEAR,
+                                 NULL, NULL, NULL);
+    if( !swsContext_ )
+    {
+        put_flog(LOG_ERROR, "Error allocating an SwsContext");
+        return;
+    }
 }
 
-QImage MovieThumbnailGenerator::generate(const QString &filename) const
+FFMPEGVideoFrameConverter::~FFMPEGVideoFrameConverter()
 {
-    FFMPEGMovie movie(filename);
+    sws_freeContext(swsContext_);
 
-    if( !movie.isValid() )
-        return createErrorImage("movie");
+    avpicture_free( (AVPicture *)avFrameRGB_ );
+    av_free(avFrameRGB_);
+}
 
-    if ( !movie.jumpTo( PREVIEW_RELATIVE_POSITION * movie.getDuration( )))
-        return createErrorImage("movie");
+bool FFMPEGVideoFrameConverter::convert(const AVFrame* srcFrame)
+{
+    sws_scale(swsContext_, srcFrame->data, srcFrame->linesize, 0, srcFrame->height,
+              avFrameRGB_->data, avFrameRGB_->linesize);
+    return true;
+}
 
-    QImage image( (uchar*)movie.getData(), movie.getWidth(), movie.getHeight(), QImage::Format_ARGB32 );
-    image = image.scaled(size_, aspectRatioMode_);
-    image = image.rgbSwapped();
-    addMetadataToImage(image, filename);
-    return image;
+const uint8_t* FFMPEGVideoFrameConverter::getData() const
+{
+    return avFrameRGB_->data[0];
 }

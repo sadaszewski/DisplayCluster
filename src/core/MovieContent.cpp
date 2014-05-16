@@ -70,10 +70,10 @@ const QStringList& MovieContent::getSupportedExtensions()
     return extensions;
 }
 
-void MovieContent::advance(FactoriesPtr factories, ContentWindowManagerPtr window)
+void MovieContent::advance(FactoriesPtr factories, ContentWindowManagerPtr window, const boost::posix_time::time_duration timeSinceLastFrame)
 {
-    if( blockAdvance_ )
-        return;
+//    if( blockAdvance_ )
+//        return;
 
     // window parameters
     double x, y, w, h;
@@ -86,5 +86,5 @@ void MovieContent::advance(FactoriesPtr factories, ContentWindowManagerPtr windo
     boost::shared_ptr< Movie > movie = factories->getMovieFactory().getObject(getURI());
     movie->setPause( window->getControlState() & STATE_PAUSED );
     movie->setLoop( window->getControlState() & STATE_LOOP );
-    movie->nextFrame(skip);
+    movie->nextFrame(timeSinceLastFrame, skip);
 }

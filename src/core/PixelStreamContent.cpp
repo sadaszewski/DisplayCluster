@@ -54,7 +54,7 @@ bool PixelStreamContent::readMetadata()
     return true;
 }
 
-void PixelStreamContent::advance(FactoriesPtr factories, ContentWindowManagerPtr window)
+void PixelStreamContent::advance(FactoriesPtr factories, ContentWindowManagerPtr window, const boost::posix_time::time_duration)
 {
     const QRectF& windowRect = window->getCoordinates();
     factories->getPixelStreamFactory().getObject(getURI())->preRenderUpdate(windowRect);

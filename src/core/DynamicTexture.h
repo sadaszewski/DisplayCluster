@@ -156,11 +156,11 @@ private:
 
     /**
      * Render the dynamic texture.
+     * This function is also called from child objects to render a low-res
+     * texture when the high-res one is not loaded yet.
      * @param texCoords The area of the full scale texture to render
-     * @param loadOnDemand Load the texture if not already available
-     * @param considerChildren Attempt to use the children objects for rendering
      */
-    void render_(const QRectF& texCoords, bool loadOnDemand=true, bool considerChildren=true);
+    void render_(const QRectF& texCoords);
 
     /** Is this object the root element. */
     bool isRoot() const;
@@ -184,7 +184,7 @@ private:
     bool loadFullResImage(); // @Root only
     QImage loadImageRegionFromFullResImageFile(const QString& filename); // @Child only
     QImage getImageFromParent(const QRectF& imageRegion, DynamicTexture * start); // @Child only
-    void uploadTexture(); // @All
+    void generateTexture(); // @All
 
     void renderChildren(const QRectF& texCoords); // @All
     double getProjectedPixelArea(const bool onScreenOnly); // Used to determine children visibility // @All

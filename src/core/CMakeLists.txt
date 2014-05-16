@@ -115,6 +115,8 @@ list(APPEND SRCS
     Factory.hpp
     Factories.cpp
     FactoryObject.cpp
+    FFMPEGMovie.cpp
+    FFMPEGVideoFrameConverter.cpp
     FileCommandHandler.cpp
     FpsCounter.cpp
     GLWindow.cpp

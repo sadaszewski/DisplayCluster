@@ -1,5 +1,5 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
+/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
 /*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
@@ -37,30 +37,42 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#include "MovieThumbnailGenerator.h"
+#ifndef FFMPEGVIDEOFRAMECONVERTER_H
+#define FFMPEGVIDEOFRAMECONVERTER_H
 
-#include "FFMPEGMovie.h"
+// required for FFMPEG includes below, specifically for the Linux build
+#ifdef __cplusplus
+    #ifndef __STDC_CONSTANT_MACROS
+        #define __STDC_CONSTANT_MACROS
+    #endif
 
-#define PREVIEW_RELATIVE_POSITION  0.5
+    #ifdef _STDINT_H
+        #undef _STDINT_H
+    #endif
 
-MovieThumbnailGenerator::MovieThumbnailGenerator(const QSize &size)
-    : ThumbnailGenerator(size)
+    #include <stdint.h>
+#endif
+
+extern "C"
 {
+    #include <libavcodec/avcodec.h>
+    #include <libswscale/swscale.h>
 }
 
-QImage MovieThumbnailGenerator::generate(const QString &filename) const
+class FFMPEGVideoFrameConverter
 {
-    FFMPEGMovie movie(filename);
+public:
+    FFMPEGVideoFrameConverter(const AVCodecContext& videoCodecContext, const PixelFormat targetFormat);
+    ~FFMPEGVideoFrameConverter();
 
-    if( !movie.isValid() )
-        return createErrorImage("movie");
+    bool convert(const AVFrame* srcFrame);
 
-    if ( !movie.jumpTo( PREVIEW_RELATIVE_POSITION * movie.getDuration( )))
-        return createErrorImage("movie");
+    const uint8_t* getData() const;
 
-    QImage image( (uchar*)movie.getData(), movie.getWidth(), movie.getHeight(), QImage::Format_ARGB32 );
-    image = image.scaled(size_, aspectRatioMode_);
-    image = image.rgbSwapped();
-    addMetadataToImage(image, filename);
-    return image;
-}
+private:
+    SwsContext * swsContext_;           // Scaling context
+    AVFrame * avFrameRGB_;
+
+};
+
+#endif // FFMPEGVIDEOFRAMECONVERTER_H

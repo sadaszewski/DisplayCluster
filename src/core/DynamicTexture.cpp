@@ -343,25 +343,20 @@ void DynamicTexture::getDimensions(int &width, int &height) const
 
 void DynamicTexture::render(const QRectF& texCoords)
 {
-    render_(texCoords);
-}
-
-void DynamicTexture::render_(const QRectF& texCoords, bool loadOnDemand, bool considerChildren)
-{
     renderedChildren_ = false;
 
-    if(considerChildren &&
-            getProjectedPixelArea(true) > 0. &&
-            getProjectedPixelArea(false) > TEXTURE_SIZE*TEXTURE_SIZE &&
-            (getRoot()->imageSize_.width() / pow(2,depth_) > TEXTURE_SIZE ||
-             getRoot()->imageSize_.height() / pow(2,depth_) > TEXTURE_SIZE))
+    if(getProjectedPixelArea(true) > 0. &&
+       getProjectedPixelArea(false) > TEXTURE_SIZE*TEXTURE_SIZE &&
+       (getRoot()->imageSize_.width() / pow(2,depth_) > TEXTURE_SIZE ||
+        getRoot()->imageSize_.height() / pow(2,depth_) > TEXTURE_SIZE))
     {
         renderChildren(texCoords);
+        renderedChildren_ = true;
         return;
     }
 
-    // see if we need to start loading the image
-    if(loadOnDemand && !loadImageThreadStarted_)
+    // Load the texture if not already available
+    if(!loadImageThreadStarted_)
     {
         // only start the thread if this DynamicTexture tree has one available
         // each DynamicTexture tree is limited to (maxThreads - 2) threads, where
@@ -375,25 +370,27 @@ void DynamicTexture::render_(const QRectF& texCoords, bool loadOnDemand, bool co
             loadImageAsync();
     }
 
-    // see if we need to load the texture
-    if(loadImageThreadStarted_ && loadImageThread_.isFinished() && !textureId_)
-        uploadTexture();
+    render_(texCoords);
+}
 
-    // if we don't yet have a texture, try to render from parent's texture
-    // however, we won't force an image/texture computation on the parent
-    if(!textureId_)
-    {
-        // render from parent if we can
-        DynamicTexturePtr parent = parent_.lock();
-        if(parent)
-            parent->render_(getImageRegionInParentImage(texCoords), false, false);
-    }
-    else
+void DynamicTexture::render_(const QRectF& texCoords)
+{
+    if(!textureId_ && loadImageThreadStarted_ && loadImageThread_.isFinished())
+        generateTexture();
+
+    if(textureId_)
     {
 #ifdef DYNAMIC_TEXTURE_SHOW_BORDER
         renderTextureBorder();
 #endif
         renderTexturedUnitQuad(texCoords);
+    }
+    else
+    {
+        // If we don't yet have a texture, try to render from parent's texture
+        DynamicTexturePtr parent = parent_.lock();
+        if(parent)
+            parent->render_(getImageRegionInParentImage(texCoords));
     }
 }
 
@@ -416,7 +413,6 @@ void DynamicTexture::renderTextureBorder()
 
 void DynamicTexture::renderTexturedUnitQuad(const QRectF& texCoords)
 {
-    // draw the texture
     glPushAttrib(GL_ENABLE_BIT | GL_TEXTURE_BIT);
 
     glEnable(GL_TEXTURE_2D);
@@ -610,7 +606,7 @@ QImage DynamicTexture::getImageFromParent(const QRectF& imageRegion, DynamicText
     }
 }
 
-void DynamicTexture::uploadTexture()
+void DynamicTexture::generateTexture()
 {
     // generate new texture
     // no need to compute mipmaps
@@ -633,9 +629,6 @@ void DynamicTexture::uploadTexture()
 
 void DynamicTexture::renderChildren(const QRectF& texCoords)
 {
-    // mark this object as having rendered children in this frame
-    renderedChildren_ = true;
-
     // children rectangles
     const float inf = 1000000.;
 
