@@ -66,7 +66,6 @@ Socket::Socket(const std::string &hostname, const unsigned short port)
 
 Socket::~Socket()
 {
-    socket_->flush();
     delete socket_;
 }
 
@@ -82,6 +81,8 @@ int Socket::getFileDescriptor() const
 
 bool Socket::hasMessage(const size_t messageSize) const
 {
+    // needed to 'wakeup' socket when no data was streamed for a while
+    socket_->waitForReadyRead(0);
     return socket_->bytesAvailable() >= (int)(MessageHeader::serializedSize + messageSize);
 }
 
