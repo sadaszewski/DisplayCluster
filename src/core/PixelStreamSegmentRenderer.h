@@ -39,7 +39,8 @@
 #ifndef PIXEL_STREAM_SEGMENT_RENDERER_H
 #define PIXEL_STREAM_SEGMENT_RENDERER_H
 
-#include <QGLWidget>
+#include "GLTexture2D.h"
+
 #include <boost/noncopyable.hpp>
 
 class FpsCounter;
@@ -102,10 +103,7 @@ private:
     /** A reference to the render context. */
     RenderContext* renderContext_;
 
-    // texture
-    GLuint textureId_;
-    int textureWidth_;
-    int textureHeight_;
+    GLTexture2D texture_;
 
     // Segment position
     unsigned int x_, y_;

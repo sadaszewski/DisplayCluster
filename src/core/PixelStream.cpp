@@ -50,6 +50,7 @@
 #include "PixelStreamSegmentDecoder.h"
 
 #include "PixelStreamSegmentParameters.h"
+using dc::PixelStreamSegmentParameters;
 
 PixelStream::PixelStream(const QString &uri)
     : uri_(uri)

@@ -42,6 +42,7 @@
 #include "MessageHeader.h"
 #include "DisplayGroupManager.h"
 #include "Options.h"
+#include "PixelStreamFrame.h"
 
 #include "log.h"
 
@@ -545,7 +546,7 @@ void MPIChannel::receiveContentsDimensionsRequest()
     MPI_Send((void *)serializedString.data(), size, MPI_BYTE, 0, 0, MPI_COMM_WORLD);
 }
 
-void MPIChannel::send(const std::vector<PixelStreamSegment> & segments, const QString& uri)
+void MPIChannel::send(PixelStreamFramePtr frame)
 {
     if(mpiRank_ != 0)
     {
@@ -553,7 +554,7 @@ void MPIChannel::send(const std::vector<PixelStreamSegment> & segments, const QS
         return;
     }
 
-    assert(!segments.empty() && "sendPixelStreamSegments() received an empty vector");
+    assert(!frame->segments.empty() && "sendPixelStreamSegments() received an empty vector");
 
     // serialize the vector
     std::ostringstream oss(std::ostringstream::binary);
@@ -561,7 +562,7 @@ void MPIChannel::send(const std::vector<PixelStreamSegment> & segments, const QS
     // brace this so destructor is called on archive before we use the stream
     {
         boost::archive::binary_oarchive oa(oss);
-        oa << segments;
+        oa << frame->segments;
     }
 
     // serialized data to string
@@ -574,7 +575,7 @@ void MPIChannel::send(const std::vector<PixelStreamSegment> & segments, const QS
     mh.type = MESSAGE_TYPE_PIXELSTREAM;
 
     // add the truncated URI to the header
-    strncpy(mh.uri, uri.toLocal8Bit().constData(), MESSAGE_HEADER_URI_LENGTH-1);
+    strncpy(mh.uri, frame->uri.toLocal8Bit().constData(), MESSAGE_HEADER_URI_LENGTH-1);
 
     // the header is sent via a send, so that we can probe it on the render processes
     for(int i=1; i<mpiSize_; i++)
@@ -613,11 +614,11 @@ void MPIChannel::receivePixelStreams(const MessageHeader& messageHeader)
     }
 
     // read to a new segments vector
-    std::vector<PixelStreamSegment> segments;
+    PixelStreamFramePtr frame(new PixelStreamFrame);
+    frame->uri = uri;
 
     boost::archive::binary_iarchive ia(iss);
-    ia >> segments;
+    ia >> frame->segments;
 
-    Factory<PixelStream>& pixelStreamFactory = factories_->getPixelStreamFactory();
-    pixelStreamFactory.getObject(uri)->insertNewFrame(segments);
+    emit received(frame);
 }

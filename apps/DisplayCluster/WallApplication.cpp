@@ -44,7 +44,9 @@
 #include "Options.h"
 #include "RenderContext.h"
 #include "Factories.h"
+#include "PixelStreamFrame.h"
 #include "GLWindow.h"
+#include "TestPattern.h"
 #include "DisplayGroupManager.h"
 #include "ContentWindowManager.h"
 #include "DisplayGroupRenderer.h"
@@ -69,13 +71,25 @@ WallApplication::WallApplication(int& argc_, char** argv_, MPIChannelPtr mpiChan
         mpiChannel_->setFactories(factories_);
 
     for (size_t i = 0; i < renderContext_->getGLWindowCount(); ++i)
-        renderContext_->getGLWindow(i)->addRenderable(displayGroupRenderer_);
+    {
+        GLWindowPtr glWindow = renderContext_->getGLWindow(i);
+        glWindow->addRenderable(displayGroupRenderer_);
+
+        RenderablePtr testPattern(new TestPattern(glWindow.get(),
+                                                  config,
+                                                  mpiChannel_->getRank(),
+                                                  glWindow->getTileIndex()));
+        glWindow->setTestPattern(testPattern);
+    }
 
     connect(mpiChannel_.get(), SIGNAL(received(DisplayGroupManagerPtr)),
             this, SLOT(updateDisplayGroup(DisplayGroupManagerPtr)));
 
     connect(mpiChannel_.get(), SIGNAL(received(OptionsPtr)),
             this, SLOT(updateOptions(OptionsPtr)));
+
+    connect(mpiChannel_.get(), SIGNAL(received(PixelStreamFramePtr)),
+            this, SLOT(processPixelStreamFrame(PixelStreamFramePtr)));
 
     // setup connection so renderFrame() will be called continuously.
     // Must be a queued connection to avoid infinite recursion.
@@ -150,4 +164,10 @@ void WallApplication::updateDisplayGroup(DisplayGroupManagerPtr displayGroup)
 void WallApplication::updateOptions(OptionsPtr options)
 {
     g_configuration->setOptions(options);
+}
+
+void WallApplication::processPixelStreamFrame(PixelStreamFramePtr frame)
+{
+    Factory<PixelStream>& pixelStreamFactory = factories_->getPixelStreamFactory();
+    pixelStreamFactory.getObject(frame->uri)->insertNewFrame(frame->segments);
 }

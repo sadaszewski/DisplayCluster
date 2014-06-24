@@ -1,5 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
+/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -36,80 +37,44 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef NETWORK_LISTENER_THREAD_H
-#define NETWORK_LISTENER_THREAD_H
+#ifndef TESTPATTERN_H
+#define TESTPATTERN_H
 
-#include "MessageHeader.h"
-#include "Event.h"
-#include "PixelStreamSegment.h"
-#include "EventReceiver.h"
+#include "Renderable.h"
 
-#include <QtNetwork/QTcpSocket>
-#include <QQueue>
+#include <QList>
+#include <QString>
 
-using dc::Event;
-using dc::PixelStreamSegment;
-using dc::PixelStreamSegmentParameters;
+class WallConfiguration;
+class QGLWidget;
 
-class NetworkListenerThread : public EventReceiver
+/**
+ * Render a test pattern to help setup and debug the display configuration.
+ */
+class TestPattern : public Renderable
 {
-    Q_OBJECT
-
 public:
+    /**
+     * Constructor
+     * @param glWindow The associated QGLWidget (used for rendering text)
+     * @param configuration The configuration to get information from
+     * @param rank The rank of the process
+     * @param tileIndex The tile index of the display
+     */
+    TestPattern(QGLWidget* glWindow,
+                const WallConfiguration* configuration,
+                const int rank,
+                const int tileIndex);
 
-    NetworkListenerThread(int socketDescriptor);
-    ~NetworkListenerThread();
-
-public slots:
-
-    void processEvent(Event evt);
-    void pixelStreamerClosed(QString uri);
-
-    void eventRegistrationReply(QString uri, bool success);
-
-signals:
-
-    void finished();
-
-    void receivedAddPixelStreamSource(QString uri, size_t sourceIndex);
-    void receivedPixelStreamSegement(QString uri, size_t SourceIndex, PixelStreamSegment segment);
-    void receivedPixelStreamFinishFrame(QString uri, size_t SourceIndex);
-    void receivedRemovePixelStreamSource(QString uri, size_t sourceIndex);
-
-    void registerToEvents(QString uri, bool exclusive, EventReceiver* receiver);
-
-    void receivedCommand(QString command, QString senderUri);
-
-    /** @internal */
-    void dataAvailable();
-
-private slots:
-
-    void initialize();
-    void process();
-    void socketReceiveMessage();
+    /** Render the test pattern. */
+    virtual void render();
 
 private:
+    QList<QString> labels_;
+    QGLWidget* glWindow_;
 
-    int socketDescriptor_;
-    QTcpSocket* tcpSocket_;
-
-    QString pixelStreamUri_;
-
-    bool registeredToEvents_;
-    QQueue<Event> events_;
-
-    MessageHeader receiveMessageHeader();
-    QByteArray receiveMessageBody(const int size);
-
-    void handleMessage(const MessageHeader& messageHeader, const QByteArray& byteArray);
-    void handlePixelStreamMessage(const QString& uri, const QByteArray& byteArray);
-
-    void sendProtocolVersion();
-    void sendBindReply(const bool successful);
-    void send(const Event &evt);
-    void sendQuit();
-    bool send(const MessageHeader& messageHeader);
+    void renderCrossPattern();
+    void renderLabels();
 };
 
-#endif
+#endif // TESTPATTERN_H

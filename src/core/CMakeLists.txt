@@ -119,6 +119,7 @@ list(APPEND SRCS
     FFMPEGVideoFrameConverter.cpp
     FileCommandHandler.cpp
     FpsCounter.cpp
+    GLTexture2D.cpp
     GLWindow.cpp
     globals.cpp
     gestures/DoubleTapGestureRecognizer.cpp
@@ -153,6 +154,7 @@ list(APPEND SRCS
     StateSerializationHelper.cpp
     SVG.cpp
     SVGContent.cpp
+    TestPattern.cpp
     Texture.cpp
     TextureContent.cpp
     WebbrowserCommandHandler.cpp

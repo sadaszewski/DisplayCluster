@@ -44,12 +44,15 @@
 #include "globals.h"
 #include "MPIChannel.h"
 
+#include "PixelStreamSegment.h" // For metaType registration
+
 DisplayGroupManager::DisplayGroupManager()
 {
     // register types for use in signals/slots
     qRegisterMetaType<Event>("Event");
     qRegisterMetaType<ContentWindowManagerPtr>("ContentWindowManagerPtr");
     qRegisterMetaType<PixelStreamSegment>("PixelStreamSegment");
+    qRegisterMetaType<PixelStreamFramePtr>("PixelStreamFramePtr");
 
 #if ENABLE_SKELETON_SUPPORT
     qRegisterMetaType<std::vector< boost::shared_ptr<SkeletonState> > >("std::vector< boost::shared_ptr<SkeletonState> >");

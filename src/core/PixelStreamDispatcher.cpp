@@ -39,9 +39,7 @@
 
 #include "PixelStreamDispatcher.h"
 #include "PixelStreamWindowManager.h"
-
-#include "globals.h"
-#include "MPIChannel.h"
+#include "PixelStreamFrame.h"
 
 #define DISPATCH_FREQUENCY 100
 
@@ -128,18 +126,20 @@ void PixelStreamDispatcher::dispatchFrames()
 {
     for (StreamBuffers::iterator it = streamBuffers_.begin(); it != streamBuffers_.end(); ++it)
     {
-        // Only dispatch the last frame
-        PixelStreamSegments segments;
+        PixelStreamFramePtr frame(new PixelStreamFrame);
+        frame->uri = it->first;
+
+        // Only dispatch the lastest frame
         while (it->second.hasFrameComplete())
         {
-            segments = it->second.getFrame();
+            frame->segments = it->second.getFrame();
         }
-        if (!segments.empty())
+        if (!frame->segments.empty())
         {
-            QSize size = it->second.computeFrameDimensions(segments);
-            windowManager_.updateDimension(it->first, size);
+            QSize size = it->second.computeFrameDimensions(frame->segments);
+            windowManager_.updateDimension(frame->uri, size);
 
-            g_mpiChannel->send(segments, it->first);
+            emit sendFrame(frame);
         }
     }
 }

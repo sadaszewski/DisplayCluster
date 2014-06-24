@@ -57,6 +57,7 @@ public:
     ~NetworkListener();
 
     CommandHandler& getCommandHandler() const;
+    PixelStreamDispatcher* getPixelStreamDispatcher() const;
 
 protected:
     virtual void incomingConnection(int socketHandle);

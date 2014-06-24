@@ -46,6 +46,8 @@
 
 #include "log.h"
 
+#include <QThreadPool>
+
 #if ENABLE_TUIO_TOUCH_LISTENER
 #include <X11/Xlib.h>
 #endif

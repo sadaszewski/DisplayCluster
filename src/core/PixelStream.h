@@ -43,14 +43,10 @@
 #include "PixelStreamSegment.h"
 #include "types.h"
 
-#include <QtGui>
+#include <QRectF>
+#include <QString>
 #include <boost/shared_ptr.hpp>
 #include <vector>
-#include <queue>
-
-using dc::PixelStreamSegment;
-using dc::PixelStreamSegmentParameters;
-typedef std::vector<PixelStreamSegment> PixelStreamSegments;
 
 class PixelStreamSegmentRenderer;
 class PixelStreamSegmentDecoder;

@@ -74,6 +74,7 @@ private slots:
     void renderFrame();
     void updateDisplayGroup(DisplayGroupManagerPtr displayGroup);
     void updateOptions(OptionsPtr options);
+    void processPixelStreamFrame(PixelStreamFramePtr frame);
 
 private:
     MPIChannelPtr mpiChannel_;

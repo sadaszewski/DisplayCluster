@@ -38,18 +38,12 @@
 
 #include "PixelStreamSegmentRenderer.h"
 
-#include "log.h"
 #include "FpsCounter.h"
-
-#include "globals.h"
 #include "RenderContext.h"
 #include "GLWindow.h"
 
 PixelStreamSegmentRenderer::PixelStreamSegmentRenderer(RenderContext* renderContext)
     : renderContext_(renderContext)
-    , textureId_ (0)
-    , textureWidth_(0)
-    , textureHeight_(0)
     , x_(0)
     , y_(0)
     , width_(0)
@@ -61,13 +55,6 @@ PixelStreamSegmentRenderer::PixelStreamSegmentRenderer(RenderContext* renderCont
 
 PixelStreamSegmentRenderer::~PixelStreamSegmentRenderer()
 {
-    // delete bound texture
-    if(textureId_)
-    {
-        glDeleteTextures(1, &textureId_);
-        textureId_ = 0;
-    }
-
     delete segmentStatistics;
 }
 
@@ -79,33 +66,7 @@ QRect PixelStreamSegmentRenderer::getRect() const
 void PixelStreamSegmentRenderer::updateTexture(const QImage& image)
 {
     segmentStatistics->tick();
-
-    // if the size has changed, create a new texture
-    if(textureId_ && (image.width() != textureWidth_ || image.height() != textureHeight_))
-    {
-        // delete bound texture
-        glDeleteTextures(1, &textureId_);
-        textureId_ = 0;
-    }
-
-    if(!textureId_)
-    {
-        glGenTextures(1, &textureId_);
-        glBindTexture(GL_TEXTURE_2D, textureId_);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width(), image.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, image.bits());
-        textureWidth_ = image.width();
-        textureHeight_ = image.height();
-    }
-    else
-    {
-        glBindTexture(GL_TEXTURE_2D, textureId_);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image.width(), image.height(), GL_RGBA, GL_UNSIGNED_BYTE, image.bits());
-    }
-
+    texture_.update(image);
     textureNeedsUpdate_ = false;
 }
 
@@ -130,10 +91,8 @@ void PixelStreamSegmentRenderer::setParameters(const unsigned int x, const unsig
 
 bool PixelStreamSegmentRenderer::render(bool showSegmentBorders, bool showSegmentStatistics)
 {
-    if(!textureId_)
-    {
+    if(!texture_.isValid())
         return false;
-    }
 
     // OpenGL transformation
     glPushMatrix();
@@ -180,7 +139,7 @@ void PixelStreamSegmentRenderer::drawUnitTexturedQuad(float tX, float tY, float 
     glPushAttrib(GL_ENABLE_BIT | GL_TEXTURE_BIT);
 
     glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, textureId_);
+    texture_.bind();
 
     glBegin(GL_QUADS);
 

@@ -58,6 +58,7 @@
 #include "localstreamer/PixelStreamerLauncher.h"
 #include "StateSerializationHelper.h"
 #include "PixelStreamWindowManager.h"
+#include "PixelStreamDispatcher.h"
 
 #include "CommandHandler.h"
 #include "SessionCommandHandler.h"
@@ -164,6 +165,10 @@ void MasterApplication::startNetworkListener(const MasterConfiguration* configur
         return;
 
     networkListener_ = new NetworkListener(*pixelStreamWindowManager_);
+    connect(networkListener_->getPixelStreamDispatcher(),
+            SIGNAL(sendFrame(PixelStreamFramePtr)),
+            mpiChannel_.get(),
+            SLOT(send(PixelStreamFramePtr)));
 
     CommandHandler& handler = networkListener_->getCommandHandler();
     handler.registerCommandHandler(new FileCommandHandler(displayGroup_, *pixelStreamWindowManager_));

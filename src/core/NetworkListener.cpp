@@ -74,6 +74,11 @@ CommandHandler& NetworkListener::getCommandHandler() const
     return *commandHandler_;
 }
 
+PixelStreamDispatcher* NetworkListener::getPixelStreamDispatcher() const
+{
+    return pixelStreamDispatcher_;
+}
+
 void NetworkListener::incomingConnection(int socketHandle)
 {
     put_flog(LOG_DEBUG, "");

@@ -1,5 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
+/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -36,80 +37,76 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef NETWORK_LISTENER_THREAD_H
-#define NETWORK_LISTENER_THREAD_H
+#include "GLTexture2D.h"
 
-#include "MessageHeader.h"
-#include "Event.h"
-#include "PixelStreamSegment.h"
-#include "EventReceiver.h"
+#include <QImage>
 
-#include <QtNetwork/QTcpSocket>
-#include <QQueue>
-
-using dc::Event;
-using dc::PixelStreamSegment;
-using dc::PixelStreamSegmentParameters;
-
-class NetworkListenerThread : public EventReceiver
+GLTexture2D::GLTexture2D()
+    : textureId_(0)
 {
-    Q_OBJECT
+}
 
-public:
+GLTexture2D::~GLTexture2D()
+{
+    free();
+}
 
-    NetworkListenerThread(int socketDescriptor);
-    ~NetworkListenerThread();
 
-public slots:
+bool GLTexture2D::init(const QImage image)
+{
+    if(textureId_)
+        return false;
 
-    void processEvent(Event evt);
-    void pixelStreamerClosed(QString uri);
+    glGenTextures(1, &textureId_);
+    glBindTexture(GL_TEXTURE_2D, textureId_);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width(), image.height(),
+                 0, GL_RGBA, GL_UNSIGNED_BYTE, image.bits());
 
-    void eventRegistrationReply(QString uri, bool success);
+    size_ = image.size();
 
-signals:
+    return true;
+}
 
-    void finished();
+void GLTexture2D::free()
+{
+    if(textureId_)
+    {
+        glDeleteTextures(1, &textureId_);
+        textureId_ = 0;
+        size_ = QSize();
+    }
+}
 
-    void receivedAddPixelStreamSource(QString uri, size_t sourceIndex);
-    void receivedPixelStreamSegement(QString uri, size_t SourceIndex, PixelStreamSegment segment);
-    void receivedPixelStreamFinishFrame(QString uri, size_t SourceIndex);
-    void receivedRemovePixelStreamSource(QString uri, size_t sourceIndex);
+void GLTexture2D::update(const QImage image)
+{
+    if (size_ != image.size())
+    {
+        free();
+        init(image);
+    }
+    else
+    {
+        glBindTexture(GL_TEXTURE_2D, textureId_);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image.width(), image.height(),
+                        GL_RGBA, GL_UNSIGNED_BYTE, image.bits());
+    }
+}
 
-    void registerToEvents(QString uri, bool exclusive, EventReceiver* receiver);
+QSize GLTexture2D::getSize() const
+{
+    return size_;
+}
 
-    void receivedCommand(QString command, QString senderUri);
+void GLTexture2D::bind()
+{
+    glBindTexture(GL_TEXTURE_2D, textureId_);
+}
 
-    /** @internal */
-    void dataAvailable();
-
-private slots:
-
-    void initialize();
-    void process();
-    void socketReceiveMessage();
-
-private:
-
-    int socketDescriptor_;
-    QTcpSocket* tcpSocket_;
-
-    QString pixelStreamUri_;
-
-    bool registeredToEvents_;
-    QQueue<Event> events_;
-
-    MessageHeader receiveMessageHeader();
-    QByteArray receiveMessageBody(const int size);
-
-    void handleMessage(const MessageHeader& messageHeader, const QByteArray& byteArray);
-    void handlePixelStreamMessage(const QString& uri, const QByteArray& byteArray);
-
-    void sendProtocolVersion();
-    void sendBindReply(const bool successful);
-    void send(const Event &evt);
-    void sendQuit();
-    bool send(const MessageHeader& messageHeader);
-};
-
-#endif
+bool GLTexture2D::isValid() const
+{
+    return textureId_ != 0;
+}

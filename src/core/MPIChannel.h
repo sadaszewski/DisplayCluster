@@ -42,16 +42,13 @@
 
 #include "types.h"
 
-#include "PixelStreamSegment.h"
 #include "Factory.hpp"
-#include "PixelStream.h"
 
 #include <QObject>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <mpi.h>
 
 struct MessageHeader;
-using dc::PixelStreamSegment;
 
 /**
  * Handle MPI communications between all DisplayCluster instances.
@@ -100,13 +97,6 @@ public:
     void receiveMessages();
 
     /**
-     * Rank 0: Send pixel stream segments to ranks 1-N
-     * @param segments The segements to be sent
-     * @param uri The uri associated with the segments
-     */
-    void send(const std::vector<PixelStreamSegment>& segments, const QString& uri);
-
-    /**
      * Rank0: Calibrate the offset between its local clock and the rank1 clock.
      * @note The rank1 clock is used across ranks 1-N.
      */
@@ -140,6 +130,12 @@ public slots:
      */
     void send(OptionsPtr options);
 
+    /**
+     * Rank 0: Send pixel stream frame to ranks 1-N
+     * @param frame The frame to send
+     */
+    void send(PixelStreamFramePtr frame);
+
 signals:
     /**
      * Rank 1-N: Emitted when a displayGroup was recieved
@@ -154,6 +150,13 @@ signals:
      * @param options The options that was received
      */
     void received(OptionsPtr options);
+
+    /**
+     * Rank 1-N: Emitted when a new PixelStream frame was recieved
+     * @see receiveMessages()
+     * @param frame The frame that was received
+     */
+    void received(PixelStreamFramePtr frame);
 
 private:
     int mpiRank_;
@@ -170,6 +173,7 @@ private:
     DisplayGroupManagerPtr receiveDisplayGroup(const MessageHeader& messageHeader);
     OptionsPtr receiveOptions(const MessageHeader& messageHeader);
     void receivePixelStreams(const MessageHeader& messageHeader);
+
     // TODO remove content dimension requests (DISCL-21)
     void receiveContentsDimensionsRequest();
     // Storing the DisplayGroup (on Rank1) to serve contentDimensionsRequests

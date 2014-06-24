@@ -44,11 +44,12 @@
 
 #include "ContentWindowRenderer.h"
 #include "MarkerRenderer.h"
+#include "Renderable.h"
 
 /**
  * Renders a DisplayGroup.
  */
-class DisplayGroupRenderer
+class DisplayGroupRenderer : public Renderable
 {
 public:
     /** Constructor */
@@ -56,7 +57,7 @@ public:
                          RenderContext& renderContext, FactoriesPtr factories);
 
     /** Render the DisplayGroup */
-    void render();
+    virtual void render();
 
     /** Set the DisplayGroup to render, replacing the previous one. */
     void setDisplayGroup(DisplayGroupManagerPtr displayGroup);

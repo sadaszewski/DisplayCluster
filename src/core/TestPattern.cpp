@@ -1,5 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
+/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -36,80 +37,81 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef NETWORK_LISTENER_THREAD_H
-#define NETWORK_LISTENER_THREAD_H
+#include "TestPattern.h"
 
-#include "MessageHeader.h"
-#include "Event.h"
-#include "PixelStreamSegment.h"
-#include "EventReceiver.h"
+#include "configuration/WallConfiguration.h"
 
-#include <QtNetwork/QTcpSocket>
-#include <QQueue>
+#include <QString>
+#include <QFont>
+#include <QGLWidget>
 
-using dc::Event;
-using dc::PixelStreamSegment;
-using dc::PixelStreamSegmentParameters;
+#define FONT_SIZE   24
+#define LINE_WIDTH  10
+#define TEXT_POS_X  50
 
-class NetworkListenerThread : public EventReceiver
+TestPattern::TestPattern(QGLWidget* widget,
+                         const WallConfiguration* configuration,
+                         const int rank,
+                         const int tileIndex)
+    : glWindow_(widget)
 {
-    Q_OBJECT
+    const QPoint globalScreenIndex = configuration->getGlobalScreenIndex(tileIndex);
+    const QString fullsceenMode = configuration->getFullscreen() ? "True" : "False";
 
-public:
+    labels_.push_back(QString("Rank: %1").arg(rank));
+    labels_.push_back(QString("Host: %1").arg(configuration->getHost()));
+    labels_.push_back(QString("Display: %1").arg(configuration->getDisplay()));
+    labels_.push_back(QString("Tile coordinates: (%1,%2)").arg(globalScreenIndex.x()).arg(globalScreenIndex.y()));
+    labels_.push_back(QString("Resolution: %1 x %2").arg(configuration->getScreenWidth()).arg(configuration->getScreenWidth()));
+    labels_.push_back(QString("Fullscreen mode: %1").arg(fullsceenMode));
+}
 
-    NetworkListenerThread(int socketDescriptor);
-    ~NetworkListenerThread();
+void TestPattern::render()
+{
+    glPushAttrib(GL_CURRENT_BIT | GL_LINE_BIT);
+    glPushMatrix();
 
-public slots:
+    renderCrossPattern();
 
-    void processEvent(Event evt);
-    void pixelStreamerClosed(QString uri);
+    // screen information in front of cross pattern
+    glTranslatef(0., 0., 0.1);
 
-    void eventRegistrationReply(QString uri, bool success);
+    renderLabels();
 
-signals:
+    glPopMatrix();
+    glPopAttrib();
+}
 
-    void finished();
+void TestPattern::renderCrossPattern()
+{
+    glLineWidth(LINE_WIDTH);
 
-    void receivedAddPixelStreamSource(QString uri, size_t sourceIndex);
-    void receivedPixelStreamSegement(QString uri, size_t SourceIndex, PixelStreamSegment segment);
-    void receivedPixelStreamFinishFrame(QString uri, size_t SourceIndex);
-    void receivedRemovePixelStreamSource(QString uri, size_t sourceIndex);
+    glBegin(GL_LINES);
 
-    void registerToEvents(QString uri, bool exclusive, EventReceiver* receiver);
+    for(double y_coord=-1.; y_coord<=2.; y_coord+=0.1)
+    {
+        QColor color = QColor::fromHsvF((y_coord + 1.)/3., 1., 1.);
+        glColor3f(color.redF(), color.greenF(), color.blueF());
 
-    void receivedCommand(QString command, QString senderUri);
+        glVertex2d(0., y_coord);
+        glVertex2d(1., y_coord+1.);
 
-    /** @internal */
-    void dataAvailable();
+        glVertex2d(0., y_coord);
+        glVertex2d(1., y_coord-1.);
+    }
 
-private slots:
+    glEnd();
+}
 
-    void initialize();
-    void process();
-    void socketReceiveMessage();
+void TestPattern::renderLabels()
+{
+    QFont textFont;
+    textFont.setPixelSize(FONT_SIZE);
 
-private:
+    glColor3f(1.,1.,1.);
 
-    int socketDescriptor_;
-    QTcpSocket* tcpSocket_;
-
-    QString pixelStreamUri_;
-
-    bool registeredToEvents_;
-    QQueue<Event> events_;
-
-    MessageHeader receiveMessageHeader();
-    QByteArray receiveMessageBody(const int size);
-
-    void handleMessage(const MessageHeader& messageHeader, const QByteArray& byteArray);
-    void handlePixelStreamMessage(const QString& uri, const QByteArray& byteArray);
-
-    void sendProtocolVersion();
-    void sendBindReply(const bool successful);
-    void send(const Event &evt);
-    void sendQuit();
-    bool send(const MessageHeader& messageHeader);
-};
-
-#endif
+    unsigned int pos = 0;
+    foreach (QString label, labels_) {
+        glWindow_->renderText(TEXT_POS_X, ++pos * FONT_SIZE, label, textFont);
+    }
+}

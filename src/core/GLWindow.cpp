@@ -44,7 +44,7 @@
 #include "configuration/WallConfiguration.h"
 #include "ContentWindowManager.h"
 #include "DisplayGroupManager.h"
-#include "DisplayGroupRenderer.h"
+#include "Renderable.h"
 #include "RenderContext.h"
 #include "log.h"
 #include <QtOpenGL>
@@ -102,9 +102,14 @@ void GLWindow::purgeTextures()
     purgeTextureIds_.clear();
 }
 
-void GLWindow::addRenderable(DisplayGroupRendererPtr renderable)
+void GLWindow::addRenderable(RenderablePtr renderable)
 {
     renderables_.append(renderable);
+}
+
+void GLWindow::setTestPattern(RenderablePtr testPattern)
+{
+    testPattern_ = testPattern;
 }
 
 void GLWindow::initializeGL()
@@ -116,18 +121,18 @@ void GLWindow::initializeGL()
 
 void GLWindow::paintGL()
 {
-    OptionsPtr options = g_configuration->getOptions();
+    OptionsPtr options = configuration_->getOptions();
 
     clear(options->getBackgroundColor());
     setOrthographicView();
 
     if(options->getShowTestPattern())
     {
-        renderTestPattern();
+        testPattern_->render();
         return;
     }
 
-    foreach (DisplayGroupRendererPtr renderable, renderables_) {
+    foreach (RenderablePtr renderable, renderables_) {
         renderable->render();
     }
 
@@ -336,67 +341,6 @@ void GLWindow::drawRectangle(double x, double y, double w, double h)
     glVertex2d(x,y+h);
 
     glEnd();
-}
-
-void GLWindow::renderTestPattern()
-{
-    glPushAttrib(GL_CURRENT_BIT | GL_LINE_BIT);
-    glPushMatrix();
-
-    // cross pattern
-    glLineWidth(10);
-
-    glBegin(GL_LINES);
-
-    for(double y_coord=-1.; y_coord<=2.; y_coord+=0.1)
-    {
-        QColor color = QColor::fromHsvF((y_coord + 1.)/3., 1., 1.);
-        glColor3f(color.redF(), color.greenF(), color.blueF());
-
-        glVertex2d(0., y_coord);
-        glVertex2d(1., y_coord+1.);
-
-        glVertex2d(0., y_coord);
-        glVertex2d(1., y_coord-1.);
-    }
-
-    glEnd();
-
-    // screen information in front of cross pattern
-    glTranslatef(0., 0., 0.1);
-
-    QString label1 = "Rank: " + QString::number(g_mpiChannel->getRank());
-    QString label2 = "Host: " + configuration_->getHost();
-    QString label3 = "Display: " + configuration_->getDisplay();
-    QString label4 = "Tile coordinates: (" + QString::number(configuration_->getGlobalScreenIndex(tileIndex_).x()) + ", " + QString::number(configuration_->getGlobalScreenIndex(tileIndex_).y()) + ")";
-    QString label5 = "Resolution: " + QString::number(configuration_->getScreenWidth()) + " x " + QString::number(configuration_->getScreenHeight());
-    QString label6 = "Fullscreen mode: ";
-
-    if(configuration_->getFullscreen())
-    {
-        label6 += "True";
-    }
-    else
-    {
-        label6 += "False";
-    }
-
-    int fontSize = 64;
-
-    QFont textFont;
-    textFont.setPixelSize(fontSize);
-
-    glColor3f(1.,1.,1.);
-
-    renderText(50, 1*fontSize, label1, textFont);
-    renderText(50, 2*fontSize, label2, textFont);
-    renderText(50, 3*fontSize, label3, textFont);
-    renderText(50, 4*fontSize, label4, textFont);
-    renderText(50, 5*fontSize, label5, textFont);
-    renderText(50, 6*fontSize, label6, textFont);
-
-    glPopMatrix();
-    glPopAttrib();
 }
 
 void GLWindow::drawFps()

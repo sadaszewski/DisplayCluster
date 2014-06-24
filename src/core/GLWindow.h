@@ -74,8 +74,11 @@ public:
     /** Delete the textures added with insertPurgeTextureId()/ */
     void purgeTextures();
 
-    /** Add a renderable, currently only supports DisplayGroupRenderer. */
-    void addRenderable(DisplayGroupRendererPtr renderable);
+    /** Add an object to be rendered. */
+    void addRenderable(RenderablePtr renderable);
+
+    /** Set the test pattern renderable */
+    void setTestPattern(RenderablePtr testPattern);
 
     /**
      * Is the given region visible in this window.
@@ -121,7 +124,8 @@ private:
 
     FpsCounter fpsCounter_;
 
-    QList<DisplayGroupRendererPtr> renderables_;
+    QList<RenderablePtr> renderables_;
+    RenderablePtr testPattern_;
 
     void clear(const QColor& clearColor);
     void setOrthographicView();
@@ -130,7 +134,6 @@ private:
     void renderSkeletons(const std::vector< boost::shared_ptr<SkeletonState> >& skeletons);
 #endif
 
-    void renderTestPattern();
     void drawFps();
 };
 
