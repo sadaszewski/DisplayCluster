@@ -41,9 +41,8 @@
 #include "MPIChannel.h"
 #include "RenderContext.h"
 #include "GLWindow.h"
-#include "log.h"
-
 #include "FFMPEGMovie.h"
+#include "log.h"
 
 Movie::Movie(QString uri)
     : ffmpegMovie_(new FFMPEGMovie(uri))

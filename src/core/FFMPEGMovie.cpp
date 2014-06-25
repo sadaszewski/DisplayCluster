@@ -47,6 +47,9 @@
 
 #define INVALID_STREAM_INDEX -1
 
+#pragma clang diagnostic ignored "-Wdeprecated"
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 FFMPEGMovie::FFMPEGMovie(const QString& uri)
     : avFormatContext_(0)
     , videoCodecContext_(0)
