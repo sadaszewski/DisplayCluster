@@ -347,8 +347,8 @@ void DynamicTexture::render(const QRectF& texCoords)
 
     if(getProjectedPixelArea(true) > 0. &&
        getProjectedPixelArea(false) > TEXTURE_SIZE*TEXTURE_SIZE &&
-       (getRoot()->imageSize_.width() / pow(2,depth_) > TEXTURE_SIZE ||
-        getRoot()->imageSize_.height() / pow(2,depth_) > TEXTURE_SIZE))
+       (getRoot()->imageSize_.width() / (1 << depth_) > TEXTURE_SIZE ||
+        getRoot()->imageSize_.height() / (1 << depth_) > TEXTURE_SIZE))
     {
         renderChildren(texCoords);
         renderedChildren_ = true;
@@ -718,17 +718,8 @@ double DynamicTexture::getProjectedPixelArea(const bool onScreenOnly)
         if(onScreenOnly)
         {
             // clamp to on-screen portion
-            if(xWin[i][0] < 0.)
-                xWin[i][0] = 0.;
-
-            if(xWin[i][0] > (double)renderContext_->getGLWindow()->width())
-                xWin[i][0] = (double)renderContext_->getGLWindow()->width();
-
-            if(xWin[i][1] < 0.)
-                xWin[i][1] = 0.;
-
-            if(xWin[i][1] > (double)renderContext_->getGLWindow()->height())
-                xWin[i][1] = (double)renderContext_->getGLWindow()->height();
+            xWin[i][0] = std::min( std::max( xWin[i][0], 0. ), (double)renderContext_->getGLWindow()->width() );
+            xWin[i][1] = std::min( std::max( xWin[i][1], 0. ), (double)renderContext_->getGLWindow()->height() );
         }
     }
 

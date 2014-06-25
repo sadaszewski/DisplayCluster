@@ -55,7 +55,7 @@ DisplayGroupManager::DisplayGroupManager()
     qRegisterMetaType<PixelStreamFramePtr>("PixelStreamFramePtr");
 
 #if ENABLE_SKELETON_SUPPORT
-    qRegisterMetaType<std::vector< boost::shared_ptr<SkeletonState> > >("std::vector< boost::shared_ptr<SkeletonState> >");
+    qRegisterMetaType<SkeletonStatePtrs("SkeletonStatePtrs");
 #endif
 }
 
@@ -92,7 +92,7 @@ void DisplayGroupManager::deleteMarkers()
 }
 
 #if ENABLE_SKELETON_SUPPORT
-std::vector<boost::shared_ptr<SkeletonState> > DisplayGroupManager::getSkeletons()
+SkeletonStatePtrs DisplayGroupManager::getSkeletons()
 {
     return skeletons_;
 }
@@ -208,7 +208,7 @@ void DisplayGroupManager::sendDisplayGroup()
 }
 
 #if ENABLE_SKELETON_SUPPORT
-void DisplayGroupManager::setSkeletons(std::vector< boost::shared_ptr<SkeletonState> > skeletons)
+void DisplayGroupManager::setSkeletons(SkeletonStatePtrs skeletons)
 {
     skeletons_ = skeletons;
 

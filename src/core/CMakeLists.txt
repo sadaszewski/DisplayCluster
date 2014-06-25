@@ -43,10 +43,12 @@ if(ENABLE_SKELETON_SUPPORT)
   include_directories(SYSTEM ${OpenNI_INCLUDE_DIRS}) # use SYSTEM to suppress OpenNI compile warnings
   list(APPEND CORE_LIBRARY_LIBS ${OpenNI_LIBRARIES})
 
-  list(APPEMD SRCS
+  list(APPEND SRCS
     SkeletonThread.cpp
     SkeletonSensor.cpp
-    SkeletonState.cpp)
+    SkeletonState.cpp
+    SkeletonRenderer.cpp
+  )
 
   if(NOT ENABLE_JOYSTICK_SUPPORT)
     list(APPEMD SRCS DisplayGroupJoystick.cpp)

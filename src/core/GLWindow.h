@@ -91,12 +91,6 @@ public:
     /** Used by PDF and SVG renderers */
     QRectF getProjectedPixelRect(const bool clampToWindowArea) const;
 
-    /** Draw an un-textured rectangle.
-     * @param x,y postion
-     * @param w,h dimensions
-     */
-    static void drawRectangle(double x, double y, double w, double h);
-
 protected:
     ///@{
     /** Overloaded methods from QGLWidget */
@@ -129,11 +123,6 @@ private:
 
     void clear(const QColor& clearColor);
     void setOrthographicView();
-#if ENABLE_SKELETON_SUPPORT
-    bool setPerspectiveView(double x=0., double y=0., double w=1., double h=1.);
-    void renderSkeletons(const std::vector< boost::shared_ptr<SkeletonState> >& skeletons);
-#endif
-
     void drawFps();
 };
 

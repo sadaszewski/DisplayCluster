@@ -1,6 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2013, EPFL/Blue Brain Project                       */
-/*                     Daniel Nachbaur <daniel.nachbaur@epfl.ch>     */
+/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -37,56 +37,25 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef TYPES_H
-#define TYPES_H
+#ifndef SKELETONRENDERER_H
+#define SKELETONRENDERER_H
 
-#include <vector>
-#include <boost/shared_ptr.hpp>
+#include "types.h"
 
-class Content;
-class ContentWindowManager;
-class DisplayGroupManager;
-class DisplayGroupManagerAdapter;
-class DynamicTexture;
-class Options;
-class Marker;
-class GLWindow;
-class MPIChannel;
-class PixelStreamWindowManager;
-class Factories;
-class Renderable;
-class DisplayGroupRenderer;
-class FactoryObject;
-class PixelStreamFrame;
-class SkeletonState;
-
-namespace dc
+/**
+ * Render Skeletons
+ */
+class SkeletonRenderer
 {
-struct PixelStreamSegment;
-}
-using dc::PixelStreamSegment;
+public:
+    /** Constructor */
+    SkeletonRenderer();
 
-typedef boost::shared_ptr< Content > ContentPtr;
-typedef boost::shared_ptr< ContentWindowManager > ContentWindowManagerPtr;
-typedef boost::shared_ptr< DisplayGroupManager > DisplayGroupManagerPtr;
-typedef boost::shared_ptr< DisplayGroupManagerAdapter > DisplayGroupManagerAdapterPtr;
-typedef boost::shared_ptr< DynamicTexture > DynamicTexturePtr;
-typedef boost::shared_ptr< Options > OptionsPtr;
-typedef boost::shared_ptr<Marker> MarkerPtr;
-typedef boost::shared_ptr<GLWindow> GLWindowPtr;
-typedef boost::shared_ptr<MPIChannel> MPIChannelPtr;
-typedef boost::shared_ptr<Factories> FactoriesPtr;
-typedef boost::shared_ptr<Renderable> RenderablePtr;
-typedef boost::shared_ptr<DisplayGroupRenderer> DisplayGroupRendererPtr;
-typedef boost::shared_ptr<FactoryObject> FactoryObjectPtr;
-typedef boost::shared_ptr<PixelStreamFrame> PixelStreamFramePtr;
-typedef boost::shared_ptr<SkeletonState> SkeletonStatePtr;
+    /** Render a list of skeletons as an overlay */
+    void render(const SkeletonStatePtrs& skeletons);
 
-typedef std::vector< ContentWindowManagerPtr > ContentWindowManagerPtrs;
-typedef std::vector<MarkerPtr> MarkerPtrs;
-typedef std::vector<GLWindowPtr> GLWindowPtrs;
-typedef std::vector<PixelStreamSegment> PixelStreamSegments;
-typedef std::vector<SkeletonStatePtr> SkeletonStatePtrs;
+private:
+    bool setPerspectiveView(double x=0., double y=0., double w=1., double h=1.);
+};
 
-
-#endif
+#endif // SKELETONRENDERER_H

@@ -47,12 +47,22 @@
 #include "GLWindow.h"
 #include "Factories.h"
 
-ContentWindowRenderer::ContentWindowRenderer()
+#define CONTEXT_VIEW_REL_SIZE       0.25f
+#define CONTEXT_VIEW_PADDING        0.02f
+#define CONTEXT_VIEW_DELTA_Z        0.001f
+#define CONTEXT_VIEW_ALPHA          0.5f
+#define CONTEXT_VIEW_BORDER_WIDTH   5.f
+
+ContentWindowRenderer::ContentWindowRenderer(FactoriesPtr factories)
+    : factories_(factories)
 {
 }
 
-void ContentWindowRenderer::render(ContentWindowManagerPtr window, FactoriesPtr factories)
+void ContentWindowRenderer::render()
 {
+    if(!window_)
+        return;
+
     bool showWindowBorders = true;
     bool showZoomContext = false;
 
@@ -62,126 +72,134 @@ void ContentWindowRenderer::render(ContentWindowManagerPtr window, FactoriesPtr 
         showZoomContext = g_configuration->getOptions()->getShowZoomContext();
     }
 
-    renderContent(window, factories, showZoomContext);
+    renderContent(showZoomContext);
 
-    if(showWindowBorders || window->selected())
-        renderWindowBorder(window);
+    if(showWindowBorders || window_->selected())
+        renderWindowBorder();
 }
 
-void ContentWindowRenderer::renderWindowBorder(ContentWindowManagerPtr window)
+void ContentWindowRenderer::setContentWindow(ContentWindowManagerPtr window)
+{
+    window_ = window;
+}
+
+void ContentWindowRenderer::renderWindowBorder()
 {
     double horizontalBorder = 5. / (double)g_configuration->getTotalHeight(); // 5 pixels
 
-    // enlarge the border if we're highlighted
-    if(window->getHighlighted())
+    if(window_->getHighlighted())
         horizontalBorder *= 4.;
 
     double verticalBorder = horizontalBorder / g_configuration->getAspectRatio();
 
     glPushAttrib(GL_CURRENT_BIT);
 
-    // color the border based on window state
-    if(window->selected())
+    if(window_->selected())
         glColor4f(1,0,0,1);
     else
         glColor4f(1,1,1,1);
 
-    const QRectF coordinates = window->getCoordinates();
-    GLWindow::drawRectangle(coordinates.x()-verticalBorder, coordinates.y()-horizontalBorder,
-                            coordinates.width()+2.*verticalBorder, coordinates.height()+2.*horizontalBorder);
+    const QRectF winCoord = window_->getCoordinates();
+
+    drawQuad(QRectF(winCoord.x() - verticalBorder,
+                    winCoord.y() - horizontalBorder,
+                    winCoord.width() + 2.f*verticalBorder,
+                    winCoord.height() + 2.f*horizontalBorder));
 
     glPopAttrib();
 }
 
-void ContentWindowRenderer::renderContent(ContentWindowManagerPtr window,
-                                          FactoriesPtr factories,
-                                          const bool showZoomContext)
+void ContentWindowRenderer::renderContent(const bool showZoomContext)
 {
-    double x, y, w, h;
-    window->getCoordinates(x, y, w, h);
-
-    double centerX, centerY;
-    window->getCenter(centerX, centerY);
-
-    double zoom = window->getZoom();
-
-    // calculate texture coordinates
-    float tX = centerX - 0.5 / zoom;
-    float tY = centerY - 0.5 / zoom;
-    float tW = 1./zoom;
-    float tH = 1./zoom;
+    const QRectF winCoord = window_->getCoordinates();
+    const QRectF texCoord = getTexCoord();
 
     // transform to a normalize coordinate system so the content
     // can be rendered at (x,y,w,h) = (0,0,1,1)
     glPushMatrix();
 
-    glTranslatef(x, y, 0.);
-    glScalef(w, h, 1.);
+    glTranslatef(winCoord.x(), winCoord.y(), 0.f);
+    glScalef(winCoord.width(), winCoord.height(), 1.f);
 
-    // render the factory object
-    FactoryObjectPtr object = factories->getFactoryObject(window->getContent());
-    object->render(QRectF(tX, tY, tW, tH));
+    FactoryObjectPtr object = factories_->getFactoryObject(window_->getContent());
+    object->render(texCoord);
 
-    // render the context view
-    if(showZoomContext && zoom > 1.)
-    {
-        float sizeFactor = 0.25;
-        float padding = 0.02;
-        float deltaZ = 0.001;
-        float alpha = 0.5;
-        float borderPixels = 5.;
-
-        glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT | GL_LINE_BIT);
-        glPushMatrix();
-
-        // position at lower left
-        glTranslatef(padding, 1. - sizeFactor - padding, deltaZ);
-        glScalef(sizeFactor, sizeFactor, 1.);
-
-        // render border rectangle
-        glColor4f(1,1,1,1);
-
-        glLineWidth(borderPixels);
-
-        glBegin(GL_LINE_LOOP);
-
-        glVertex2d(0., 0.);
-        glVertex2d(1., 0.);
-        glVertex2d(1., 1.);
-        glVertex2d(0., 1.);
-
-        glEnd();
-
-        // render the factory object (full view)
-        glTranslatef(0., 0., deltaZ);
-        object->render(QRectF(0., 0., 1., 1.));
-
-        // draw context rectangle border
-        glTranslatef(0., 0., deltaZ);
-
-        glLineWidth(borderPixels);
-
-        glBegin(GL_LINE_LOOP);
-
-        glVertex2d(tX, tY);
-        glVertex2d(tX + tW, tY);
-        glVertex2d(tX + tW, tY + tH);
-        glVertex2d(tX, tY + tH);
-
-        glEnd();
-
-        // draw context rectangle blended
-        glTranslatef(0., 0., deltaZ);
-
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        glColor4f(1.,1.,1., alpha);
-        GLWindow::drawRectangle(tX, tY, tW, tH);
-
-        glPopMatrix();
-        glPopAttrib();
-    }
+    if(showZoomContext && window_->getZoom() > 1.)
+        renderContextView(object, texCoord);
 
     glPopMatrix();
+}
+
+QRectF ContentWindowRenderer::getTexCoord() const
+{
+    double centerX, centerY;
+    window_->getCenter(centerX, centerY);
+
+    const double zoom = window_->getZoom();
+
+    return QRectF(centerX - 0.5/zoom, centerY - 0.5/zoom, 1./zoom, 1./zoom);
+}
+
+void ContentWindowRenderer::renderContextView(FactoryObjectPtr object,
+                                              const QRectF& texCoord)
+{
+    const QRectF unitRect(0.f, 0.f, 1.f, 1.f);
+
+    glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT | GL_LINE_BIT);
+    glPushMatrix();
+
+    // position at lower left
+    glTranslatef(CONTEXT_VIEW_PADDING,
+                 1.f - CONTEXT_VIEW_REL_SIZE - CONTEXT_VIEW_PADDING,
+                 CONTEXT_VIEW_DELTA_Z);
+    glScalef(CONTEXT_VIEW_REL_SIZE, CONTEXT_VIEW_REL_SIZE, 1.f);
+
+    // render border rectangle
+    glColor4f(1,1,1,1);
+    drawQuadBorder(unitRect, CONTEXT_VIEW_BORDER_WIDTH);
+
+    // render the factory object (full view)
+    glTranslatef(0.f, 0.f, CONTEXT_VIEW_DELTA_Z);
+    object->render(unitRect);
+
+    glTranslatef(0.f, 0.f, CONTEXT_VIEW_DELTA_Z);
+    drawQuadBorder(texCoord, CONTEXT_VIEW_BORDER_WIDTH);
+
+    // draw context rectangle blended
+    glTranslatef(0.f, 0.f, CONTEXT_VIEW_DELTA_Z);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glColor4f(1.f, 1.f, 1.f, CONTEXT_VIEW_ALPHA);
+    drawQuad(texCoord);
+
+    glPopMatrix();
+    glPopAttrib();
+}
+
+void ContentWindowRenderer::drawQuad(const QRectF& coord)
+{
+    glBegin(GL_QUADS);
+
+    glVertex2f(coord.x(), coord.y());
+    glVertex2f(coord.x() + coord.width(), coord.y());
+    glVertex2f(coord.x() + coord.width(), coord.y() + coord.height());
+    glVertex2f(coord.x(), coord.y() + coord.height());
+
+    glEnd();
+}
+
+void ContentWindowRenderer::drawQuadBorder(const QRectF& coord, const float width)
+{
+    glLineWidth(width);
+
+    glBegin(GL_LINE_LOOP);
+
+    glVertex2f(coord.x(), coord.y());
+    glVertex2f(coord.x() + coord.width(), coord.y());
+    glVertex2f(coord.x() + coord.width(), coord.y() + coord.height());
+    glVertex2f(coord.x(), coord.y() + coord.height());
+
+    glEnd();
 }

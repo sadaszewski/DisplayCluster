@@ -46,6 +46,10 @@
 #include "MarkerRenderer.h"
 #include "Renderable.h"
 
+#if ENABLE_SKELETON_SUPPORT
+#include "SkeletonRenderer.h"
+#endif
+
 /**
  * Renders a DisplayGroup.
  */
@@ -53,13 +57,18 @@ class DisplayGroupRenderer : public Renderable
 {
 public:
     /** Constructor */
-    DisplayGroupRenderer(DisplayGroupManagerPtr displayGroup,
-                         RenderContext& renderContext, FactoriesPtr factories);
+    DisplayGroupRenderer(RenderContext& renderContext, FactoriesPtr factories);
 
-    /** Render the DisplayGroup */
+    /**
+     * Render the associated DisplayGroup.
+     * @see setDisplayGroup()
+     */
     virtual void render();
 
-    /** Set the DisplayGroup to render, replacing the previous one. */
+    /**
+     * Set the DisplayGroup to render, replacing the previous one.
+     * @see render()
+     */
     void setDisplayGroup(DisplayGroupManagerPtr displayGroup);
 
 private:
@@ -67,6 +76,9 @@ private:
     DisplayGroupManagerPtr displayGroup_;
     ContentWindowRenderer windowRenderer_;
     MarkerRenderer markerRenderer_;
+#if ENABLE_SKELETON_SUPPORT
+    SkeletonRenderer skeletonRenderer_;
+#endif
 
     void renderBackgroundContent(ContentWindowManagerPtr backgroundContentWindow);
     void renderContentWindows(ContentWindowManagerPtrs contentWindowManagers);

@@ -37,16 +37,13 @@
 /*********************************************************************/
 
 #include "GLWindow.h"
-#include "globals.h"
-#include "Options.h"
-#include "MPIChannel.h"
-#include "Marker.h"
-#include "configuration/WallConfiguration.h"
-#include "ContentWindowManager.h"
-#include "DisplayGroupManager.h"
-#include "Renderable.h"
-#include "RenderContext.h"
+
 #include "log.h"
+#include "globals.h"
+#include "configuration/WallConfiguration.h"
+#include "Options.h"
+#include "Renderable.h"
+
 #include <QtOpenGL>
 #include <boost/shared_ptr.hpp>
 
@@ -138,11 +135,6 @@ void GLWindow::paintGL()
 
     if (options->getShowStreamingStatistics())
         drawFps();
-
-#if ENABLE_SKELETON_SUPPORT
-    if(options->getShowSkeletons())
-        renderSkeletons(displayGroup_->getSkeletons());
-#endif
 }
 
 void GLWindow::resizeGL(int w, int h)
@@ -204,143 +196,11 @@ void GLWindow::setOrthographicView()
 
 }
 
-#if ENABLE_SKELETON_SUPPORT
-bool GLWindow::setPerspectiveView(double x, double y, double w, double h)
-{
-    // we want a perspective view for an area over the entire display bounded by (x,y,w,h)
-    // this windows area is produced by intersection((left_,right_,bottom_,top_), (x,y,w,h))
-    // in the current coordinate system, bottom is at the top of the screen, top at the bottom...
-    QRectF screenRect = QRectF(left_, bottom_, right_-left_, top_-bottom_);
-    QRectF windowRect = QRectF(x, y, w, h);
-    QRectF boundRect = screenRect.intersected(windowRect);
-
-    // if bounding rectangle is empty, return false to indicate no rendering should be done
-    if(boundRect.isEmpty() == true)
-    {
-        return false;
-    }
-
-    if(boundRect != screenRect)
-    {
-        // x,y for viewport is lower-left corner
-        // the y coordinate needs to be shifted from the top of the screen to the bottom, and y-direction inverted
-        int viewPortX = (int)((boundRect.x() - screenRect.x()) / screenRect.width() * width());
-        int viewPortY = (int)((screenRect.height() - (boundRect.y() + boundRect.height() - screenRect.y())) / screenRect.height() * height());
-        int viewPortW = (int)(boundRect.width() / screenRect.width() * width());
-        int viewPortH = (int)(boundRect.height() / screenRect.height() * height());
-
-        glViewport(viewPortX, viewPortY, viewPortW, viewPortH);
-    }
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-
-    double near = 0.001;
-    double far = 100.;
-
-    double aspect = (double)configuration_->getTotalHeight() / (double)configuration_->getTotalWidth() * windowRect.height() / windowRect.width();
-
-    double winFovY = 45.0 * aspect;
-
-    double top = tan(0.5 * winFovY * M_PI/180.) * near;
-    double bottom = -top;
-    double left = 1./aspect * bottom;
-    double right = 1./aspect * top;
-
-    // this window's portion of the entire view above is bounded by (left_, right_) and (bottom_, top_)
-    // the full frustum would be for this screen:
-    // glFrustum(left + left_ * (right-left), left + right_ * (right-left), top + top_ * (bottom-top), top + bottom_ * (bottom-top), near, far);
-    double fLeft = left + (boundRect.x() - windowRect.x()) / windowRect.width() * (right-left);
-    double fRight = fLeft + boundRect.width() / windowRect.width() * (right-left);
-    double fBottom = top + (boundRect.y() - windowRect.y()) / windowRect.height() * (bottom-top);
-    double fTop = fBottom + boundRect.height() / windowRect.height() * (bottom-top);
-
-    glFrustum(fLeft, fRight, fTop, fBottom, near, far);
-
-    glPushMatrix();
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-
-    // don't clear the GL_COLOR_BUFFER_BIT since this may be an overlay. only clear depth
-    glClear(GL_DEPTH_BUFFER_BIT);
-
-    // new lookat matrix
-    glLoadIdentity();
-
-    gluLookAt(0,0,1, 0,0,0, 0,1,0);
-
-    // setup lighting
-    GLfloat LightAmbient[] = { 0.01, 0.01, 0.01, 1.0 };
-    GLfloat LightDiffuse[] = { .5, .5, .5, 1.0 };
-    GLfloat LightSpecular[] = { .9,.9,.9, 1.0 };
-
-    GLfloat LightPosition[] = { 0,0,1000000, 1.0 };
-
-    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, LightAmbient);
-    glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);
-
-    glLightfv(GL_LIGHT1, GL_AMBIENT, LightAmbient);
-    glLightfv(GL_LIGHT1, GL_DIFFUSE, LightDiffuse);
-    glLightfv(GL_LIGHT1, GL_SPECULAR, LightSpecular);
-    glLightfv(GL_LIGHT1, GL_POSITION, LightPosition);
-
-    glEnable(GL_LIGHT1);
-
-    // glEnable(GL_LIGHTING) needs to be called to actually use lighting. ditto for depth testing.
-    // let other code enable / disable such settings so glPushAttrib() and glPopAttrib() can be used appropriately
-
-    return true;
-}
-
-void GLWindow::renderSkeletons(const std::vector< boost::shared_ptr<SkeletonState> >& skeletons)
-{
-    // render perspective overlay for skeletons
-
-    // setPersectiveView() may change the viewport!
-    glPushAttrib(GL_VIEWPORT_BIT | GL_ENABLE_BIT | GL_CURRENT_BIT);
-
-    // set the height of the skeleton view to a fraction of the total display height
-    // set the width to maintain a 16/9 aspect ratio
-    double skeletonViewHeight = 0.4;
-    double skeletonViewWidth = 16./9. / configuration_->getAspectRatio() * skeletonViewHeight;
-
-    // view at the center bottom
-    if(setPerspectiveView(0.5 * (1. - skeletonViewWidth), 1. - skeletonViewHeight, skeletonViewWidth, skeletonViewHeight))
-    {
-        // enable depth testing, lighting, color tracking, and normal normalization (since we're scaling)
-        glEnable(GL_DEPTH_TEST);
-        glEnable(GL_LIGHTING);
-        glEnable(GL_COLOR_MATERIAL);
-        glEnable(GL_NORMALIZE);
-
-        for(unsigned int i = 0; i < skeletons.size(); i++)
-            skeletons[i]->render();
-    }
-
-    glPopAttrib();
-}
-
-#endif
-
 bool GLWindow::isRegionVisible(const QRectF& region) const
 {
-    // screen rectangle
     const QRectF screenRect(left_, bottom_, right_-left_, top_-bottom_);
 
     return screenRect.intersects(region);
-}
-
-void GLWindow::drawRectangle(double x, double y, double w, double h)
-{
-    glBegin(GL_QUADS);
-
-    glVertex2d(x,y);
-    glVertex2d(x+w,y);
-    glVertex2d(x+w,y+h);
-    glVertex2d(x,y+h);
-
-    glEnd();
 }
 
 void GLWindow::drawFps()

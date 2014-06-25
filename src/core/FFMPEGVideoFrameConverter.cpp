@@ -41,7 +41,8 @@
 
 #include "log.h"
 
-FFMPEGVideoFrameConverter::FFMPEGVideoFrameConverter(const AVCodecContext& videoCodecContext, const PixelFormat targetFormat)
+FFMPEGVideoFrameConverter::FFMPEGVideoFrameConverter(const AVCodecContext& videoCodecContext,
+                                                     const PixelFormat targetFormat)
     : swsContext_(0)
     , avFrameRGB_(0)
 {
@@ -84,9 +85,11 @@ FFMPEGVideoFrameConverter::~FFMPEGVideoFrameConverter()
 
 bool FFMPEGVideoFrameConverter::convert(const AVFrame* srcFrame)
 {
-    sws_scale(swsContext_, srcFrame->data, srcFrame->linesize, 0, srcFrame->height,
-              avFrameRGB_->data, avFrameRGB_->linesize);
-    return true;
+    const int output_height = sws_scale(swsContext_, srcFrame->data,
+                                        srcFrame->linesize, 0, srcFrame->height,
+                                        avFrameRGB_->data,
+                                        avFrameRGB_->linesize);
+    return output_height == srcFrame->height;
 }
 
 const uint8_t* FFMPEGVideoFrameConverter::getData() const

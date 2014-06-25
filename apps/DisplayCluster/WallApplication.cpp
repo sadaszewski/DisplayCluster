@@ -54,19 +54,19 @@
 WallApplication::WallApplication(int& argc_, char** argv_, MPIChannelPtr mpiChannel)
     : Application(argc_, argv_)
     , mpiChannel_(mpiChannel)
-    , renderContext_(0)
     , displayGroup_(new DisplayGroupManager)
 {
     WallConfiguration* config = new WallConfiguration(getConfigFilename(),
                                                       mpiChannel_->getRank());
     g_configuration = config;
 
-    renderContext_ = new RenderContext(config);
+    renderContext_.reset(new RenderContext(config));
 
     factories_.reset(new Factories(*renderContext_));
-    displayGroupRenderer_.reset(new DisplayGroupRenderer(displayGroup_,
-                                                         *renderContext_,
+    displayGroupRenderer_.reset(new DisplayGroupRenderer(*renderContext_,
                                                          factories_));
+    displayGroupRenderer_->setDisplayGroup(displayGroup_);
+
     if (mpiChannel_->getRank() == 1)
         mpiChannel_->setFactories(factories_);
 
@@ -102,9 +102,6 @@ WallApplication::~WallApplication()
 {
     // Must be done before destructing the GLWindows to release GL objects
     factories_->clear();
-
-    delete renderContext_;
-    renderContext_ = 0;
 }
 
 void WallApplication::renderFrame()

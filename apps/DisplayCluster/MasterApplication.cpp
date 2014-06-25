@@ -47,11 +47,13 @@
 #include "Options.h"
 
 #if ENABLE_JOYSTICK_SUPPORT
-    #include "JoystickThread.h"
+#include "JoystickThread.h"
+#define JOYSTICK_THREAD_WAIT_TIME_USEC 1000
 #endif
 
 #if ENABLE_SKELETON_SUPPORT
-    #include "SkeletonThread.h"
+#include "SkeletonThread.h"
+#define SKELTON_THREAD_WAIT_TIME_USEC 1000
 #endif
 
 #include "NetworkListener.h"
@@ -74,19 +76,7 @@
 MasterApplication::MasterApplication(int& argc_, char** argv_, MPIChannelPtr mpiChannel)
     : Application(argc_, argv_)
     , mpiChannel_(mpiChannel)
-    , masterWindow_(0)
     , displayGroup_(new DisplayGroupManager)
-    , networkListener_(0)
-    , pixelStreamerLauncher_(0)
-    , pixelStreamWindowManager_(0)
-    , webServiceServer_(0)
-    , textInputDispatcher_(0)
-    #if ENABLE_JOYSTICK_SUPPORT
-        , joystickThread_(0)
-    #endif
-    #if ENABLE_SKELETON_SUPPORT
-        , skeletonThread_(0)
-    #endif
 {
     MasterConfiguration* config = new MasterConfiguration(getConfigFilename());
     g_configuration = config;
@@ -106,44 +96,25 @@ MasterApplication::MasterApplication(int& argc_, char** argv_, MPIChannelPtr mpi
 MasterApplication::~MasterApplication()
 {
 #if ENABLE_SKELETON_SUPPORT
-    delete skeletonThread_;
-    skeletonThread_ = 0;
+    skeletonThread_->stop();
+    skeletonThread_->wait();
 #endif
 
 #if ENABLE_JOYSTICK_SUPPORT
-    delete joystickThread_;
-    joystickThread_ = 0;
+    joystickThread_->stop();
+    joystickThread_->wait();
 #endif
-
-    // Clear all ContentWindows
-    displayGroup_->clear();
-
-    delete masterWindow_;
-    masterWindow_ = 0;
-
-    delete pixelStreamerLauncher_;
-    pixelStreamerLauncher_ = 0;
-    delete networkListener_;
-    networkListener_ = 0;
-
-    delete textInputDispatcher_;
-    textInputDispatcher_ = 0;
 
     webServiceServer_->stop();
     webServiceServer_->wait();
-    delete webServiceServer_;
-    webServiceServer_ = 0;
-
-    delete pixelStreamWindowManager_;
-    pixelStreamWindowManager_ = 0;
 }
 
 
 void MasterApplication::init(const MasterConfiguration* config)
 {
-    masterWindow_ = new MasterWindow(displayGroup_);
+    masterWindow_.reset(new MasterWindow(displayGroup_));
 
-    pixelStreamWindowManager_ = new PixelStreamWindowManager(*displayGroup_);
+    pixelStreamWindowManager_.reset(new PixelStreamWindowManager(*displayGroup_));
 
     initPixelStreamLauncher();
     startNetworkListener(config);
@@ -164,7 +135,7 @@ void MasterApplication::startNetworkListener(const MasterConfiguration* configur
     if (networkListener_)
         return;
 
-    networkListener_ = new NetworkListener(*pixelStreamWindowManager_);
+    networkListener_.reset(new NetworkListener(*pixelStreamWindowManager_));
     connect(networkListener_->getPixelStreamDispatcher(),
             SIGNAL(sendFrame(PixelStreamFramePtr)),
             mpiChannel_.get(),
@@ -186,14 +157,14 @@ void MasterApplication::startWebservice(const int webServicePort)
     if (webServiceServer_)
         return;
 
-    webServiceServer_ = new WebServiceServer(webServicePort);
+    webServiceServer_.reset(new WebServiceServer(webServicePort));
 
     DisplayGroupManagerAdapterPtr adapter(new DisplayGroupManagerAdapter(displayGroup_));
     TextInputHandler* textInputHandler = new TextInputHandler(adapter);
     webServiceServer_->addHandler("/dcapi/textinput", dcWebservice::HandlerPtr(textInputHandler));
 
-    textInputHandler->moveToThread(webServiceServer_);
-    textInputDispatcher_ = new TextInputDispatcher(displayGroup_);
+    textInputHandler->moveToThread(webServiceServer_.get());
+    textInputDispatcher_.reset(new TextInputDispatcher(displayGroup_));
     textInputDispatcher_->connect(textInputHandler, SIGNAL(receivedKeyInput(char)),
                          SLOT(sendKeyEventToActiveWindow(char)));
 
@@ -210,13 +181,13 @@ void MasterApplication::restoreBackground(const MasterConfiguration* configurati
 
 void MasterApplication::initPixelStreamLauncher()
 {
-    pixelStreamerLauncher_ = new PixelStreamerLauncher(*pixelStreamWindowManager_);
+    pixelStreamerLauncher_.reset(new PixelStreamerLauncher(*pixelStreamWindowManager_));
 
-    pixelStreamerLauncher_->connect(masterWindow_, SIGNAL(openWebBrowser(QPointF,QSize,QString)),
+    pixelStreamerLauncher_->connect(masterWindow_.get(), SIGNAL(openWebBrowser(QPointF,QSize,QString)),
                                        SLOT(openWebBrowser(QPointF,QSize,QString)));
-    pixelStreamerLauncher_->connect(masterWindow_, SIGNAL(openDock(QPointF,QSize,QString)),
+    pixelStreamerLauncher_->connect(masterWindow_.get(), SIGNAL(openDock(QPointF,QSize,QString)),
                                        SLOT(openDock(QPointF,QSize,QString)));
-    pixelStreamerLauncher_->connect(masterWindow_, SIGNAL(hideDock()),
+    pixelStreamerLauncher_->connect(masterWindow_.get(), SIGNAL(hideDock()),
                                        SLOT(hideDock()));
 }
 
@@ -232,34 +203,30 @@ void MasterApplication::startJoystickThread()
     }
 
     // create thread to monitor joystick events (all joysticks handled in same event queue)
-    JoystickThread * joystickThread_ = new JoystickThread(displayGroup_);
+    joystickThread_.reset(new JoystickThread(displayGroup_));
     joystickThread_->start();
 
     // wait for thread to start
     while(!joystickThread_->isRunning() || joystickThread_->isFinished())
-    {
-        usleep(1000);
-    }
+        usleep(JOYSTICK_THREAD_WAIT_TIME_USEC);
 }
 #endif
 
 #if ENABLE_SKELETON_SUPPORT
 void MasterApplication::startSkeletonThread()
 {
-    skeletonThread_ = new SkeletonThread(displayGroup_);
+    skeletonThread_.reset(new SkeletonThread(displayGroup_));
     skeletonThread_->start();
 
     // wait for thread to start
     while( !skeletonThread_->isRunning() || skeletonThread_->isFinished() )
-    {
-        usleep(1000);
-    }
+        usleep(SKELTON_THREAD_WAIT_TIME_USEC);
 
     connect(masterWindow_, SIGNAL(enableSkeletonTracking()), skeletonThread_, SLOT(startTimer()));
     connect(masterWindow_, SIGNAL(disableSkeletonTracking()), skeletonThread_, SLOT(stopTimer()));
 
-    connect(skeletonThread_, SIGNAL(skeletonsUpdated(std::vector< boost::shared_ptr<SkeletonState> >)),
-            displayGroup_.get(), SLOT(setSkeletons(std::vector<boost::shared_ptr<SkeletonState> >)),
+    connect(skeletonThread_, SIGNAL(skeletonsUpdated(SkeletonStatePtrs)),
+            displayGroup_.get(), SLOT(setSkeletons(SkeletonStatePtrs)),
             Qt::QueuedConnection);
 }
 #endif

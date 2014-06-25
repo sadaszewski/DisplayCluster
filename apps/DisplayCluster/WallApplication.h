@@ -43,6 +43,7 @@
 #include "Application.h"
 
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/scoped_ptr.hpp>
 
 class WallConfiguration;
 class RenderContext;
@@ -78,7 +79,7 @@ private slots:
 
 private:
     MPIChannelPtr mpiChannel_;
-    RenderContext* renderContext_;
+    boost::scoped_ptr<RenderContext> renderContext_;
     DisplayGroupManagerPtr displayGroup_;
     DisplayGroupRendererPtr displayGroupRenderer_;
     FactoriesPtr factories_;

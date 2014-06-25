@@ -41,6 +41,7 @@
 #define MASTERAPPLICATION_H
 
 #include "Application.h"
+#include <boost/scoped_ptr.hpp>
 
 class MasterWindow;
 class NetworkListener;
@@ -71,20 +72,20 @@ public:
 
 private:
     MPIChannelPtr mpiChannel_;
-    MasterWindow* masterWindow_;
+    boost::scoped_ptr<MasterWindow> masterWindow_;
     DisplayGroupManagerPtr displayGroup_;
-    NetworkListener* networkListener_;
-    PixelStreamerLauncher* pixelStreamerLauncher_;
-    PixelStreamWindowManager* pixelStreamWindowManager_;
-    WebServiceServer* webServiceServer_;
-    TextInputDispatcher* textInputDispatcher_;
+    boost::scoped_ptr<NetworkListener> networkListener_;
+    boost::scoped_ptr<PixelStreamerLauncher> pixelStreamerLauncher_;
+    boost::scoped_ptr<PixelStreamWindowManager> pixelStreamWindowManager_;
+    boost::scoped_ptr<WebServiceServer> webServiceServer_;
+    boost::scoped_ptr<TextInputDispatcher> textInputDispatcher_;
 
 #if ENABLE_JOYSTICK_SUPPORT
-    JoystickThread* joystickThread_;
+    boost::scoped_ptr<JoystickThread> joystickThread_;
 #endif
 
 #if ENABLE_SKELETON_SUPPORT
-    SkeletonThread* skeletonThread_;
+    boost::scoped_ptr<SkeletonThread> skeletonThread_;
 #endif
 
     void init(const MasterConfiguration* config);

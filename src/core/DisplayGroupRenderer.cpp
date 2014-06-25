@@ -43,22 +43,29 @@
 #include "ContentWindowManager.h"
 #include "Marker.h"
 
-DisplayGroupRenderer::DisplayGroupRenderer(DisplayGroupManagerPtr displayGroup,
-                                           RenderContext& renderContext,
+DisplayGroupRenderer::DisplayGroupRenderer(RenderContext& renderContext,
                                            FactoriesPtr factories)
     : factories_(factories)
-    , displayGroup_(displayGroup)
+    , windowRenderer_(factories)
     , markerRenderer_(renderContext)
 {
 }
 
 void DisplayGroupRenderer::render()
 {
+    if(!displayGroup_)
+        return;
+
     renderBackgroundContent(displayGroup_->getBackgroundContentWindow());
     renderContentWindows(displayGroup_->getContentWindowManagers());
 
     // Markers should be rendered last since they're blended
     renderMarkers(displayGroup_->getMarkers());
+
+#if ENABLE_SKELETON_SUPPORT
+    if (g_configuration->getOptions()->getShowSkeletons())
+        skeletonRenderer_.render(displayGroup_->getSkeletons());
+#endif
 }
 
 void DisplayGroupRenderer::setDisplayGroup(DisplayGroupManagerPtr displayGroup)
@@ -74,7 +81,8 @@ void DisplayGroupRenderer::renderBackgroundContent(ContentWindowManagerPtr backg
         glPushMatrix();
         glTranslatef(0., 0., -1.f + std::numeric_limits<float>::epsilon());
 
-        windowRenderer_.render(backgroundContentWindow, factories_);
+        windowRenderer_.setContentWindow(backgroundContentWindow);
+        windowRenderer_.render();
 
         glPopMatrix();
     }
@@ -99,7 +107,8 @@ void DisplayGroupRenderer::renderContentWindows(ContentWindowManagerPtrs content
             glPushMatrix();
             glTranslatef(0.f, 0.f, zCoordinate);
 
-            windowRenderer_.render(*it, factories_);
+            windowRenderer_.setContentWindow(*it);
+            windowRenderer_.render();
 
             glPopMatrix();
         }
@@ -117,4 +126,3 @@ void DisplayGroupRenderer::renderMarkers(const MarkerPtrs& markers)
             markerRenderer_.render(*it);
     }
 }
-

@@ -41,18 +41,44 @@
 #define CONTENTWINDOWRENDERER_H
 
 #include "types.h"
+#include "Renderable.h"
+#include <QRectF>
 
-class ContentWindowRenderer
+/**
+ * Render a ContentWindow and its Content using the associated FactoryObject.
+ */
+class ContentWindowRenderer : public Renderable
 {
 public:
-    ContentWindowRenderer();
+    /**
+     * Constructor.
+     * @param factories Used to retrieve FactoryObjects for rendering Contents.
+     */
+    ContentWindowRenderer(FactoriesPtr factories);
 
-    void render(ContentWindowManagerPtr window, FactoriesPtr factories);
+    /**
+     * Render the associated ContentWindow.
+     * @see setContentWindow()
+     */
+    virtual void render();
+
+    /**
+     * Set the ContentWindow to be rendered.
+     * @see render()
+     */
+    void setContentWindow(ContentWindowManagerPtr window);
 
 private:
-    void renderContent(ContentWindowManagerPtr window, FactoriesPtr factories,
-                       const bool showZoomContext);
-    void renderWindowBorder(ContentWindowManagerPtr window);
+    FactoriesPtr factories_;
+    ContentWindowManagerPtr window_;
+
+    void renderWindowBorder();
+    void renderContent(const bool showZoomContext);
+    void renderContextView(FactoryObjectPtr object, const QRectF& texCoord);
+    QRectF getTexCoord() const;
+
+    void drawQuad(const QRectF& coord);
+    void drawQuadBorder(const QRectF& coord, const float width);
 };
 
 #endif // CONTENTWINDOWRENDERER_H

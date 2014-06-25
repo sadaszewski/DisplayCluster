@@ -59,20 +59,39 @@ extern "C"
     #include <libswscale/swscale.h>
 }
 
+/**
+ * Converts FFMPEG's AVFrame format to a data buffer of user-defined format
+ */
 class FFMPEGVideoFrameConverter
 {
 public:
-    FFMPEGVideoFrameConverter(const AVCodecContext& videoCodecContext, const PixelFormat targetFormat);
+    /**
+     * Create a new converter
+     * @param videoCodecContext The FFMPEG context to allocate resources
+     * @param targetFormat The desired data output format (e.g. PIX_FMT_RGBA)
+     */
+    FFMPEGVideoFrameConverter(const AVCodecContext& videoCodecContext,
+                              const PixelFormat targetFormat);
+    /** Desturctor */
     ~FFMPEGVideoFrameConverter();
 
+    /**
+     * Convert an AVFrame to the target data format
+     * @param srcFrame The source frame
+     * @return true on success
+     * @see getData()
+     */
     bool convert(const AVFrame* srcFrame);
 
+    /**
+     * Get the converted data in the target format
+     * @see convert()
+     */
     const uint8_t* getData() const;
 
 private:
     SwsContext * swsContext_;           // Scaling context
     AVFrame * avFrameRGB_;
-
 };
 
 #endif // FFMPEGVIDEOFRAMECONVERTER_H

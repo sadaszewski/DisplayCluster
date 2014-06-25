@@ -412,10 +412,9 @@ bool FFMPEGMovie::decodeVideoFrame(AVPacket& packet)
         return false;
     }
 
-    videoFrameConverter_->convert(avFrame_);
-
     //put_flog(LOG_DEBUG, "Rank%i : Decoded frame with PTS: %i", g_mpiRank, avFrame_->pkt_dts);
-    return true;
+
+    return videoFrameConverter_->convert(avFrame_);
 }
 
 void FFMPEGMovie::generateSeekingParameters()

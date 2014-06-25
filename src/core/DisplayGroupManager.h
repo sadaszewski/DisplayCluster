@@ -82,7 +82,7 @@ public:
     void deleteMarkers();
 
 #if ENABLE_SKELETON_SUPPORT
-    std::vector< boost::shared_ptr<SkeletonState> > getSkeletons();
+    SkeletonStatePtrs getSkeletons();
 #endif
 
     /** Get the background content window. */
@@ -121,7 +121,7 @@ public slots:
     void setBackgroundContent(ContentPtr content);
 
 #if ENABLE_SKELETON_SUPPORT
-    void setSkeletons(std::vector<boost::shared_ptr<SkeletonState> > skeletons);
+    void setSkeletons(SkeletonStatePtrs skeletons);
 #endif
 
 private slots:
@@ -150,7 +150,7 @@ private:
     MarkerPtrs markers_;
 
 #if ENABLE_SKELETON_SUPPORT
-    std::vector<boost::shared_ptr<SkeletonState> > skeletons_;
+    SkeletonStatePtrs skeletons_;
 #endif
 
 };
