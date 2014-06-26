@@ -37,7 +37,6 @@
 /*********************************************************************/
 
 #include "DynamicTexture.h"
-#include "globals.h"
 #include "RenderContext.h"
 #include "GLWindow.h"
 #include "vector.h"
@@ -77,7 +76,6 @@ DynamicTexture::DynamicTexture(const QString& uri, DynamicTexturePtr parent,
     , imageCoordsInParentImage_(parentCoordinates)
     , depth_(0)
     , loadImageThreadStarted_(false)
-    , textureId_(0)
     , renderedChildren_(false)
 {
     // if we're a child...
@@ -109,13 +107,6 @@ DynamicTexture::DynamicTexture(const QString& uri, DynamicTexturePtr parent,
 
 DynamicTexture::~DynamicTexture()
 {
-    // delete bound texture
-    if(textureId_)
-    {
-        // let the OpenGL window delete the texture, so the destructor can occur in any thread...
-        renderContext_->getGLWindow()->insertPurgeTextureId(textureId_);
-        textureId_ = 0;
-    }
 }
 
 bool DynamicTexture::isRoot() const
@@ -273,7 +264,7 @@ QImage DynamicTexture::loadImageRegionFromFullResImageFile(const QString& filena
     return imageReader.read();
 }
 
-void DynamicTexture::loadImage(const bool convertToGLFormat)
+void DynamicTexture::loadImage()
 {
     if(isRoot())
     {
@@ -318,14 +309,6 @@ void DynamicTexture::loadImage(const bool convertToGLFormat)
     {
         put_flog(LOG_ERROR, "failed to load the image. aborting.");
         return;
-    }
-
-    // optionally convert the image to OpenGL format
-    // note that the resulting image can only be used for width(), height(), and bits() calls for OpenGL
-    // save(), etc. won't work.
-    if(convertToGLFormat)
-    {
-        scaledImage_ = QGLWidget::convertToGLFormat(scaledImage_);
     }
 }
 
@@ -375,10 +358,10 @@ void DynamicTexture::render(const QRectF& texCoords)
 
 void DynamicTexture::render_(const QRectF& texCoords)
 {
-    if(!textureId_ && loadImageThreadStarted_ && loadImageThread_.isFinished())
+    if(!texture_.isValid() && loadImageThreadStarted_ && loadImageThread_.isFinished())
         generateTexture();
 
-    if(textureId_)
+    if(texture_.isValid())
     {
 #ifdef DYNAMIC_TEXTURE_SHOW_BORDER
         renderTextureBorder();
@@ -396,17 +379,13 @@ void DynamicTexture::render_(const QRectF& texCoords)
 
 void DynamicTexture::renderTextureBorder()
 {
-    // draw the border
     glPushAttrib(GL_CURRENT_BIT);
 
     glColor4f(0.,1.,0.,1.);
 
-    glBegin(GL_LINE_LOOP);
-    glVertex2f(0.,0.);
-    glVertex2f(1.,0.);
-    glVertex2f(1.,1.);
-    glVertex2f(0.,1.);
-    glEnd();
+    quad_.setEnableTexture(false);
+    quad_.setRenderMode(GL_LINE_LOOP);
+    quad_.render();
 
     glPopAttrib();
 }
@@ -415,25 +394,12 @@ void DynamicTexture::renderTexturedUnitQuad(const QRectF& texCoords)
 {
     glPushAttrib(GL_ENABLE_BIT | GL_TEXTURE_BIT);
 
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, textureId_);
+    texture_.bind();
 
-    glBegin(GL_QUADS);
-
-    // note we need to flip the y coordinate since the textures are loaded upside down
-    glTexCoord2f(texCoords.x(),1.-texCoords.y());
-    glVertex2f(0.,0.);
-
-    glTexCoord2f(texCoords.x()+texCoords.width(),1.-texCoords.y());
-    glVertex2f(1.,0.);
-
-    glTexCoord2f(texCoords.x()+texCoords.width(),1.-(texCoords.y()+texCoords.height()));
-    glVertex2f(1.,1.);
-
-    glTexCoord2f(texCoords.x(),1.-(texCoords.y()+texCoords.height()));
-    glVertex2f(0.,1.);
-
-    glEnd();
+    quad_.setEnableTexture(true);
+    quad_.setTexCoords(texCoords);
+    quad_.setRenderMode(GL_QUADS);
+    quad_.render();
 
     glPopAttrib();
 }
@@ -477,8 +443,8 @@ bool DynamicTexture::generateImagePyramid(const QString& pyramidFolder)
             return false;
     }
 
-    // load this object's scaledImage_ (not converted to the GL format)
-    loadImage(false);
+    // load this object's scaledImage_
+    loadImage();
 
     const QString filename = pyramidFolder + getPyramidImageFilename();
     put_flog(LOG_DEBUG, "saving %s", filename.toLocal8Bit().constData());
@@ -590,8 +556,10 @@ QImage DynamicTexture::getImageFromParent(const QRectF& imageRegion, DynamicText
     if(!fullscaleImage_.isNull())
     {
         // we have a valid image, return the clipped image
-        return fullscaleImage_.copy(imageRegion.x()*fullscaleImage_.width(), imageRegion.y()*fullscaleImage_.height(),
-                           imageRegion.width()*fullscaleImage_.width(), imageRegion.height()*fullscaleImage_.height());
+        return fullscaleImage_.copy(imageRegion.x()*fullscaleImage_.width(),
+                                    imageRegion.y()*fullscaleImage_.height(),
+                                    imageRegion.width()*fullscaleImage_.width(),
+                                    imageRegion.height()*fullscaleImage_.height());
     }
     else
     {
@@ -608,20 +576,7 @@ QImage DynamicTexture::getImageFromParent(const QRectF& imageRegion, DynamicText
 
 void DynamicTexture::generateTexture()
 {
-    // generate new texture
-    // no need to compute mipmaps
-    // note that scaledImage_ is already in the GL format so we can use glTexImage2D directly
-    glGenTextures(1, &textureId_);
-    glBindTexture(GL_TEXTURE_2D, textureId_);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, scaledImage_.width(), scaledImage_.height(), 0,
-                 GL_RGBA, GL_UNSIGNED_BYTE, scaledImage_.bits());
-
-    // linear min / max filtering
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    texture_.init(scaledImage_, GL_BGRA);
 
     // no longer need the scaled image
     scaledImage_ = QImage();

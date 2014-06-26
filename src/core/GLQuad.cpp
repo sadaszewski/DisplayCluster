@@ -1,5 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
+/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -36,69 +37,53 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#include "Movie.h"
+#include "GLQuad.h"
 
-#include "FFMPEGMovie.h"
+#include <QtOpenGL/qgl.h>
 
-Movie::Movie(QString uri)
-    : ffmpegMovie_(new FFMPEGMovie(uri))
-    , uri_(uri)
-    , paused_(false)
-{}
-
-Movie::~Movie()
+GLQuad::GLQuad()
+    : texCoords_(0.f, 0.f, 1.f, 1.f)
+    , renderMode_(GL_QUADS)
+    , enableTexture_(true)
 {
-    delete ffmpegMovie_;
 }
 
-void Movie::getDimensions(int &width, int &height) const
+void GLQuad::setTexCoords(const QRectF& texCoords)
 {
-    width = ffmpegMovie_->getWidth();
-    height = ffmpegMovie_->getHeight();
+    texCoords_ = texCoords;
 }
 
-void Movie::nextFrame(const boost::posix_time::time_duration timeSinceLastFrame, const bool skip)
+void GLQuad::setEnableTexture(const bool enable)
 {
-    if(paused_)
-        return;
-
-    ffmpegMovie_->update(timeSinceLastFrame, skip);
-
-    if (skip)
-        return;
-
-    texture_.update(ffmpegMovie_->getData(), GL_RGBA);
+    enableTexture_ = enable;
 }
 
-bool Movie::generateTexture()
+void GLQuad::setRenderMode(const GLenum mode)
 {
-    QImage image(ffmpegMovie_->getWidth(), ffmpegMovie_->getHeight(), QImage::Format_RGB32);
-    image.fill(0);
-
-    return texture_.init(image);
+    if (mode == GL_QUADS || mode == GL_LINE_LOOP)
+        renderMode_ = mode;
 }
 
-void Movie::render(const QRectF& texCoords)
+void GLQuad::render()
 {
-    if(!texture_.isValid() && !generateTexture())
-        return;
+    if (enableTexture_)
+        glEnable(GL_TEXTURE_2D);
+    else
+        glDisable(GL_TEXTURE_2D);
 
-    glPushAttrib(GL_ENABLE_BIT | GL_TEXTURE_BIT);
+    glBegin(renderMode_);
 
-    texture_.bind();
+    glTexCoord2f(texCoords_.x(), texCoords_.y());
+    glVertex2f(0., 0.);
 
-    quad_.setTexCoords(texCoords);
-    quad_.render();
+    glTexCoord2f(texCoords_.x() + texCoords_.width(), texCoords_.y());
+    glVertex2f(1., 0.);
 
-    glPopAttrib();
-}
+    glTexCoord2f(texCoords_.x() + texCoords_.width(), texCoords_.y() + texCoords_.height());
+    glVertex2f(1., 1.);
 
-void Movie::setPause(const bool pause)
-{
-    paused_ = pause;
-}
+    glTexCoord2f(texCoords_.x(), texCoords_.y() + texCoords_.height());
+    glVertex2f(0., 1.);
 
-void Movie::setLoop(const bool loop)
-{
-    ffmpegMovie_->setLoop(loop);
+    glEnd();
 }

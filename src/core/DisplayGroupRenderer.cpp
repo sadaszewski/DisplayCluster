@@ -43,11 +43,9 @@
 #include "ContentWindowManager.h"
 #include "Marker.h"
 
-DisplayGroupRenderer::DisplayGroupRenderer(RenderContext& renderContext,
-                                           FactoriesPtr factories)
+DisplayGroupRenderer::DisplayGroupRenderer(FactoriesPtr factories)
     : factories_(factories)
     , windowRenderer_(factories)
-    , markerRenderer_(renderContext)
 {
 }
 

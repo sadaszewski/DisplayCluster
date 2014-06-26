@@ -41,8 +41,10 @@
 #define PDF_H
 
 #include "FactoryObject.h"
+#include "GLTexture2D.h"
+#include "GLQuad.h"
+
 #include <QString>
-#include <QGLFramebufferObject>
 
 namespace Poppler {
     class Document;
@@ -58,30 +60,29 @@ public:
     bool isValid() const;
     void getDimensions(int &width, int &height) const;
     void render(const QRectF& texCoords);
-    void setPage(int pageNumber);
+    void setPage(const int pageNumber);
     int getPageCount() const;
 
     QImage renderToImage() const;
 
 private:
-
-    // document location
     QString uri_;
 
     Poppler::Document* pdfDoc_;
     Poppler::Page* pdfPage_;
-    int pdfPageNumber;
+    int pageNumber_;
 
-    // texture information
+    GLTexture2D texture_;
+    GLQuad quad_;
     QRect textureRect_;
-    GLuint textureId_;
 
-    void openDocument(QString filename);
+    void openDocument(const QString& filename);
     void closeDocument();
     void closePage();
+    bool isValid(const int pageNumber) const;
 
-    void generateTexture(QRectF screenRect, QRectF fullRect, const QRectF& texCoords);
-    void deleteTexture();
+    void drawUnitTexturedQuad();
+    void generateTexture(const QRectF screenRect, const QRectF fullRect, const QRectF& texCoords);
 };
 
 #endif // PDF_H

@@ -51,20 +51,30 @@ GLTexture2D::~GLTexture2D()
     free();
 }
 
-
-bool GLTexture2D::init(const QImage image)
+bool GLTexture2D::init(const QImage image, const GLenum format, bool mipmaps)
 {
     if(textureId_)
         return false;
 
     glGenTextures(1, &textureId_);
     glBindTexture(GL_TEXTURE_2D, textureId_);
+
+    if (mipmaps)
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    }
+    else
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_FALSE);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    }
+
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image.width(), image.height(),
-                 0, GL_RGBA, GL_UNSIGNED_BYTE, image.bits());
+                 0, format, GL_UNSIGNED_BYTE, image.bits());
 
     size_ = image.size();
 
@@ -81,19 +91,26 @@ void GLTexture2D::free()
     }
 }
 
-void GLTexture2D::update(const QImage image)
+void GLTexture2D::update(const QImage image, const GLenum format)
 {
     if (size_ != image.size())
     {
         free();
-        init(image);
+        init(image, format);
     }
     else
     {
         glBindTexture(GL_TEXTURE_2D, textureId_);
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image.width(), image.height(),
-                        GL_RGBA, GL_UNSIGNED_BYTE, image.bits());
+                        format, GL_UNSIGNED_BYTE, image.bits());
     }
+}
+
+void GLTexture2D::update(const void* data, const GLenum format)
+{
+    glBindTexture(GL_TEXTURE_2D, textureId_);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, size_.width(), size_.height(),
+                    format, GL_UNSIGNED_BYTE, data);
 }
 
 QSize GLTexture2D::getSize() const

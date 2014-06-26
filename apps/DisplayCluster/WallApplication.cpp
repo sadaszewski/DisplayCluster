@@ -51,6 +51,8 @@
 #include "ContentWindowManager.h"
 #include "DisplayGroupRenderer.h"
 
+#include <boost/foreach.hpp>
+
 WallApplication::WallApplication(int& argc_, char** argv_, MPIChannelPtr mpiChannel)
     : Application(argc_, argv_)
     , mpiChannel_(mpiChannel)
@@ -63,8 +65,7 @@ WallApplication::WallApplication(int& argc_, char** argv_, MPIChannelPtr mpiChan
     renderContext_.reset(new RenderContext(config));
 
     factories_.reset(new Factories(*renderContext_));
-    displayGroupRenderer_.reset(new DisplayGroupRenderer(*renderContext_,
-                                                         factories_));
+    displayGroupRenderer_.reset(new DisplayGroupRenderer(factories_));
     displayGroupRenderer_->setDisplayGroup(displayGroup_);
 
     if (mpiChannel_->getRank() == 1)
@@ -131,11 +132,12 @@ void WallApplication::advanceContent()
 {
     boost::posix_time::time_duration timeSinceLastFrame = getTimeSinceLastFrame();
     ContentWindowManagerPtrs contentWindows = displayGroup_->getContentWindowManagers();
-    for(unsigned int i=0; i<contentWindows.size(); i++)
+
+    BOOST_FOREACH(ContentWindowManagerPtr contentWindow, contentWindows)
     {
         // note that if we have multiple ContentWindowManagers corresponding to a single Content object,
         // we will call advance() multiple times per frame on that Content object...
-        contentWindows[i]->getContent()->advance(factories_, contentWindows[i], timeSinceLastFrame);
+        contentWindow->getContent()->advance(factories_, contentWindow, timeSinceLastFrame);
     }
     ContentWindowManagerPtr backgroundContent = displayGroup_->getBackgroundContentWindow();
     if (backgroundContent)

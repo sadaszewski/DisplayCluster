@@ -40,7 +40,8 @@
 #define TEXTURE_H
 
 #include "FactoryObject.h"
-#include <QGLWidget>
+#include "GLTexture2D.h"
+#include "GLQuad.h"
 
 class Texture : public FactoryObject
 {
@@ -59,8 +60,8 @@ private:
     int imageWidth_;
     int imageHeight_;
 
-    // texture information
-    GLuint textureId_;
+    GLTexture2D texture_;
+    GLQuad quad_;
 
     bool generateTexture();
 };

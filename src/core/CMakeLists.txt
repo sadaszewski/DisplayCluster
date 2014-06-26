@@ -121,6 +121,7 @@ list(APPEND SRCS
     FFMPEGVideoFrameConverter.cpp
     FileCommandHandler.cpp
     FpsCounter.cpp
+    GLQuad.cpp
     GLTexture2D.cpp
     GLWindow.cpp
     globals.cpp

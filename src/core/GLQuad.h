@@ -1,5 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
+/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -36,69 +37,40 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#include "Movie.h"
+#ifndef GLQUAD_H
+#define GLQUAD_H
 
-#include "FFMPEGMovie.h"
+#include "Renderable.h"
+#include <QRectF>
+#include <QtOpenGL/qgl.h>
 
-Movie::Movie(QString uri)
-    : ffmpegMovie_(new FFMPEGMovie(uri))
-    , uri_(uri)
-    , paused_(false)
-{}
-
-Movie::~Movie()
+/**
+ * A simple OpenGL textured quad.
+ */
+class GLQuad : public Renderable
 {
-    delete ffmpegMovie_;
-}
+public:
+    /** Construct a unit quad. */
+    GLQuad();
 
-void Movie::getDimensions(int &width, int &height) const
-{
-    width = ffmpegMovie_->getWidth();
-    height = ffmpegMovie_->getHeight();
-}
+    /** Draw the quad. */
+    virtual void render();
 
-void Movie::nextFrame(const boost::posix_time::time_duration timeSinceLastFrame, const bool skip)
-{
-    if(paused_)
-        return;
+    /** Set the texture coordinates. */
+    void setTexCoords(const QRectF& texCoords);
 
-    ffmpegMovie_->update(timeSinceLastFrame, skip);
+    /** Enable or disable texturing. (default: ON) */
+    void setEnableTexture(const bool enable);
 
-    if (skip)
-        return;
+    /** Set the render mode [GL_QUADS|GL_LINE_LOOP] (default: GL_QUADS) */
+    void setRenderMode(const GLenum mode);
 
-    texture_.update(ffmpegMovie_->getData(), GL_RGBA);
-}
+private:
+    QRectF texCoords_;
+    // Material properties (may go to a separate class)
+    GLenum renderMode_;
+    bool enableTexture_;
 
-bool Movie::generateTexture()
-{
-    QImage image(ffmpegMovie_->getWidth(), ffmpegMovie_->getHeight(), QImage::Format_RGB32);
-    image.fill(0);
+};
 
-    return texture_.init(image);
-}
-
-void Movie::render(const QRectF& texCoords)
-{
-    if(!texture_.isValid() && !generateTexture())
-        return;
-
-    glPushAttrib(GL_ENABLE_BIT | GL_TEXTURE_BIT);
-
-    texture_.bind();
-
-    quad_.setTexCoords(texCoords);
-    quad_.render();
-
-    glPopAttrib();
-}
-
-void Movie::setPause(const bool pause)
-{
-    paused_ = pause;
-}
-
-void Movie::setLoop(const bool loop)
-{
-    ffmpegMovie_->setLoop(loop);
-}
+#endif // GLQUAD_H

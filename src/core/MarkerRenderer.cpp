@@ -44,24 +44,20 @@
 #include "globals.h"
 #include "configuration/Configuration.h"
 
-#include "RenderContext.h"
-#include "GLWindow.h"
 #include "log.h"
 
 #define MARKER_IMAGE_FILENAME ":/img/marker.png"
 
 // this is a fraction of the tiled display width of 1
-#define MARKER_WIDTH 0.0025
+#define MARKER_WIDTH 0.005
 
-MarkerRenderer::MarkerRenderer(RenderContext& renderContext)
-    : renderContext_(renderContext)
-    , textureId_(0)
+MarkerRenderer::MarkerRenderer()
 {
 }
 
 void MarkerRenderer::render(MarkerPtr marker)
 {
-    if (!textureId_ && !generateTexture())
+    if (!texture_.isValid() && !generateTexture())
         return;
 
     float x, y;
@@ -71,39 +67,23 @@ void MarkerRenderer::render(MarkerPtr marker)
     const float tiledDisplayAspect = g_configuration->getAspectRatio();
     const float markerHeight = MARKER_WIDTH * tiledDisplayAspect;
 
-    // draw the texture
     glPushAttrib(GL_ENABLE_BIT | GL_TEXTURE_BIT);
 
-    // disable depth testing and enable blending
     glDisable(GL_DEPTH_TEST);
-
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    // enable texturing
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, textureId_);
-
     glPushMatrix();
-    glTranslated(x, y, 0.);
 
-    glBegin(GL_QUADS);
+    glTranslatef(x, y, 0);
+    glScalef(MARKER_WIDTH, markerHeight, 1.f);
+    glTranslatef(-0.5f*MARKER_WIDTH, -0.5f*markerHeight, 0); // Center unit quad
 
-    glTexCoord2f(0,0);
-    glVertex2f(-MARKER_WIDTH,-markerHeight);
-
-    glTexCoord2f(1,0);
-    glVertex2f(MARKER_WIDTH,-markerHeight);
-
-    glTexCoord2f(1,1);
-    glVertex2f(MARKER_WIDTH,markerHeight);
-
-    glTexCoord2f(0,1);
-    glVertex2f(-MARKER_WIDTH,markerHeight);
-
-    glEnd();
+    texture_.bind();
+    quad_.render();
 
     glPopMatrix();
+
     glPopAttrib();
 }
 
@@ -117,12 +97,5 @@ bool MarkerRenderer::generateTexture()
         return false;
     }
 
-    textureId_ = renderContext_.getGLWindow()->bindTexture(image, GL_TEXTURE_2D, GL_RGBA, QGLContext::DefaultBindOption);
-    return true;
-}
-
-void MarkerRenderer::releaseTexture()
-{
-    renderContext_.getGLWindow()->deleteTexture(textureId_);
-    textureId_ = 0;
+    return texture_.init(image, GL_BGRA);
 }

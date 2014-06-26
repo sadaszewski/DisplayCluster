@@ -144,7 +144,27 @@ void SVG::render(const QRectF& texCoords)
     const float wp = screenRect.width() / fullRect.width();
     const float hp = screenRect.height() / fullRect.height();
 
-    drawTexturedQuad(xp, yp, wp, hp, textureData.fbo->texture());
+    // Render the (scaled) unit textured quad
+    glPushMatrix();
+
+    glTranslatef(xp, yp, 0);
+    glScalef(wp, hp, 1.f);
+
+    drawUnitTexturedQuad(textureData.fbo->texture());
+
+    glPopMatrix();
+}
+
+void SVG::drawUnitTexturedQuad(const GLuint textureID)
+{
+    glPushAttrib(GL_ENABLE_BIT | GL_TEXTURE_BIT);
+
+    glBindTexture(GL_TEXTURE_2D, textureID);
+    // flip the y texture coordinate since the textures are loaded upside down
+    quad_.setTexCoords(QRectF(0.f, 1.f, 1.f, -1.f));
+    quad_.render();
+
+    glPopAttrib();
 }
 
 QRectF SVG::computeTextureRect(const QRectF& screenRect, const QRectF& fullRect,
@@ -210,39 +230,5 @@ void SVG::restoreGLState()
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
-    glPopAttrib();
-}
-
-void SVG::drawTexturedQuad(const float posX, const float posY,
-                           const float width, const float height, const GLuint textureID)
-{
-    // Texture coordinates
-    const float tX = 0.f;
-    const float tY = 0.f;
-    const float tW = 1.f;
-    const float tH = 1.f;
-
-    glPushAttrib(GL_ENABLE_BIT | GL_TEXTURE_BIT);
-
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, textureID);
-
-    glBegin(GL_QUADS);
-
-    // note we need to flip the y coordinate since the textures are loaded upside down
-    glTexCoord2f(tX, 1.-tY);
-    glVertex2f(posX, posY);
-
-    glTexCoord2f(tX+tW, 1.-tY);
-    glVertex2f(posX+width, posY);
-
-    glTexCoord2f(tX+tW, 1.-(tY+tH));
-    glVertex2f(posX+width, posY+height);
-
-    glTexCoord2f(tX, 1.-(tY+tH));
-    glVertex2f(posX, posY+height);
-
-    glEnd();
-
     glPopAttrib();
 }

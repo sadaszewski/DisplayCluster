@@ -40,11 +40,9 @@
 #ifndef MARKERRENDERER_H
 #define MARKERRENDERER_H
 
-#include <QGLFramebufferObject>
-
 #include "types.h"
-
-class RenderContext;
+#include "GLTexture2D.h"
+#include "GLQuad.h"
 
 /**
  * Renderer for Marker objects.
@@ -52,21 +50,17 @@ class RenderContext;
 class MarkerRenderer
 {
 public:
-    /**
-     * Set the render context to render the object on Rank 1-N
-     * @param renderContext The render context to create/release GL textures
-     */
-    MarkerRenderer(RenderContext& renderContext);
+    /** Constructor */
+    MarkerRenderer();
 
     /** Render a Marker */
     void render(MarkerPtr marker);
 
 private:
-    RenderContext& renderContext_;
-    GLuint textureId_;
+    GLTexture2D texture_;
+    GLQuad quad_;
 
     bool generateTexture();
-    void releaseTexture();
 };
 
 #endif // MARKERRENDERER_H

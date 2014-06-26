@@ -42,6 +42,8 @@
 
 #include "types.h"
 #include "Renderable.h"
+#include "GLQuad.h"
+
 #include <QRectF>
 
 /**
@@ -71,6 +73,7 @@ public:
 private:
     FactoriesPtr factories_;
     ContentWindowManagerPtr window_;
+    GLQuad quad_;
 
     void renderWindowBorder();
     void renderContent(const bool showZoomContext);

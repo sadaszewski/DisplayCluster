@@ -39,13 +39,14 @@
 #ifndef DYNAMIC_TEXTURE_H
 #define DYNAMIC_TEXTURE_H
 
-#include "FactoryObject.h"
 #include "types.h"
+#include "FactoryObject.h"
+#include "GLTexture2D.h"
+#include "GLQuad.h"
 
 #include <QImage>
 #include <QFuture>
 #include <QRectF>
-#include <QGLWidget>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
@@ -108,11 +109,10 @@ public:
 
     /**
      * Load the image for this part of the texture
-     * @param convertToGLFormat convert the image to GL format for texture upload
      * @throw boost::bad_weak_ptr exception if a parent object is deleted during thread execution
      * @internal asynchronous loading thread needs access to this method
      */
-    void loadImage(const bool convertToGLFormat=true);
+    void loadImage();
 
     /**
      * Decrement the global count of loading threads.
@@ -147,9 +147,10 @@ private:
     mutable QFuture<void> loadImageThread_; // Future for asychronous image loading
     bool loadImageThreadStarted_; // True if the texture loading has been started
 
-    QImage scaledImage_; // for texture upload to GPU
-    GLuint textureId_;
     QSize imageSize_; // full scale image dimensions
+    QImage scaledImage_; // for texture upload to GPU
+    GLTexture2D texture_;
+    GLQuad quad_;
 
     std::vector<DynamicTexturePtr> children_; // Children in the image pyramid
     bool renderedChildren_; // Used for garbage-collecting unused child objects

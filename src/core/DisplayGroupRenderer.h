@@ -57,7 +57,7 @@ class DisplayGroupRenderer : public Renderable
 {
 public:
     /** Constructor */
-    DisplayGroupRenderer(RenderContext& renderContext, FactoriesPtr factories);
+    DisplayGroupRenderer(FactoriesPtr factories);
 
     /**
      * Render the associated DisplayGroup.

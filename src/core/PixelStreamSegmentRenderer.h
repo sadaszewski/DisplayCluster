@@ -40,6 +40,7 @@
 #define PIXEL_STREAM_SEGMENT_RENDERER_H
 
 #include "GLTexture2D.h"
+#include "GLQuad.h"
 
 #include <boost/noncopyable.hpp>
 
@@ -104,6 +105,7 @@ private:
     RenderContext* renderContext_;
 
     GLTexture2D texture_;
+    GLQuad quad_;
 
     // Segment position
     unsigned int x_, y_;
@@ -117,7 +119,7 @@ private:
     bool textureNeedsUpdate_;
 
     // Rendering
-    void drawUnitTexturedQuad(float tX, float tY, float tW, float tH);
+    void drawUnitTexturedQuad();
     void drawSegmentBorders();
     void drawSegmentStatistics();
 };

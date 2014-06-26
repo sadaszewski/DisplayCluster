@@ -57,10 +57,17 @@ public:
     ~GLTexture2D();
 
     /** Init the texture using the given image. */
-    bool init(const QImage image);
+    bool init(const QImage image, const GLenum format = GL_RGBA, bool mipmaps = false);
 
     /** Update the texture using the given image. */
-    void update(const QImage image);
+    void update(const QImage image, const GLenum format = GL_RGBA);
+
+    /**
+     * Update the texture using the given image
+     * @param data A buffer of getSize() dimensions with "format" bytes per pixels
+     * @param format The image format of the data buffer
+     */
+    void update(const void* data, const GLenum format = GL_RGBA);
 
     /** Get the texture size. */
     QSize getSize() const;

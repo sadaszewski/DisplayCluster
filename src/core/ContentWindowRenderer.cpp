@@ -56,6 +56,7 @@
 ContentWindowRenderer::ContentWindowRenderer(FactoriesPtr factories)
     : factories_(factories)
 {
+    quad_.setEnableTexture(false);
 }
 
 void ContentWindowRenderer::render()
@@ -180,26 +181,27 @@ void ContentWindowRenderer::renderContextView(FactoryObjectPtr object,
 
 void ContentWindowRenderer::drawQuad(const QRectF& coord)
 {
-    glBegin(GL_QUADS);
+    glPushMatrix();
 
-    glVertex2f(coord.x(), coord.y());
-    glVertex2f(coord.x() + coord.width(), coord.y());
-    glVertex2f(coord.x() + coord.width(), coord.y() + coord.height());
-    glVertex2f(coord.x(), coord.y() + coord.height());
+    glTranslatef(coord.x(), coord.y(), 0);
+    glScalef(coord.width(), coord.height(), 1.f);
 
-    glEnd();
+    quad_.setRenderMode(GL_QUADS);
+    quad_.render();
+
+    glPopMatrix();
 }
 
 void ContentWindowRenderer::drawQuadBorder(const QRectF& coord, const float width)
 {
+    glPushMatrix();
+
+    glTranslatef(coord.x(), coord.y(), 0);
+    glScalef(coord.width(), coord.height(), 1.f);
+
     glLineWidth(width);
+    quad_.setRenderMode(GL_LINE_LOOP);
+    quad_.render();
 
-    glBegin(GL_LINE_LOOP);
-
-    glVertex2f(coord.x(), coord.y());
-    glVertex2f(coord.x() + coord.width(), coord.y());
-    glVertex2f(coord.x() + coord.width(), coord.y() + coord.height());
-    glVertex2f(coord.x(), coord.y() + coord.height());
-
-    glEnd();
+    glPopMatrix();
 }

@@ -40,10 +40,12 @@
 #define MOVIE_H
 
 #include "FactoryObject.h"
-#include <QGLWidget>
+#include "GLTexture2D.h"
+#include "GLQuad.h"
+
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-#include "FFMPEGMovie.h"
+class FFMPEGMovie;
 
 class Movie : public FactoryObject
 {
@@ -61,12 +63,12 @@ private:
     FFMPEGMovie* ffmpegMovie_;
 
     QString uri_;
-    GLuint textureId_;
+    GLTexture2D texture_;
+    GLQuad quad_;
 
     bool paused_;
 
     bool generateTexture();
-    void updateTexture();
 };
 
 #endif

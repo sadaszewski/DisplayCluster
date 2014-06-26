@@ -66,7 +66,7 @@ QRect PixelStreamSegmentRenderer::getRect() const
 void PixelStreamSegmentRenderer::updateTexture(const QImage& image)
 {
     segmentStatistics->tick();
-    texture_.update(image);
+    texture_.update(image, GL_RGBA);
     textureNeedsUpdate_ = false;
 }
 
@@ -101,8 +101,7 @@ bool PixelStreamSegmentRenderer::render(bool showSegmentBorders, bool showSegmen
     // The following draw calls assume normalized coordinates, so we must pre-multiply by this segment's dimensions
     glScalef(width_, height_, 0.);
 
-    // todo: compute actual texture bounds to render considering zoom, pan
-    drawUnitTexturedQuad(0, 0, 1.f, 1.f);
+    drawUnitTexturedQuad();
 
     if(showSegmentBorders || showSegmentStatistics)
     {
@@ -133,29 +132,14 @@ bool PixelStreamSegmentRenderer::render(bool showSegmentBorders, bool showSegmen
     return true;
 }
 
-void PixelStreamSegmentRenderer::drawUnitTexturedQuad(float tX, float tY, float tW, float tH)
+void PixelStreamSegmentRenderer::drawUnitTexturedQuad()
 {
-    // draw the texture
     glPushAttrib(GL_ENABLE_BIT | GL_TEXTURE_BIT);
 
-    glEnable(GL_TEXTURE_2D);
     texture_.bind();
-
-    glBegin(GL_QUADS);
-
-    glTexCoord2f(tX,tY);
-    glVertex2f(0.,0.);
-
-    glTexCoord2f(tX+tW,tY);
-    glVertex2f(1.,0.);
-
-    glTexCoord2f(tX+tW,tY+tH);
-    glVertex2f(1.,1.);
-
-    glTexCoord2f(tX,tY+tH);
-    glVertex2f(0.,1.);
-
-    glEnd();
+    quad_.setEnableTexture(true);
+    quad_.setRenderMode(GL_QUADS);
+    quad_.render();
 
     glPopAttrib();
 }
@@ -164,12 +148,9 @@ void PixelStreamSegmentRenderer::drawSegmentBorders()
 {
     glColor4f(1.,1.,1.,1.);
 
-    glBegin(GL_LINE_LOOP);
-
-    glVertex2f(0.,0.);
-    glVertex2f(1.,0.);
-    glVertex2f(1.,1.);
-    glVertex2f(0.,1.);
+    quad_.setEnableTexture(false);
+    quad_.setRenderMode(GL_LINE_LOOP);
+    quad_.render();
 
     glEnd();
 }

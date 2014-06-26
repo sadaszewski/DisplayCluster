@@ -41,6 +41,7 @@
 
 #include "FactoryObject.h"
 #include "types.h"
+#include "GLQuad.h"
 
 #include <QtSvg>
 #include <QGLWidget>
@@ -87,6 +88,10 @@ private:
     int width_;
     int height_;
 
+    GLQuad quad_;
+
+    void drawUnitTexturedQuad(const GLuint textureID);
+
     QRectF computeTextureRect(const QRectF& screenRect, const QRectF& fullRect,
                               const QRectF& texCoords) const;
 
@@ -94,9 +99,6 @@ private:
 
     void saveGLState();
     void restoreGLState();
-
-    void drawTexturedQuad(const float posX, const float posY,
-                          const float width, const float height, const GLuint textureID);
 };
 
 #endif
