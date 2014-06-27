@@ -38,8 +38,9 @@
 
 #include "TextureContent.h"
 
-#include <boost/serialization/export.hpp>
 #include "serializationHelpers.h"
+#include <boost/serialization/export.hpp>
+#include <QImageReader>
 
 BOOST_CLASS_EXPORT_GUID(TextureContent, "TextureContent")
 

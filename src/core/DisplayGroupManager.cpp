@@ -40,27 +40,22 @@
 
 #include "ContentWindowManager.h"
 #include "Content.h"
-
-#include "globals.h"
 #include "MPIChannel.h"
 
-#include "PixelStreamSegment.h" // For metaType registration
+#include <QApplication>
 
 DisplayGroupManager::DisplayGroupManager()
 {
-    // register types for use in signals/slots
-    qRegisterMetaType<Event>("Event");
-    qRegisterMetaType<ContentWindowManagerPtr>("ContentWindowManagerPtr");
-    qRegisterMetaType<PixelStreamSegment>("PixelStreamSegment");
-    qRegisterMetaType<PixelStreamFramePtr>("PixelStreamFramePtr");
-
-#if ENABLE_SKELETON_SUPPORT
-    qRegisterMetaType<SkeletonStatePtrs("SkeletonStatePtrs");
-#endif
 }
 
 DisplayGroupManager::~DisplayGroupManager()
 {
+}
+
+DisplayGroupManager::DisplayGroupManager(MPIChannelPtr mpiChannel)
+    : mpiChannel_(mpiChannel)
+{
+    assert(mpiChannel_->getRank() == 0);
 }
 
 MarkerPtr DisplayGroupManager::getNewMarker()
@@ -109,12 +104,12 @@ void DisplayGroupManager::addContentWindowManager(ContentWindowManagerPtr conten
 
         emit modified(shared_from_this());
 
-        if (contentWindowManager->getContent()->getType() != CONTENT_TYPE_PIXEL_STREAM)
+        if (mpiChannel_ && contentWindowManager->getContent()->getType() != CONTENT_TYPE_PIXEL_STREAM)
         {
             // TODO initialize all content dimensions on creation so we can
             // remove this procedure (DISCL-21)
             // make sure we have its dimensions so we can constrain its aspect ratio
-            g_mpiChannel->sendContentsDimensionsRequest(getContentWindowManagers());
+            mpiChannel_->sendContentsDimensionsRequest(getContentWindowManagers());
         }
     }
 }

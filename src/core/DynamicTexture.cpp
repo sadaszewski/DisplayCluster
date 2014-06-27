@@ -326,19 +326,17 @@ void DynamicTexture::getDimensions(int &width, int &height) const
 
 void DynamicTexture::render(const QRectF& texCoords)
 {
-    renderedChildren_ = false;
+    if(!isVisibleInCurrentGLView())
+        return;
 
-    if(getProjectedPixelArea(true) > 0. &&
-       getProjectedPixelArea(false) > TEXTURE_SIZE*TEXTURE_SIZE &&
-       (getRoot()->imageSize_.width() / (1 << depth_) > TEXTURE_SIZE ||
-        getRoot()->imageSize_.height() / (1 << depth_) > TEXTURE_SIZE))
+    if(canHaveChildren() && !isResolutionSufficientForCurrentGLView())
     {
         renderChildren(texCoords);
         renderedChildren_ = true;
         return;
     }
 
-    // Load the texture if not already available
+    // Normal rendering: load the texture if not already available
     if(!loadImageThreadStarted_)
     {
         // only start the thread if this DynamicTexture tree has one available
@@ -354,6 +352,30 @@ void DynamicTexture::render(const QRectF& texCoords)
     }
 
     render_(texCoords);
+}
+
+void DynamicTexture::postRenderUpdate()
+{
+    clearOldChildren();
+    renderedChildren_ = false;
+}
+
+bool DynamicTexture::isVisibleInCurrentGLView()
+{
+    // TODO This objects visibility should be determined by using the GLWindow
+    // as a pre-render step, not retro-fitted in here!
+    return getProjectedPixelArea(true) > 0.;
+}
+
+bool DynamicTexture::isResolutionSufficientForCurrentGLView()
+{
+    return getProjectedPixelArea(false) <= TEXTURE_SIZE*TEXTURE_SIZE;
+}
+
+bool DynamicTexture::canHaveChildren()
+{
+    return (getRoot()->imageSize_.width() / (1 << depth_) > TEXTURE_SIZE ||
+            getRoot()->imageSize_.height() / (1 << depth_) > TEXTURE_SIZE);
 }
 
 void DynamicTexture::render_(const QRectF& texCoords)

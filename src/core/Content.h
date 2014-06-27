@@ -39,11 +39,9 @@
 #ifndef CONTENT_H
 #define CONTENT_H
 
+#include "types.h"
 #include "ContentFactory.h"
 #include "ContentType.h"
-#include "types.h"
-
-#include <QtGui>
 
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/assume_abstract.hpp>
@@ -51,9 +49,6 @@
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/serialization/nvp.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
-
-class ContentWindowManager;
-class Factories;
 
 /**
  * An abstract Content displayed in a ContentWindowManager.

@@ -136,6 +136,7 @@ list(APPEND SRCS
     ImageJpegDecompressor.cpp
     Marker.cpp
     MarkerRenderer.cpp
+    MetaTypeRegistration.cpp
     Movie.cpp
     MovieContent.cpp
     MPIChannel.cpp

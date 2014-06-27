@@ -50,6 +50,8 @@
 #include "globals.h"
 #include "configuration/Configuration.h"
 
+#include <QTapGesture>
+#include <QSwipeGesture>
 
 ContentInteractionDelegate::ContentInteractionDelegate(ContentWindowManager& contentWindow)
     : contentWindowManager_(contentWindow)

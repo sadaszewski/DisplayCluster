@@ -64,8 +64,17 @@ class DisplayGroupManager : public DisplayGroupInterface,
     Q_OBJECT
 
 public:
+    /** Constructor */
     DisplayGroupManager();
+
+    /** Destructor */
     ~DisplayGroupManager();
+
+    /**
+     * Rank0 only: Constructor with MPIChannel for ContentDimensionsRequest.
+     * @note TODO remove this whole procedure (DISCL-21)
+     */
+    DisplayGroupManager(MPIChannelPtr mpiChannel);
 
     /**
      * Create and return a new Marker.
@@ -148,6 +157,8 @@ private:
 
     mutable QMutex markersMutex_;
     MarkerPtrs markers_;
+
+    MPIChannelPtr mpiChannel_;
 
 #if ENABLE_SKELETON_SUPPORT
     SkeletonStatePtrs skeletons_;

@@ -121,7 +121,6 @@ void WallApplication::renderFrame()
     advanceContent();
 
     factories_->clearStaleFactoryObjects();
-    renderContext_->getGLWindow()->purgeTextures();
 
     lastFrameTime_ = mpiChannel_->getTime();
 
@@ -139,9 +138,9 @@ void WallApplication::advanceContent()
         // we will call advance() multiple times per frame on that Content object...
         contentWindow->getContent()->advance(factories_, contentWindow, timeSinceLastFrame);
     }
-    ContentWindowManagerPtr backgroundContent = displayGroup_->getBackgroundContentWindow();
-    if (backgroundContent)
-        backgroundContent->getContent()->advance(factories_, backgroundContent, timeSinceLastFrame);
+    ContentWindowManagerPtr backgroundWindow = displayGroup_->getBackgroundContentWindow();
+    if (backgroundWindow)
+        backgroundWindow->getContent()->advance(factories_, backgroundWindow, timeSinceLastFrame);
 }
 
 boost::posix_time::time_duration WallApplication::getTimeSinceLastFrame() const

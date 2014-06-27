@@ -1,5 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
+/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -36,51 +37,35 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#include "DynamicTextureContent.h"
-#include "globals.h"
-#include "DynamicTexture.h"
-#include "serializationHelpers.h"
-#include "Factories.h"
+#include "config.h"
+#include "types.h"
 
-#include <boost/serialization/export.hpp>
+#include "PixelStreamSegment.h"
+#include "Event.h"
+#include "ContentWindowInterface.h"
 
-BOOST_CLASS_EXPORT_GUID(DynamicTextureContent, "DynamicTextureContent")
+#include <QMetaType>
 
-DynamicTextureContent::DynamicTextureContent(QString uri)
-    : Content(uri)
-{}
+using dc::Event;
 
-CONTENT_TYPE DynamicTextureContent::getType()
+/**
+ * Register types for use in Qt signals/slots
+ */
+struct MetaTypeRegistration
 {
-    return CONTENT_TYPE_DYNAMIC_TEXTURE;
-}
-
-bool DynamicTextureContent::readMetadata()
-{
-    return true;
-}
-
-const QStringList& DynamicTextureContent::getSupportedExtensions()
-{
-    static QStringList extensions;
-
-    if (extensions.empty())
+    MetaTypeRegistration()
     {
-        extensions << "pyr";
-
-        const QList<QByteArray>& imageFormats = QImageReader::supportedImageFormats();
-        foreach( const QByteArray entry, imageFormats )
-            extensions << entry;
+        qRegisterMetaType<size_t>("size_t");
+        qRegisterMetaType<Event>("Event");
+        qRegisterMetaType<ContentWindowManagerPtr>("ContentWindowManagerPtr");
+        qRegisterMetaType<PixelStreamSegment>("PixelStreamSegment");
+        qRegisterMetaType<PixelStreamFramePtr>("PixelStreamFramePtr");
+        qRegisterMetaType<ContentWindowInterface::WindowState>("ContentWindowInterface::WindowState");
+#if ENABLE_SKELETON_SUPPORT
+        qRegisterMetaType<SkeletonStatePtrs("SkeletonStatePtrs");
+#endif
     }
+};
 
-    return extensions;
-}
-
-void DynamicTextureContent::advance(FactoriesPtr factories, ContentWindowManagerPtr, const boost::posix_time::time_duration)
-{
-    if( blockAdvance_ )
-        return;
-
-    // recall that advance() is called after rendering
-    factories->getDynamicTextureFactory().getObject(getURI())->postRenderUpdate();
-}
+// Static instance to register types during library static initialisation phase
+static MetaTypeRegistration staticInstance;

@@ -76,7 +76,7 @@
 MasterApplication::MasterApplication(int& argc_, char** argv_, MPIChannelPtr mpiChannel)
     : Application(argc_, argv_)
     , mpiChannel_(mpiChannel)
-    , displayGroup_(new DisplayGroupManager)
+    , displayGroup_(new DisplayGroupManager(mpiChannel))
 {
     MasterConfiguration* config = new MasterConfiguration(getConfigFilename());
     g_configuration = config;

@@ -96,10 +96,9 @@ public:
     virtual void render(const QRectF& texCoords);
 
     /**
-     * Recursively clear children of this object which have not been rendered recently.
-     * @param currentFrameIndex The current frame index
+     * Post render step.
      */
-    void clearOldChildren();
+    virtual void postRenderUpdate();
 
     /**
      * Generate an image Pyramid from the current uri and save it to the disk.
@@ -155,16 +154,25 @@ private:
     std::vector<DynamicTexturePtr> children_; // Children in the image pyramid
     bool renderedChildren_; // Used for garbage-collecting unused child objects
 
+    bool isVisibleInCurrentGLView();
+    bool isResolutionSufficientForCurrentGLView();
+    bool canHaveChildren();
+
+    /**
+     * Recursively clear children of this object which have not been rendered recently.
+     */
+    void clearOldChildren(); // @All
+
     /**
      * Render the dynamic texture.
      * This function is also called from child objects to render a low-res
      * texture when the high-res one is not loaded yet.
      * @param texCoords The area of the full scale texture to render
      */
-    void render_(const QRectF& texCoords);
+    void render_(const QRectF& texCoords); // @All
 
     /** Is this object the root element. */
-    bool isRoot() const;
+    bool isRoot() const;  // @All
 
     /**
      * Get the root object,

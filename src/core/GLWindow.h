@@ -40,7 +40,6 @@
 #define GL_WINDOW_H
 
 #include <QGLWidget>
-#include <QMutex>
 #include <QList>
 
 #include "types.h"
@@ -66,13 +65,6 @@ public:
 
     /** Get the unique tile index identifier. */
     int getTileIndex() const;
-
-    // TODO See if we can remove this method of deleting textures.
-    // It is only used in DynamicTexture.
-    /** Insert the id of a texture to be deleted. */
-    void insertPurgeTextureId(GLuint textureId);
-    /** Delete the textures added with insertPurgeTextureId()/ */
-    void purgeTextures();
 
     /** Add an object to be rendered. */
     void addRenderable(RenderablePtr renderable);
@@ -109,12 +101,6 @@ private:
     double right_;
     double bottom_;
     double top_;
-
-    // mutex and vector of texture id's to purge
-    // this allows other threads to trigger deletion of a texture during
-    // the main OpenGL thread execution
-    QMutex purgeTexturesMutex_;
-    std::vector<GLuint> purgeTextureIds_;
 
     FpsCounter fpsCounter_;
 

@@ -82,23 +82,6 @@ int GLWindow::getTileIndex() const
     return tileIndex_;
 }
 
-void GLWindow::insertPurgeTextureId(GLuint textureId)
-{
-    QMutexLocker locker(&purgeTexturesMutex_);
-
-    purgeTextureIds_.push_back(textureId);
-}
-
-void GLWindow::purgeTextures()
-{
-    QMutexLocker locker(&purgeTexturesMutex_);
-
-    for(size_t i=0; i<purgeTextureIds_.size(); ++i)
-        deleteTexture(purgeTextureIds_[i]);
-
-    purgeTextureIds_.clear();
-}
-
 void GLWindow::addRenderable(RenderablePtr renderable)
 {
     renderables_.append(renderable);
