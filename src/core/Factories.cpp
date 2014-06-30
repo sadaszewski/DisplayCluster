@@ -45,7 +45,9 @@ Factories::Factories(RenderContext& renderContext)
     : frameIndex_(0)
     , textureFactory_(renderContext)
     , dynamicTextureFactory_(renderContext)
+#if ENABLE_PDF_SUPPORT
     , pdfFactory_(renderContext)
+#endif
     , svgFactory_(renderContext)
     , movieFactory_(renderContext)
     , pixelStreamFactory_(renderContext)
@@ -56,7 +58,9 @@ void Factories::clearStaleFactoryObjects()
 {
     textureFactory_.clearStaleObjects(frameIndex_);
     dynamicTextureFactory_.clearStaleObjects(frameIndex_);
+#if ENABLE_PDF_SUPPORT
     pdfFactory_.clearStaleObjects(frameIndex_);
+#endif
     svgFactory_.clearStaleObjects(frameIndex_);
     movieFactory_.clearStaleObjects(frameIndex_);
     pixelStreamFactory_.clearStaleObjects(frameIndex_);
@@ -68,7 +72,9 @@ void Factories::clear()
 {
     textureFactory_.clear();
     dynamicTextureFactory_.clear();
+#if ENABLE_PDF_SUPPORT
     pdfFactory_.clear();
+#endif
     svgFactory_.clear();
     movieFactory_.clear();
     pixelStreamFactory_.clear();
@@ -85,9 +91,11 @@ FactoryObjectPtr Factories::getFactoryObject(ContentPtr content)
     case CONTENT_TYPE_DYNAMIC_TEXTURE:
         object = dynamicTextureFactory_.getObject(content->getURI());
         break;
+#if ENABLE_PDF_SUPPORT
     case CONTENT_TYPE_PDF:
         object = pdfFactory_.getObject(content->getURI());
         break;
+#endif
     case CONTENT_TYPE_SVG:
         object = svgFactory_.getObject(content->getURI());
         break;
@@ -115,10 +123,12 @@ Factory<DynamicTexture> & Factories::getDynamicTextureFactory()
     return dynamicTextureFactory_;
 }
 
+#if ENABLE_PDF_SUPPORT
 Factory<PDF> & Factories::getPDFFactory()
 {
     return pdfFactory_;
 }
+#endif
 
 Factory<SVG> & Factories::getSVGFactory()
 {

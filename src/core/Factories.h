@@ -40,10 +40,13 @@
 #ifndef FACTORIES_H
 #define FACTORIES_H
 
+#include "config.h"
 #include "Factory.hpp"
 #include "Texture.h"
 #include "DynamicTexture.h"
+#if ENABLE_PDF_SUPPORT
 #include "PDF.h"
+#endif
 #include "SVG.h"
 #include "Movie.h"
 #include "PixelStream.h"
@@ -88,7 +91,9 @@ public:
     /** Getters for specific Factory types. */
     Factory<Texture> & getTextureFactory();
     Factory<DynamicTexture> & getDynamicTextureFactory();
+#if ENABLE_PDF_SUPPORT
     Factory<PDF> & getPDFFactory();
+#endif
     Factory<SVG> & getSVGFactory();
     Factory<Movie> & getMovieFactory();
     Factory<PixelStream> & getPixelStreamFactory();
@@ -99,7 +104,9 @@ private:
 
     Factory<Texture> textureFactory_;
     Factory<DynamicTexture> dynamicTextureFactory_;
+#if ENABLE_PDF_SUPPORT
     Factory<PDF> pdfFactory_;
+#endif
     Factory<SVG> svgFactory_;
     Factory<Movie> movieFactory_;
     Factory<PixelStream> pixelStreamFactory_;
