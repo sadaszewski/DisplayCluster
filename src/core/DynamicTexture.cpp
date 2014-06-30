@@ -39,10 +39,8 @@
 #include "DynamicTexture.h"
 #include "RenderContext.h"
 #include "GLWindow.h"
-#include "vector.h"
 #include "log.h"
 
-#include <algorithm>
 #include <fstream>
 #include <boost/tokenizer.hpp>
 #include <QDir>
@@ -364,12 +362,14 @@ bool DynamicTexture::isVisibleInCurrentGLView()
 {
     // TODO This objects visibility should be determined by using the GLWindow
     // as a pre-render step, not retro-fitted in here!
-    return getProjectedPixelArea(true) > 0.;
+    const QRectF screenRect = renderContext_->getGLWindow()->getProjectedPixelRect(true);
+    return screenRect.width()*screenRect.height() > 0.;
 }
 
 bool DynamicTexture::isResolutionSufficientForCurrentGLView()
 {
-    return getProjectedPixelArea(false) <= TEXTURE_SIZE*TEXTURE_SIZE;
+    const QRectF fullRect = renderContext_->getGLWindow()->getProjectedPixelRect(false);
+    return fullRect.width() <= TEXTURE_SIZE && fullRect.height() <= TEXTURE_SIZE;
 }
 
 bool DynamicTexture::canHaveChildren()
@@ -662,72 +662,6 @@ void DynamicTexture::renderChildren(const QRectF& texCoords)
 
         glPopMatrix();
     }
-}
-
-double DynamicTexture::getProjectedPixelArea(const bool onScreenOnly)
-{
-    // get four corners in object space (recall we're in normalized 0->1 dimensions)
-    const double corners[4][3] =
-    {
-        {0.,0.,0.},
-        {1.,0.,0.},
-        {1.,1.,0.},
-        {0.,1.,0.}
-    };
-
-    // get four corners in screen space
-    GLdouble modelview[16];
-    glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
-
-    GLdouble projection[16];
-    glGetDoublev(GL_PROJECTION_MATRIX, projection);
-
-    GLint viewport[4];
-    glGetIntegerv(GL_VIEWPORT, viewport);
-
-    GLdouble xWin[4][3];
-
-    for(int i=0; i<4; ++i)
-    {
-        gluProject(corners[i][0], corners[i][1], corners[i][2], modelview, projection, viewport,
-                &xWin[i][0], &xWin[i][1], &xWin[i][2]);
-
-        if(onScreenOnly)
-        {
-            // clamp to on-screen portion
-            xWin[i][0] = std::min( std::max( xWin[i][0], 0. ), (double)renderContext_->getGLWindow()->width() );
-            xWin[i][1] = std::min( std::max( xWin[i][1], 0. ), (double)renderContext_->getGLWindow()->height() );
-        }
-    }
-
-    // get area from two triangles
-    // use this method to accomodate warped / transformed views in screen space
-    double vec1[3];
-    vec1[0] = xWin[1][0] - xWin[0][0];
-    vec1[1] = xWin[1][1] - xWin[0][1];
-    vec1[2] = xWin[1][2] - xWin[0][2];
-
-    double vec2[3];
-    vec2[0] = xWin[2][0] - xWin[0][0];
-    vec2[1] = xWin[2][1] - xWin[0][1];
-    vec2[2] = xWin[2][2] - xWin[0][2];
-
-    double vec3[3];
-    vec3[0] = xWin[3][0] - xWin[0][0];
-    vec3[1] = xWin[3][1] - xWin[0][1];
-    vec3[2] = xWin[3][2] - xWin[0][2];
-
-    double cp[3];
-
-    vectorCrossProduct(vec1, vec2, cp);
-    double A1 = 0.5 * vectorMagnitude(cp);
-
-    vectorCrossProduct(vec1, vec3, cp);
-    double A2 = 0.5 * vectorMagnitude(cp);
-
-    double A = A1 + A2;
-
-    return A;
 }
 
 bool DynamicTexture::getThreadsDoneDescending()

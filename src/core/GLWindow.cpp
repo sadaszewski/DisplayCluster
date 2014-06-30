@@ -234,21 +234,12 @@ QRectF GLWindow::getProjectedPixelRect(const bool clampToWindowArea) const
         if( clampToWindowArea )
         {
             // clamp to on-screen portion
-            if(xWin[i][0] < 0.)
-                xWin[i][0] = 0.;
-
-            if(xWin[i][0] > (double)width())
-                xWin[i][0] = (double)width();
-
-            if(xWin[i][1] < 0.)
-                xWin[i][1] = 0.;
-
-            if(xWin[i][1] > (double)height())
-                xWin[i][1] = (double)height();
+            xWin[i][0] = std::min( std::max( xWin[i][0], 0. ), (double)width() );
+            xWin[i][1] = std::min( std::max( xWin[i][1], 0. ), (double)height() );
         }
     }
-    const QPointF topleft( xWin[0][0], (double)height() - xWin[0][1] );
-    const QPointF bottomright( xWin[2][0], (double)height() - xWin[2][1] );
 
+    const QPointF topleft( xWin[3][0], xWin[3][1] );
+    const QPointF bottomright( xWin[1][0], xWin[1][1] );
     return QRectF( topleft, bottomright );
 }

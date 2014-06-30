@@ -196,7 +196,6 @@ private:
     void generateTexture(); // @All
 
     void renderChildren(const QRectF& texCoords); // @All
-    double getProjectedPixelArea(const bool onScreenOnly); // Used to determine children visibility // @All
     void renderTextureBorder(); // @All
     void renderTexturedUnitQuad(const QRectF& texCoords); // @All
 
