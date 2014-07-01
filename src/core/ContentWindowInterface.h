@@ -144,7 +144,7 @@ class ContentWindowInterface : public QObject
         void getButtonDimensions(float &width, float &height);
 
         /** Set the aspect ratio policy based on the gloabl Options. */
-        void fixAspectRatio(ContentWindowInterface * source=NULL);
+        void fixAspectRatio(ContentWindowInterface * source = 0);
 
         /** Is the window selected. */
         bool selected() const { return windowState_ == SELECTED; }
@@ -158,21 +158,21 @@ class ContentWindowInterface : public QObject
     public slots:
 
         // these methods set the local copies of the state variables if source != this
-        // they will emit signals if source == NULL or if this is a ContentWindowManager object
+        // they will emit signals if source == 0 or if this is a ContentWindowManager object
         // the source argument should not be provided by users -- only by these functions
-        virtual void adjustSize( const SizeState state, ContentWindowInterface * source=NULL );
-        virtual void setContentDimensions(int contentWidth, int contentHeight, ContentWindowInterface * source=NULL);
-        virtual void setCoordinates(QRectF coordinates, ContentWindowInterface * source=NULL);
-        virtual void setPosition(double x, double y, ContentWindowInterface * source=NULL);
-        virtual void setSize(double w, double h, ContentWindowInterface * source=NULL);
-        virtual void scaleSize(double factor, ContentWindowInterface * source=NULL);
-        virtual void setCenter(double centerX, double centerY, ContentWindowInterface * source=NULL);
-        virtual void setZoom(double zoom, ContentWindowInterface * source=NULL);
-        virtual void highlight(ContentWindowInterface * source=NULL);
-        virtual void setWindowState(ContentWindowInterface::WindowState windowState, ContentWindowInterface * source=NULL);
-        virtual void setEvent(Event event, ContentWindowInterface * source=NULL);
-        virtual void moveToFront(ContentWindowInterface * source=NULL);
-        virtual void close(ContentWindowInterface * source=NULL);
+        virtual void adjustSize( const SizeState state, ContentWindowInterface* source = 0 );
+        virtual void setContentDimensions(int contentWidth, int contentHeight, ContentWindowInterface* source = 0);
+        virtual void setCoordinates(QRectF coordinates, ContentWindowInterface* source = 0);
+        virtual void setPosition(double x, double y, ContentWindowInterface* source = 0);
+        virtual void setSize(double w, double h, ContentWindowInterface* source = 0);
+        virtual void scaleSize(double factor, ContentWindowInterface* source = 0);
+        virtual void setCenter(double centerX, double centerY, ContentWindowInterface* source = 0);
+        virtual void setZoom(double zoom, ContentWindowInterface* source = 0);
+        virtual void highlight(ContentWindowInterface* source = 0);
+        virtual void setWindowState(ContentWindowInterface::WindowState windowState, ContentWindowInterface* source = 0);
+        virtual void setEvent(Event event, ContentWindowInterface* source = 0);
+        virtual void moveToFront(ContentWindowInterface* source = 0);
+        virtual void close(ContentWindowInterface* source = 0);
 
     signals:
 

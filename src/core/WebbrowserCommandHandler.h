@@ -63,7 +63,7 @@ public:
                              const QString& defaultURL);
 
     /** Get the type of commands handled by the implementation. */
-    virtual CommandType getType() const;
+    CommandType getType() const override;
 
     /**
      * Handles an open web browser Command. It uses the command arguments as the
@@ -74,7 +74,7 @@ public:
      * @param command The Command to handle.
      * @param senderUri The identifier of the sender (optional).
      */
-    virtual void handle(const Command& command, const QString& senderUri = QString());
+    void handle(const Command& command, const QString& senderUri = QString()) override;
 
 signals:
     /** Signal the PixelStreamLauncher to open a Webbrowser */

@@ -7,5 +7,11 @@
 #cmakedefine01 ENABLE_PYTHON_SUPPORT
 #cmakedefine01 ENABLE_PDF_SUPPORT
 
+#ifdef __cplusplus
+#  ifndef CXX_FINAL_OVERRIDE_SUPPORTED
+#    define final
+#    define override
+#  endif
+#endif
 
 #endif

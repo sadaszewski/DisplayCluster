@@ -60,8 +60,8 @@ signals:
     void backgroundTapAndHold(QPointF pos);
 
 protected:
-    virtual bool viewportEvent( QEvent* event );
-    virtual void resizeEvent( QResizeEvent* event );
+    bool viewportEvent( QEvent* event ) override;
+    void resizeEvent( QResizeEvent* event ) override;
 
     void gestureEvent( QGestureEvent* event );
     void swipe( QSwipeGesture* gesture );

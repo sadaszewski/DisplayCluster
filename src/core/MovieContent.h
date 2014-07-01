@@ -48,13 +48,13 @@ public:
     MovieContent(QString uri = "") : Content(uri) { }
 
     /** Get the content type **/
-    CONTENT_TYPE getType();
+    CONTENT_TYPE getType() override;
 
     /**
      * Read movie informations from the source URI.
      * @return true on success, false if the URI is invalid or an error occured.
     **/
-    virtual bool readMetadata();
+    bool readMetadata() override;
 
     static const QStringList& getSupportedExtensions();
 

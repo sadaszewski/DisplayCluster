@@ -48,15 +48,15 @@ class PixelStreamContent : public Content
         PixelStreamContent(const QString& uri = "") : Content(uri) { }
 
         /** Get the content type **/
-        CONTENT_TYPE getType();
+        CONTENT_TYPE getType() override;
 
         /**
          * Content method overload, not used for PixelStreams.
          * @return always returns true
         **/
-        virtual bool readMetadata();
+        bool readMetadata() override;
 
-        virtual void advance(FactoriesPtr factories, ContentWindowManagerPtr window, const boost::posix_time::time_duration);
+        void advance(FactoriesPtr factories, ContentWindowManagerPtr window, const boost::posix_time::time_duration) override;
 
     private:
         friend class boost::serialization::access;

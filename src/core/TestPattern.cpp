@@ -111,7 +111,6 @@ void TestPattern::renderLabels()
     glColor3f(1.,1.,1.);
 
     unsigned int pos = 0;
-    foreach (QString label, labels_) {
+    foreach (QString label, labels_)
         glWindow_->renderText(TEXT_POS_X, ++pos * FONT_SIZE, label, textFont);
-    }
 }

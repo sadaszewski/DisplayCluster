@@ -78,9 +78,7 @@ private slots:
     void processPixelStreamFrame(PixelStreamFramePtr frame);
 
 private:
-    MPIChannelPtr mpiChannel_;
     boost::scoped_ptr<RenderContext> renderContext_;
-    DisplayGroupManagerPtr displayGroup_;
     DisplayGroupRendererPtr displayGroupRenderer_;
     FactoriesPtr factories_;
     boost::posix_time::ptime lastFrameTime_;

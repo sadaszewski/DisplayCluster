@@ -62,7 +62,7 @@ public:
         , hasWindows_(hasWindowsReturnValue)
     {}
 
-    virtual bool hasWindows() const
+    bool hasWindows() const override
     {
         return hasWindows_;
     }

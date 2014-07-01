@@ -37,16 +37,17 @@
 /*********************************************************************/
 
 #include "DisplayGroupListWidgetProxy.h"
+
 #include "ContentWindowManager.h"
 #include "Content.h"
 #include "ContentWindowListWidgetItem.h"
 
+#include <QListWidget>
+
 DisplayGroupListWidgetProxy::DisplayGroupListWidgetProxy(DisplayGroupManagerPtr displayGroupManager)
     : DisplayGroupInterface(displayGroupManager)
+    , listWidget_(new QListWidget())
 {
-    // create actual list widget
-    listWidget_ = new QListWidget();
-
     connect(listWidget_, SIGNAL(itemClicked(QListWidgetItem * )), this, SLOT(moveListWidgetItemToFront(QListWidgetItem *)));
 }
 
@@ -55,7 +56,7 @@ DisplayGroupListWidgetProxy::~DisplayGroupListWidgetProxy()
     delete listWidget_;
 }
 
-QListWidget * DisplayGroupListWidgetProxy::getListWidget()
+QListWidget* DisplayGroupListWidgetProxy::getListWidget()
 {
     return listWidget_;
 }
@@ -102,7 +103,6 @@ void DisplayGroupListWidgetProxy::moveListWidgetItemToFront(QListWidgetItem* ite
 
 void DisplayGroupListWidgetProxy::refreshListWidget()
 {
-    // clear list
     listWidget_->clear();
 
     for(unsigned int i=0; i<contentWindowManagers_.size(); i++)

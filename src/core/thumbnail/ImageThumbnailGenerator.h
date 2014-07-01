@@ -47,11 +47,10 @@ class ImageThumbnailGenerator : public ThumbnailGenerator
 public:
     ImageThumbnailGenerator(const QSize &size);
 
-    virtual QImage generate(const QString& filename) const;
+    QImage generate(const QString& filename) const override;
 
 protected:
     QImage createLargeImagePlaceholder() const;
-
 };
 
 #endif // IMAGETHUMBNAILGENERATOR_H

@@ -47,8 +47,7 @@ class PyramidThumbnailGenerator : public ThumbnailGenerator
 public:
     PyramidThumbnailGenerator(const QSize &size);
 
-    virtual QImage generate(const QString& filename) const;
-
+    QImage generate(const QString& filename) const override;
 };
 
 #endif // PYRAMIDTHUMBNAILGENERATOR_H

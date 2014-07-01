@@ -63,7 +63,7 @@ public:
      * Render the associated DisplayGroup.
      * @see setDisplayGroup()
      */
-    virtual void render();
+    void render() override;
 
     /**
      * Set the DisplayGroup to render, replacing the previous one.

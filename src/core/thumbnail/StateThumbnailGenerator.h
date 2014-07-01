@@ -47,11 +47,10 @@ class StateThumbnailGenerator : public ThumbnailGenerator
 public:
     StateThumbnailGenerator(const QSize &size);
 
-    virtual QImage generate(const QString& filename) const;
+    QImage generate(const QString& filename) const override;
 
 protected:
     QRect scaleRectAroundCenter(const QRect& rect, float scaleFactor) const;
-
 };
 
 #endif // STATETHUMBNAILGENERATOR_H

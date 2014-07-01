@@ -54,7 +54,7 @@ public:
     virtual ~MockNetworkListener();
 
 protected:
-    virtual void incomingConnection(int handle);
+    void incomingConnection(int handle) override;
 
 private:
     int32_t protocolVersion_;

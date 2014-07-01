@@ -62,7 +62,7 @@ public:
      * Render the associated ContentWindow.
      * @see setContentWindow()
      */
-    virtual void render();
+    void render() override;
 
     /**
      * Set the ContentWindow to be rendered.

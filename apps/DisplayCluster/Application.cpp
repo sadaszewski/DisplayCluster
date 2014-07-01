@@ -46,8 +46,10 @@
 #define CONFIGURATION_FILENAME "configuration.xml"
 #define DISPLAYCLUSTER_DIR "DISPLAYCLUSTER_DIR"
 
-Application::Application(int &argc_, char **argv_)
+Application::Application(int &argc_, char **argv_, MPIChannelPtr mpiChannel)
     : QApplication(argc_, argv_)
+    , mpiChannel_(mpiChannel)
+    , displayGroup_(new DisplayGroupManager)
 {
     QObject::connect(this, SIGNAL(lastWindowClosed()),
                      this, SLOT(quit()));

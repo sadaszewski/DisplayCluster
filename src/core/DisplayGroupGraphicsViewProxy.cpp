@@ -84,7 +84,7 @@ void DisplayGroupGraphicsViewProxy::removeContentWindowManager(ContentWindowMana
             // need dynamic cast to make sure this is actually a CWGI
             ContentWindowGraphicsItem * cwgi = dynamic_cast<ContentWindowGraphicsItem *>(itemsList.at(i));
 
-            if(cwgi != NULL && cwgi->getContentWindowManager() == contentWindowManager)
+            if(cwgi && cwgi->getContentWindowManager() == contentWindowManager)
             {
                 graphicsView_->scene()->removeItem(itemsList.at(i));
             }
@@ -112,7 +112,7 @@ void DisplayGroupGraphicsViewProxy::moveContentWindowManagerToFront(ContentWindo
             // need dynamic cast to make sure this is actually a CWGI
             ContentWindowGraphicsItem * cwgi = dynamic_cast<ContentWindowGraphicsItem *>(itemsList.at(i));
 
-            if(cwgi != NULL && cwgi->getContentWindowManager() == contentWindowManager)
+            if(cwgi && cwgi->getContentWindowManager() == contentWindowManager)
             {
                 // don't call cwgi->moveToFront() here or that'll lead to infinite recursion!
                 cwgi->setZToFront();

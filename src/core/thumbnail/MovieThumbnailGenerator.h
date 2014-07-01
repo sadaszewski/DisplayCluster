@@ -47,7 +47,7 @@ class MovieThumbnailGenerator : public ThumbnailGenerator
 public:
     MovieThumbnailGenerator(const QSize &size);
 
-    virtual QImage generate(const QString& filename) const;
+    QImage generate(const QString& filename) const override;
 };
 
 #endif // MOVIETHUMBNAILGENERATOR_H

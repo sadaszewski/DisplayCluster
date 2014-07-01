@@ -74,10 +74,10 @@
 
 
 MasterApplication::MasterApplication(int& argc_, char** argv_, MPIChannelPtr mpiChannel)
-    : Application(argc_, argv_)
-    , mpiChannel_(mpiChannel)
-    , displayGroup_(new DisplayGroupManager(mpiChannel))
+    : Application(argc_, argv_, mpiChannel)
 {
+    displayGroup_.reset(new DisplayGroupManager(mpiChannel));
+
     MasterConfiguration* config = new MasterConfiguration(getConfigFilename());
     g_configuration = config;
 
@@ -173,10 +173,14 @@ void MasterApplication::startWebservice(const int webServicePort)
 
 void MasterApplication::restoreBackground(const MasterConfiguration* configuration)
 {
-    // Must be done after everything else is setup (or in the MainWindow constructor)
     configuration->getOptions()->setBackgroundColor( configuration->getBackgroundColor( ));
-    ContentPtr content = ContentFactory::getContent( configuration->getBackgroundUri( ));
-    displayGroup_->setBackgroundContent( content );
+
+    const QString& backgroundUri = configuration->getBackgroundUri();
+    if ( !backgroundUri.isEmpty( ))
+    {
+        ContentPtr content = ContentFactory::getContent( backgroundUri );
+        displayGroup_->setBackgroundContent( content );
+    }
 }
 
 void MasterApplication::initPixelStreamLauncher()

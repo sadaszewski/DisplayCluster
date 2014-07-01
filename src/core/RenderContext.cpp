@@ -71,12 +71,12 @@ void RenderContext::setupOpenGLWindows(const WallConfiguration* configuration)
     }
 }
 
-GLWindowPtr RenderContext::getGLWindow(const int index)
+GLWindowPtr RenderContext::getGLWindow(const int index) const
 {
     return glWindows_[index];
 }
 
-GLWindowPtr RenderContext::getActiveGLWindow()
+GLWindowPtr RenderContext::getActiveGLWindow() const
 {
     return activeGLWindow_;
 }

@@ -58,10 +58,10 @@ class PixelStream : public FactoryObject
 public:
     PixelStream(const QString& uri);
 
-    void getDimensions(int &width, int &height) const;
+    void getDimensions(int &width, int &height) const override;
 
     void preRenderUpdate(const QRectF& windowRect);
-    void render(const QRectF& texCoords);
+    void render(const QRectF& texCoords) override;
 
     void insertNewFrame(const PixelStreamSegments& segments);
 

@@ -72,10 +72,10 @@ signals:
 
 public slots:
     /** Store the new settings and close the widget */
-    virtual void accept();
+    void accept() override;
 
     /** Revert to the previous settings and close the widget */
-    virtual void reject();
+    void reject() override;
 
 private slots:
     void chooseColor();

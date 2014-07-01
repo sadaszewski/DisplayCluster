@@ -51,8 +51,8 @@ public:
     RenderContext(const WallConfiguration* configuration);
     ~RenderContext();
 
-    GLWindowPtr getGLWindow(const int index=0);
-    GLWindowPtr getActiveGLWindow();
+    GLWindowPtr getGLWindow(const int index=0) const;
+    GLWindowPtr getActiveGLWindow() const;
     size_t getGLWindowCount() const;
 
     bool isRegionVisible(const QRectF& region) const;

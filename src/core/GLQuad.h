@@ -54,7 +54,7 @@ public:
     GLQuad();
 
     /** Draw the quad. */
-    virtual void render();
+    void render() override;
 
     /** Set the texture coordinates. */
     void setTexCoords(const QRectF& texCoords);

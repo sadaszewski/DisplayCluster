@@ -56,8 +56,9 @@ public:
      *
      * @param argc Command line argument count (required by QApplication)
      * @param argv Command line arguments (required by QApplication)
+     * @param mpiChannel The interprocess communication channel
      */
-    Application(int &argc, char **argv);
+    Application(int &argc, char **argv, MPIChannelPtr mpiChannel);
 
     /** Destructor */
     virtual ~Application();
@@ -65,6 +66,9 @@ public:
 protected:
     /** Get the configuration filename. */
     QString getConfigFilename() const;
+
+    MPIChannelPtr mpiChannel_;
+    DisplayGroupManagerPtr displayGroup_;
 };
 
 #endif // APPLICATION_H

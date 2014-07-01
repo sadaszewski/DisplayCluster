@@ -55,13 +55,13 @@ public:
     PDFContent(const QString& uri = "");
 
     /** Get the content type **/
-    CONTENT_TYPE getType();
+    CONTENT_TYPE getType() override;
 
     /**
      * Reaad PDF informations from the source URI.
      * @return true on success, false if the URI is invalid or an error occured.
     **/
-    virtual bool readMetadata();
+    bool readMetadata() override;
 
     static const QStringList& getSupportedExtensions();
 
@@ -90,7 +90,7 @@ private:
     int pageNumber_;
     int pageCount_;
 
-    virtual void advance(FactoriesPtr factories, ContentWindowManagerPtr window, const boost::posix_time::time_duration);
+    void advance(FactoriesPtr factories, ContentWindowManagerPtr window, const boost::posix_time::time_duration) override;
 };
 
 #endif // PDFCONTENT_H

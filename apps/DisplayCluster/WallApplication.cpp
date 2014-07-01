@@ -54,9 +54,7 @@
 #include <boost/foreach.hpp>
 
 WallApplication::WallApplication(int& argc_, char** argv_, MPIChannelPtr mpiChannel)
-    : Application(argc_, argv_)
-    , mpiChannel_(mpiChannel)
-    , displayGroup_(new DisplayGroupManager)
+    : Application(argc_, argv_, mpiChannel)
 {
     WallConfiguration* config = new WallConfiguration(getConfigFilename(),
                                                       mpiChannel_->getRank());

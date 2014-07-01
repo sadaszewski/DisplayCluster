@@ -200,7 +200,7 @@ void PDF::drawUnitTexturedQuad()
     glPopAttrib();
 }
 
-void PDF::generateTexture(const QRectF screenRect, const QRectF fullRect, const QRectF& texCoords)
+void PDF::generateTexture(const QRectF& screenRect, const QRectF& fullRect, const QRectF& texCoords)
 {
     // figure out the coordinates of the topLeft corner of the texture in the PDF page
     const double tXp = texCoords.x()/texCoords.width()*fullRect.width()  + (screenRect.x() - fullRect.x());

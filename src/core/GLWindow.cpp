@@ -112,9 +112,8 @@ void GLWindow::paintGL()
         return;
     }
 
-    foreach (RenderablePtr renderable, renderables_) {
+    foreach (RenderablePtr renderable, renderables_)
         renderable->render();
-    }
 
     if (options->getShowStreamingStatistics())
         drawFps();
@@ -176,7 +175,6 @@ void GLWindow::setOrthographicView()
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-
 }
 
 bool GLWindow::isRegionVisible(const QRectF& region) const

@@ -60,7 +60,7 @@ public:
     PixelStreamDispatcher* getPixelStreamDispatcher() const;
 
 protected:
-    virtual void incomingConnection(int socketHandle);
+    void incomingConnection(int socketHandle) override;
 
 private:
     PixelStreamWindowManager& windowManager_;

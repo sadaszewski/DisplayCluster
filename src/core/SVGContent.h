@@ -48,13 +48,13 @@ class SVGContent : public Content
         SVGContent(QString uri = "") : Content(uri) { }
 
         /** Get the content type **/
-        CONTENT_TYPE getType();
+        CONTENT_TYPE getType() override;
 
         /**
          * Read SVG metadata.
          * @return true on success, false if the URI is invalid or an error occured.
         **/
-        virtual bool readMetadata();
+        bool readMetadata() override;
 
         static const QStringList& getSupportedExtensions();
 

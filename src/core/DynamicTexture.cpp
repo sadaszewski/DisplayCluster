@@ -586,7 +586,7 @@ QImage DynamicTexture::getImageFromParent(const QRectF& imageRegion, DynamicText
     else
     {
         // we don't have a valid image
-        // if we're the root object, return a NULL image
+        // if we're the root object, return an empty image
         // otherwise, continue up the tree looking for an image
         if(isRoot())
             return QImage();

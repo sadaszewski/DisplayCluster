@@ -67,7 +67,7 @@ public:
                 const int tileIndex);
 
     /** Render the test pattern. */
-    virtual void render();
+    void render() override;
 
 private:
     QList<QString> labels_;

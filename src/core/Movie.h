@@ -53,8 +53,9 @@ public:
     Movie(QString uri);
     ~Movie();
 
-    virtual void getDimensions(int &width, int &height) const;
-    virtual void render(const QRectF& texCoords);
+    void getDimensions(int &width, int &height) const override;
+    void render(const QRectF& texCoords) override;
+
     void nextFrame(const boost::posix_time::time_duration timeSinceLastFrame, const bool skip);
     void setPause(const bool pause);
     void setLoop(const bool loop);

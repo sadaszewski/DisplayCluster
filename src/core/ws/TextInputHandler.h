@@ -73,7 +73,7 @@ public:
      * @param request A valid dcWebservice::Request object.
      * @return A valid Response object.
      */
-    virtual dcWebservice::ConstResponsePtr handle(const dcWebservice::Request& request) const;
+    dcWebservice::ConstResponsePtr handle(const dcWebservice::Request& request) const override;
 
 signals:
     /**

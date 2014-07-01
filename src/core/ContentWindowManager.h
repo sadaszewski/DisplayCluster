@@ -105,8 +105,8 @@ public:
 
     ///@{
     /** re-implemented ContentWindowInterface slots. */
-    virtual void moveToFront(ContentWindowInterface * source=NULL);
-    virtual void close(ContentWindowInterface * source=NULL);
+    void moveToFront(ContentWindowInterface* source = 0) override;
+    void close(ContentWindowInterface* source = 0) override;
     ///@}
 
     /** Get the position of the window center. */

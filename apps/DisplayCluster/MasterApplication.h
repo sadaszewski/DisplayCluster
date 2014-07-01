@@ -71,9 +71,7 @@ public:
     virtual ~MasterApplication();
 
 private:
-    MPIChannelPtr mpiChannel_;
     boost::scoped_ptr<MasterWindow> masterWindow_;
-    DisplayGroupManagerPtr displayGroup_;
     boost::scoped_ptr<NetworkListener> networkListener_;
     boost::scoped_ptr<PixelStreamerLauncher> pixelStreamerLauncher_;
     boost::scoped_ptr<PixelStreamWindowManager> pixelStreamWindowManager_;

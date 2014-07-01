@@ -55,13 +55,13 @@ class DynamicTextureContent : public Content
         DynamicTextureContent(QString uri = "");
 
         /** Get the content type **/
-        CONTENT_TYPE getType();
+        CONTENT_TYPE getType() override;
 
         /**
          * Read texture informations from the source URI.
          * @return true on success, false if the URI is invalid or an error occured.
         **/
-        virtual bool readMetadata();
+        bool readMetadata() override;
 
         static const QStringList& getSupportedExtensions();
 
@@ -75,7 +75,7 @@ class DynamicTextureContent : public Content
             ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Content);
         }
 
-        virtual void advance(FactoriesPtr factories, ContentWindowManagerPtr window, const boost::posix_time::time_duration);
+        void advance(FactoriesPtr factories, ContentWindowManagerPtr window, const boost::posix_time::time_duration) override;
 };
 
 #endif

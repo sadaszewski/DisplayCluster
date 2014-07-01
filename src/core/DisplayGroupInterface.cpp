@@ -42,14 +42,11 @@
 #include "ContentWindowManager.h"
 
 DisplayGroupInterface::DisplayGroupInterface(DisplayGroupManagerPtr displayGroupManager)
+    : displayGroupManager_(displayGroupManager)
 {
-    displayGroupManager_ = displayGroupManager;
-
     // copy all members from displayGroupManager
-    if(displayGroupManager != NULL)
-    {
+    if(displayGroupManager)
         contentWindowManagers_ = displayGroupManager->contentWindowManagers_;
-    }
 
     // connect signals from this to slots on the DisplayGroupManager
     // use queued connections for thread-safety

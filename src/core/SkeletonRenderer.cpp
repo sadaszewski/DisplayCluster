@@ -55,7 +55,7 @@ void SkeletonRenderer::render(const SkeletonStatePtrs& skeletons)
 {
     // render perspective overlay for skeletons
 
-    // setPersectiveView() may change the viewport!
+    // setPerspectiveView() may change the viewport!
     glPushAttrib(GL_VIEWPORT_BIT | GL_ENABLE_BIT | GL_CURRENT_BIT);
 
     // set the height of the skeleton view to a fraction of the total display height

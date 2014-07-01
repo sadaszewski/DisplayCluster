@@ -57,14 +57,14 @@ public:
     SessionCommandHandler(DisplayGroupManager& displayGroupManager);
 
     /** Get the type of commands handled by the implementation. */
-    virtual CommandType getType() const;
+    CommandType getType() const override;
 
     /**
      * Handle a session Command.
      * @param command The Command to handle.
      * @param senderUri The identifier of the sender (optional).
      */
-    virtual void handle(const Command& command, const QString& senderUri = QString());
+    void handle(const Command& command, const QString& senderUri = QString()) override;
 
 private:
     DisplayGroupManager& displayGroupManager_;

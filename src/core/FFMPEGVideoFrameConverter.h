@@ -56,6 +56,7 @@
 extern "C"
 {
     #include <libavcodec/avcodec.h>
+    #include <libavutil/mem.h>
     #include <libswscale/swscale.h>
 }
 

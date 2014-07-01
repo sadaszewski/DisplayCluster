@@ -361,7 +361,7 @@ bool FFMPEGMovie::readVideoFrame()
             // Here we have two options:
             // a) Ignore return code and never skip incorrect frames to maintain
             //    synchronization. May display only garbage, especially if the
-            //    rendering is too slow and seeking happens constently.
+            //    rendering is too slow and seeking happens constantly.
             //    Not recommended.
             //decodeVideoFrame(packet);
             // b) Keep decoding until we have a valid frame to display.

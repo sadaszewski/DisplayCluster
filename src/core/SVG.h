@@ -69,9 +69,8 @@ public:
     SVG(QString uri);
     ~SVG();
 
-    void getDimensions(int &width, int &height) const;
-    bool setImageData(QByteArray imageData);
-    void render(const QRectF& texCoords);
+    void getDimensions(int &width, int &height) const override;
+    void render(const QRectF& texCoords) override;
 
 private:
     // image location
@@ -90,6 +89,7 @@ private:
 
     GLQuad quad_;
 
+    bool setImageData(QByteArray imageData);
     void drawUnitTexturedQuad(const GLuint textureID);
 
     QRectF computeTextureRect(const QRectF& screenRect, const QRectF& fullRect,

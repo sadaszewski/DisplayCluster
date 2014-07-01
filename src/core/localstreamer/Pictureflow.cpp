@@ -243,8 +243,8 @@ public:
   PictureFlowSoftwareRenderer();
   ~PictureFlowSoftwareRenderer();
 
-  virtual void init();
-  virtual void paint();
+  void init() override;
+  void paint() override;
 
 private:
   QSize size;

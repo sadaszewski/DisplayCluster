@@ -86,9 +86,9 @@ public:
 protected:
     ///@{
     /** Overloaded methods from QGLWidget */
-    virtual void initializeGL();
-    virtual void paintGL();
-    virtual void resizeGL(int w, int h);
+    void initializeGL() override;
+    void paintGL() override;
+    void resizeGL(int w, int h) override;
     ///@}
 
 private:

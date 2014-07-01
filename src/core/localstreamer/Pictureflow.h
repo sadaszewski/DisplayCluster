@@ -184,10 +184,10 @@ signals:
   void imageUpdated( const QImage& image );
 
 protected:
-  void paintEvent(QPaintEvent* event);
-  void keyPressEvent(QKeyEvent* event);
-  void mousePressEvent(QMouseEvent* event);
-  void resizeEvent(QResizeEvent* event);
+  void paintEvent(QPaintEvent* event) override;
+  void keyPressEvent(QKeyEvent* event) override;
+  void mousePressEvent(QMouseEvent* event) override;
+  void resizeEvent(QResizeEvent* event) override;
 
 private slots:
   void updateAnimation();

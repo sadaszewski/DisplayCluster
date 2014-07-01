@@ -58,8 +58,10 @@ public:
     ~PDF();
 
     bool isValid() const;
-    void getDimensions(int &width, int &height) const;
-    void render(const QRectF& texCoords);
+
+    void getDimensions(int &width, int &height) const override;
+    void render(const QRectF& texCoords) override;
+
     void setPage(const int pageNumber);
     int getPageCount() const;
 
@@ -82,7 +84,7 @@ private:
     bool isValid(const int pageNumber) const;
 
     void drawUnitTexturedQuad();
-    void generateTexture(const QRectF screenRect, const QRectF fullRect, const QRectF& texCoords);
+    void generateTexture(const QRectF& screenRect, const QRectF& fullRect, const QRectF& texCoords);
 };
 
 #endif // PDF_H

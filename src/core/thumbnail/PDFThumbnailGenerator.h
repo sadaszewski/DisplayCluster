@@ -47,8 +47,7 @@ class PDFThumbnailGenerator : public ThumbnailGenerator
 public:
     PDFThumbnailGenerator(const QSize& size);
 
-    virtual QImage generate(const QString& filename) const;
-
+    QImage generate(const QString& filename) const override;
 };
 
 #endif // PDFTHUMBNAILGENERATOR_H

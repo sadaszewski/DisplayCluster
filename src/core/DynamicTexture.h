@@ -93,12 +93,12 @@ public:
      * Render the dynamic texture.
      * @param texCoords The area of the full scale texture to render
      */
-    virtual void render(const QRectF& texCoords);
+    void render(const QRectF& texCoords) override;
 
     /**
      * Post render step.
      */
-    virtual void postRenderUpdate();
+    void postRenderUpdate();
 
     /**
      * Generate an image Pyramid from the current uri and save it to the disk.

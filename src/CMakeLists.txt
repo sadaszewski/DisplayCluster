@@ -2,6 +2,8 @@
 configure_file(config.h.in ${CMAKE_BINARY_DIR}/config.h)
 include_directories(${CMAKE_BINARY_DIR})
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -include config.h")
+
 set(DISPLAYCLUSTER_LIBRARY_SHARED_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/Event.h
     ${CMAKE_CURRENT_SOURCE_DIR}/MessageHeader.h
