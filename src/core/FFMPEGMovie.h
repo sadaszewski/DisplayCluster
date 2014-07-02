@@ -104,14 +104,27 @@ public:
      */
     void update(const boost::posix_time::time_duration timeSinceLastFrame, const bool skipDecoding);
 
+    /**
+     * Is there a new frame available.
+     * @return true if a new frame was decoded as a result of the last call to
+     *         update() or jumpTo()
+     * @see update()
+     * @see jumpTo()
+     */
+    bool isNewFrameAvailable() const;
+
     /** Set looping behaviour when reaching the end of the file. */
     void setLoop(const bool loop);
 
     /** Get the movie duration in seconds. May be unavailable for some movies. */
     double getDuration() const;
 
-    /* !!experimental!! jump to a position in the movie. Warning: looses frameIndex_. */
-    bool jumpTo(double timePos);
+    /**
+     * Jump to a random position in the movie.
+     * @param timePosInSeconds The desired position in seconds
+     * @return true on success
+     */
+    bool jumpTo(const double timePosInSeconds);
 
 private:
     // FFMPEG
@@ -126,16 +139,18 @@ private:
     int64_t den2_;
     int64_t num2_;
     int64_t numFrames_;
-    int64_t frameIndex_;
     double frameDurationInSeconds_;
 
-    boost::posix_time::time_duration timeAccum_;
-    boost::posix_time::time_duration frameDurationPosix_;
+    boost::posix_time::time_duration timePosition_;
 
     // Internal
     bool loop_;
     int frameDecodingComplete_;
     bool isValid_;
+    bool skippedFrames_;
+
+    // Public status
+    bool newFrameAvailable_;
 
     /** Init the global FFMPEG context. */
     static void initGlobalState();
@@ -152,10 +167,11 @@ private:
 
     bool readVideoFrame();
     bool seekToExactFrame(const int64_t frameIndex);
-    bool seekToNearestFullframe(const int64_t frameIndex); // Warning: looses frameIndex_!!
-    size_t computeFrameIncrement();
+    bool seekToNearestFullframe(const int64_t frameIndex);
+    void clampTimePosition();
     int64_t getTimestampForFrameIndex(const int64_t frameIndex) const;
     bool decodeVideoFrame(AVPacket& packet);
+    bool convertVideoFrame();
     void rewind();
     bool isVideoStream(const AVPacket& packet) const;
     void generateSeekingParameters();

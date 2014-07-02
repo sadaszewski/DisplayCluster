@@ -72,19 +72,17 @@ const QStringList& MovieContent::getSupportedExtensions()
 
 void MovieContent::advance(FactoriesPtr factories, ContentWindowManagerPtr window, const boost::posix_time::time_duration timeSinceLastFrame)
 {
-//    if( blockAdvance_ )
-//        return;
-
-    // window parameters
-    double x, y, w, h;
-    window->getCoordinates(x, y, w, h);
-
-    // skip a frame if the Content rectangle is not visible in ANY windows; otherwise decode normally
-    //const bool skip = !g_mainWindow->isRegionVisible(QRectF(x, y, w, h));
-    const bool skip = false;
+    // Stop decoding when the window is moving to avoid saccades when reaching a new GLWindow
+    // The decoding resumes when the movement is finished
+    if( blockAdvance_ )
+        return;
 
     boost::shared_ptr< Movie > movie = factories->getMovieFactory().getObject(getURI());
+
+    // skip a frame if the Content rectangle is not visible in any window; otherwise decode normally
+    const bool skipDecoding = !movie->getRenderContext()->isRegionVisible(window->getCoordinates());
+
     movie->setPause( window->getControlState() & STATE_PAUSED );
     movie->setLoop( window->getControlState() & STATE_LOOP );
-    movie->nextFrame(timeSinceLastFrame, skip);
+    movie->nextFrame(timeSinceLastFrame, skipDecoding);
 }

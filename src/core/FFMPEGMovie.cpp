@@ -47,6 +47,8 @@
 
 #define INVALID_STREAM_INDEX -1
 
+#define MICROSEC 1000000.0
+
 #pragma clang diagnostic ignored "-Wdeprecated"
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
@@ -60,12 +62,14 @@ FFMPEGMovie::FFMPEGMovie(const QString& uri)
     , den2_(0)
     , num2_(0)
     , numFrames_(0)
-    , frameIndex_(0)
     , frameDurationInSeconds_(0)
     // Internal
     , loop_(false)
     , frameDecodingComplete_(0)
     , isValid_(false)
+    , skippedFrames_(false)
+    // Public status
+    , newFrameAvailable_(false)
 {
     FFMPEGMovie::initGlobalState();
 
@@ -216,14 +220,16 @@ void FFMPEGMovie::setLoop(const bool loop)
 
 double FFMPEGMovie::getDuration() const
 {
-    double duration = (double)videoStream_->duration *
+    const double duration = (double)videoStream_->duration *
             (double)videoStream_->time_base.num / (double)videoStream_->time_base.den;
-    return duration > 0.0 ? duration : 0.0;
+    return std::max(duration, 0.0);
 }
 
-bool FFMPEGMovie::jumpTo(double timePos)
+bool FFMPEGMovie::jumpTo(const double timePosInSeconds)
 {
-    const int64_t frameIndex = timePos/frameDurationInSeconds_;
+    newFrameAvailable_ = false;
+
+    const int64_t frameIndex = timePosInSeconds / frameDurationInSeconds_;
     if (!seekToNearestFullframe(frameIndex))
         return false;
 
@@ -232,59 +238,89 @@ bool FFMPEGMovie::jumpTo(double timePos)
             return false;
     }
     while( !frameDecodingComplete_ );
+
+    timePosition_ = boost::posix_time::microseconds(timePosInSeconds * MICROSEC);
+
+    convertVideoFrame();
     return true;
 }
 
 void FFMPEGMovie::update(const boost::posix_time::time_duration timeSinceLastFrame, const bool skipDecoding)
 {
-    // rate limiting
-    timeAccum_ += timeSinceLastFrame;
+    newFrameAvailable_ = false;
+    timePosition_ += timeSinceLastFrame;
 
     if (skipDecoding)
-        return;
-
-    // Check how by many frames we need to move
-    const size_t frameIncrement = computeFrameIncrement();
-
-    if ( frameIncrement == 0 )
-        return;
-
-    if( frameIncrement == 1 )
     {
+        skippedFrames_ = true;
+        return;
+    }
+
+    if (skippedFrames_)
+        clampTimePosition();
+
+    const double timePositionInSec = timePosition_.total_microseconds()  / MICROSEC;
+    const int64_t index = timePositionInSec / frameDurationInSeconds_;
+
+    // Catch up on missed frames
+    if (skippedFrames_)
+    {
+        seekToNearestFullframe(index);
+        skippedFrames_ = false;
+    }
+
+    bool readNewVideoFrame = false;
+
+    // Read frames until we reach the correct timestamp
+    while(avFrame_->pkt_dts < getTimestampForFrameIndex(index))
+    {
+        readNewVideoFrame = true;
+
         // Read one frame and return to start if EOF reached
         if(!readVideoFrame() && loop_)
+        {
             rewind();
+            break;
+        }
     }
-    else
-    {
-        // Catch up on missed frames
-        seekToNearestFullframe( (frameIndex_ + frameIncrement) % numFrames_ );
-    }
+
+    if (readNewVideoFrame)
+        convertVideoFrame();
 }
 
-size_t FFMPEGMovie::computeFrameIncrement()
+bool FFMPEGMovie::isNewFrameAvailable() const
 {
-    size_t frameIncrement = 0;
+    return newFrameAvailable_;
+}
 
-    while( timeAccum_ > frameDurationPosix_ )
-    {
-        timeAccum_ -= frameDurationPosix_;
-        ++frameIncrement;
-    }
+void FFMPEGMovie::clampTimePosition()
+{
+    if(getDuration() <= 0.0)
+        return;
 
-    return frameIncrement;
+    while (timePosition_.total_seconds() > getDuration())
+        timePosition_ -= boost::posix_time::microseconds(getDuration() * MICROSEC);
 }
 
 int64_t FFMPEGMovie::getTimestampForFrameIndex(const int64_t frameIndex) const
 {
-    assert (frameIndex >= 0 && frameIndex < numFrames_);
+    if (frameIndex < 0 || (numFrames_ && frameIndex >= numFrames_))
+    {
+        put_flog(LOG_WARN, "Invalid index: %i - valid range: [0, %i[",
+                 frameIndex, numFrames_);
+    }
 
-    return videoStream_->start_time + av_rescale(frameIndex, den2_, num2_);
+    int64_t timestamp = av_rescale(frameIndex, den2_, num2_);
+
+    if (videoStream_->start_time != (int64_t)AV_NOPTS_VALUE)
+        timestamp += videoStream_->start_time;
+
+    return timestamp;
 }
 
 bool FFMPEGMovie::seekToExactFrame(const int64_t frameIndex)
 {
-    if (frameIndex < 0 || frameIndex >= numFrames_)
+    if (frameIndex < 0 || (numFrames_ && frameIndex >= numFrames_))
     {
         put_flog(LOG_WARN, "Invalid index: %i, seeking aborted.", frameIndex);
         return false;
@@ -306,18 +342,14 @@ bool FFMPEGMovie::seekToExactFrame(const int64_t frameIndex)
     // Always flush buffers after seeking
     avcodec_flush_buffers(videoCodecContext_);
 
-    frameIndex_ = frameIndex;
-    timeAccum_ = boost::posix_time::time_duration();
-
     return true;
 }
 
 bool FFMPEGMovie::seekToNearestFullframe(const int64_t frameIndex)
 {
-    if (frameIndex < 0 || frameIndex >= numFrames_)
+    if (frameIndex < 0 || (numFrames_ && frameIndex >= numFrames_))
     {
-        put_flog(LOG_WARN, "Invalid index: %i/%i, seeking aborted.",
-                 frameIndex, numFrames_);
+        put_flog(LOG_WARN, "Invalid index: %i, seeking aborted.", frameIndex);
         return false;
     }
 
@@ -337,10 +369,6 @@ bool FFMPEGMovie::seekToNearestFullframe(const int64_t frameIndex)
     // Always flush buffers after seeking
     avcodec_flush_buffers(videoCodecContext_);
 
-    //frameIndex_ = -1; // Warning: We have no idea where we are!!
-    frameIndex_ = frameIndex; // Keep our approximate index as a temporary solution
-    timeAccum_ = boost::posix_time::time_duration();
-
     return true;
 }
 
@@ -354,38 +382,18 @@ bool FFMPEGMovie::readVideoFrame()
     // keep reading frames until we decode a valid video frame
     while((avReadStatus = av_read_frame(avFormatContext_, &packet)) >= 0)
     {
-        if(isVideoStream(packet))
+        if(isVideoStream(packet) && decodeVideoFrame(packet))
         {
-            ++frameIndex_;
-
-            // Here we have two options:
-            // a) Ignore return code and never skip incorrect frames to maintain
-            //    synchronization. May display only garbage, especially if the
-            //    rendering is too slow and seeking happens constantly.
-            //    Not recommended.
-            //decodeVideoFrame(packet);
-            // b) Keep decoding until we have a valid frame to display.
-            //    The original implementation. The frame index is maintained
-            //    locally and only valid frames are displayed.
-            //    However, this breaks the synchronization with other processes
-            //    which were not decoding as we decode more frames than they think.
-            //    Re-sychronizing implies a global mechanism to agree on a common
-            //    frame index (probably the largest one?).
-            if (decodeVideoFrame(packet))
-            {
-                // free the packet that was allocated by av_read_frame
-                av_free_packet(&packet);
-                break;
-            }
+            // free the packet that was allocated by av_read_frame
+            av_free_packet(&packet);
+            break;
         }
         // free the packet that was allocated by av_read_frame
         av_free_packet(&packet);
     }
 
-    //put_flog(LOG_DEBUG, "Rank%i read %i", g_mpiRank, frameIndex_);
-
     // False if file read error or EOF reached
-    return avReadStatus >= 0 && frameIndex_ < numFrames_;
+    return avReadStatus >= 0;
 }
 
 bool FFMPEGMovie::isVideoStream(const AVPacket& packet) const
@@ -395,7 +403,11 @@ bool FFMPEGMovie::isVideoStream(const AVPacket& packet) const
 
 void FFMPEGMovie::rewind()
 {
-    seekToExactFrame(0);
+    if (seekToExactFrame(0))
+    {
+        timePosition_ = boost::posix_time::time_duration();
+        readVideoFrame();
+    }
 }
 
 bool FFMPEGMovie::decodeVideoFrame(AVPacket& packet)
@@ -415,9 +427,16 @@ bool FFMPEGMovie::decodeVideoFrame(AVPacket& packet)
         return false;
     }
 
-    //put_flog(LOG_DEBUG, "Rank%i : Decoded frame with PTS: %i", g_mpiRank, avFrame_->pkt_dts);
+    return true;
+}
 
-    return videoFrameConverter_->convert(avFrame_);
+bool FFMPEGMovie::convertVideoFrame()
+{
+    if (!videoFrameConverter_->convert(avFrame_))
+        return false;
+
+    newFrameAvailable_ = true;
+    return true;
 }
 
 void FFMPEGMovie::generateSeekingParameters()
@@ -426,17 +445,17 @@ void FFMPEGMovie::generateSeekingParameters()
     den2_ = videoStream_->time_base.den * videoStream_->r_frame_rate.den;
     num2_ = videoStream_->time_base.num * videoStream_->r_frame_rate.num;
 
-    numFrames_ = av_rescale(videoStream_->duration, num2_, den2_);
+    numFrames_ = (videoStream_->duration > 0) ?
+                 av_rescale(videoStream_->duration, num2_, den2_) : 0;
+
     frameDurationInSeconds_ = (double)videoStream_->r_frame_rate.den /
                               (double)videoStream_->r_frame_rate.num;
 
-    // Boost time format for frame duration
-    frameDurationPosix_ = boost::posix_time::microseconds(frameDurationInSeconds_ * 1000000.);
-
-    put_flog(LOG_DEBUG, "seeking parameters: start_time = %i, duration_ = %i, num frames = %i",
+    put_flog(LOG_DEBUG, "seeking parameters: start_time = %i, duration_ = %i, numFrames_ = %i",
              videoStream_->start_time, videoStream_->duration, numFrames_);
     put_flog(LOG_DEBUG, "                    frame_rate = %f, time_base = %f",
              (float)videoStream_->r_frame_rate.num/(float)videoStream_->r_frame_rate.den,
              (float)videoStream_->time_base.num/(float)videoStream_->time_base.den);
+    put_flog(LOG_DEBUG, "                    frameDurationInSeconds_ = %f",
+             (float)frameDurationInSeconds_);
 }
-

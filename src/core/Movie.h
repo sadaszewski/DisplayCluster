@@ -56,7 +56,7 @@ public:
     void getDimensions(int &width, int &height) const override;
     void render(const QRectF& texCoords) override;
 
-    void nextFrame(const boost::posix_time::time_duration timeSinceLastFrame, const bool skip);
+    void nextFrame(const boost::posix_time::time_duration timeSinceLastFrame, const bool skipDecoding);
     void setPause(const bool pause);
     void setLoop(const bool loop);
 

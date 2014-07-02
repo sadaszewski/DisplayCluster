@@ -57,17 +57,15 @@ void Movie::getDimensions(int &width, int &height) const
     height = ffmpegMovie_->getHeight();
 }
 
-void Movie::nextFrame(const boost::posix_time::time_duration timeSinceLastFrame, const bool skip)
+void Movie::nextFrame(const boost::posix_time::time_duration timeSinceLastFrame, const bool skipDecoding)
 {
     if(paused_)
         return;
 
-    ffmpegMovie_->update(timeSinceLastFrame, skip);
+    ffmpegMovie_->update(timeSinceLastFrame, skipDecoding);
 
-    if (skip)
-        return;
-
-    texture_.update(ffmpegMovie_->getData(), GL_RGBA);
+    if (ffmpegMovie_->isNewFrameAvailable())
+        texture_.update(ffmpegMovie_->getData(), GL_RGBA);
 }
 
 bool Movie::generateTexture()
