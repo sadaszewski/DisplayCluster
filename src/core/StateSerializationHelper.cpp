@@ -107,7 +107,7 @@ bool StateSerializationHelper::load(const QString& filename)
         boost::archive::xml_iarchive ia(ifs);
         ia >> BOOST_SERIALIZATION_NVP(state);
     }
-    catch(const boost::archive::xml_archive_exception& e)
+    catch(const boost::archive::archive_exception& e)
     {
         put_flog(LOG_ERROR, "Could not restore session/state %s: %s",
                  filename.toStdString().c_str(), e.what());

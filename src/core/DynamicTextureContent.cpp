@@ -54,7 +54,8 @@ CONTENT_TYPE DynamicTextureContent::getType()
 
 bool DynamicTextureContent::readMetadata()
 {
-    return true;
+    QFileInfo file( getURI( ));
+    return file.exists() && file.isReadable();
 }
 
 const QStringList& DynamicTextureContent::getSupportedExtensions()
