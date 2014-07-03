@@ -54,7 +54,8 @@ CONTENT_TYPE MovieContent::getType()
 
 bool MovieContent::readMetadata()
 {
-    return true;
+    QFileInfo file( getURI( ));
+    return file.exists() && file.isReadable();
 }
 
 const QStringList& MovieContent::getSupportedExtensions()

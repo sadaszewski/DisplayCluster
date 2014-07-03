@@ -44,6 +44,7 @@
 
 #include <boost/serialization/export.hpp>
 #include "serializationHelpers.h"
+#include <QFileInfo>
 
 BOOST_CLASS_EXPORT_GUID(SVGContent, "SVGContent")
 
@@ -54,7 +55,8 @@ CONTENT_TYPE SVGContent::getType()
 
 bool SVGContent::readMetadata()
 {
-    return true;
+    QFileInfo file( getURI( ));
+    return file.exists() && file.isReadable();
 }
 
 const QStringList& SVGContent::getSupportedExtensions()
