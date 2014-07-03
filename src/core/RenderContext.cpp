@@ -41,6 +41,8 @@
 #include "configuration/WallConfiguration.h"
 #include "GLWindow.h"
 
+#include <boost/foreach.hpp>
+
 RenderContext::RenderContext(const WallConfiguration* configuration)
 {
     setupOpenGLWindows(configuration);
@@ -88,9 +90,9 @@ size_t RenderContext::getGLWindowCount() const
 
 bool RenderContext::isRegionVisible(const QRectF& region) const
 {
-    for(unsigned int i=0; i<glWindows_.size(); i++)
+    BOOST_FOREACH(GLWindowPtr glWindow, glWindows_)
     {
-        if(glWindows_[i]->isRegionVisible(region))
+        if(glWindow->isRegionVisible(region))
             return true;
     }
     return false;
@@ -98,15 +100,18 @@ bool RenderContext::isRegionVisible(const QRectF& region) const
 
 void RenderContext::updateGLWindows()
 {
-    for(size_t i=0; i<glWindows_.size(); i++)
+    BOOST_FOREACH(GLWindowPtr glWindow, glWindows_)
     {
-        activeGLWindow_ = glWindows_[i];
-        glWindows_[i]->updateGL();
+        activeGLWindow_ = glWindow;
+        glWindow->updateGL();
     }
 }
 
 void RenderContext::swapBuffers()
 {
-    for(size_t i=0; i<glWindows_.size(); i++)
-        glWindows_[i]->swapBuffers();
+    BOOST_FOREACH(GLWindowPtr glWindow, glWindows_)
+    {
+        glWindow->makeCurrent();
+        glWindow->swapBuffers();
+    }
 }

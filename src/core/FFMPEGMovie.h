@@ -166,7 +166,6 @@ private:
     void closeVideoStreamDecoder() const;
 
     bool readVideoFrame();
-    bool seekToExactFrame(const int64_t frameIndex);
     bool seekToNearestFullframe(const int64_t frameIndex);
     void clampTimePosition();
     int64_t getTimestampForFrameIndex(const int64_t frameIndex) const;

@@ -80,8 +80,15 @@ public:
      */
     bool isRegionVisible(const QRectF& region) const;
 
-    /** Used by PDF and SVG renderers */
-    QRectF getProjectedPixelRect(const bool clampToWindowArea) const;
+    /**
+     * Get the region spanned by a unit rectangle {(0;0),(1;1)} in the current
+     * GL view.
+     * The region is in screen coordinates with the origin at the viewport's
+     * top-left corner.
+     * @param clampToViewportBorders Clamp to the visible part of the region.
+     * @return The region in pixel units.
+     */
+    static QRectF getProjectedPixelRect(const bool clampToViewportBorders);
 
 protected:
     ///@{

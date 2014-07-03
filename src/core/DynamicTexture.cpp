@@ -212,9 +212,20 @@ void loadImageInThread(DynamicTexturePtr dynamicTexture)
 
 void DynamicTexture::loadImageAsync()
 {
-    loadImageThreadStarted_ = true;
-    incrementGlobalThreadCount();
-    loadImageThread_ = QtConcurrent::run(loadImageInThread, shared_from_this());
+    // only start the thread if this DynamicTexture tree has one available
+    // each DynamicTexture tree is limited to (maxThreads - 2) threads, where
+    // the max is determined by the global QThreadPool instance
+    // we increase responsiveness / interactivity by not queuing up image loading
+    // const int maxThreads = std::max(QThreadPool::globalInstance()->maxThreadCount() - 2, 1);
+    // todo: this doesn't perform well with too many threads; restricting to 1 thread for now
+    const int maxThreads = 1;
+
+    if(getGlobalThreadCount() < maxThreads)
+    {
+        loadImageThreadStarted_ = true;
+        incrementGlobalThreadCount();
+        loadImageThread_ = QtConcurrent::run(loadImageInThread, shared_from_this());
+    }
 }
 
 bool DynamicTexture::loadFullResImage()
@@ -255,7 +266,7 @@ QImage DynamicTexture::loadImageRegionFromFullResImageFile(const QString& filena
     QImage image = imageReader.read();
 
     if(!image.isNull())
-        return image.scaled(TEXTURE_SIZE, TEXTURE_SIZE);
+        return image.scaled(TEXTURE_SIZE, TEXTURE_SIZE, Qt::KeepAspectRatio);
 
     put_flog(LOG_DEBUG, "failed to read clipped region of image; attempting to read clipped and scaled region of image");
     imageReader.setScaledSize(QSize(TEXTURE_SIZE, TEXTURE_SIZE));
@@ -273,7 +284,7 @@ void DynamicTexture::loadImage()
         else
         {
             if (!fullscaleImage_.isNull() || loadFullResImage())
-                scaledImage_ = fullscaleImage_.scaled(TEXTURE_SIZE, TEXTURE_SIZE);
+                scaledImage_ = fullscaleImage_.scaled(TEXTURE_SIZE, TEXTURE_SIZE, Qt::KeepAspectRatio);
         }
     }
     else
@@ -293,7 +304,7 @@ void DynamicTexture::loadImage()
             if(!image.isNull())
             {
                 imageSize_= image.size();
-                scaledImage_ = image.scaled(TEXTURE_SIZE, TEXTURE_SIZE);
+                scaledImage_ = image.scaled(TEXTURE_SIZE, TEXTURE_SIZE, Qt::KeepAspectRatio);
             }
             else
             {
@@ -336,24 +347,17 @@ void DynamicTexture::render(const QRectF& texCoords)
 
     // Normal rendering: load the texture if not already available
     if(!loadImageThreadStarted_)
-    {
-        // only start the thread if this DynamicTexture tree has one available
-        // each DynamicTexture tree is limited to (maxThreads - 2) threads, where
-        // the max is determined by the global QThreadPool instance
-        // we increase responsiveness / interactivity by not queuing up image loading
-        // const int maxThreads = std::max(QThreadPool::globalInstance()->maxThreadCount() - 2, 1);
-        // todo: this doesn't perform well with too many threads; restricting to 1 thread for now
-        const int maxThreads = 1;
-
-        if(getGlobalThreadCount() < maxThreads)
-            loadImageAsync();
-    }
+        loadImageAsync();
 
     render_(texCoords);
 }
 
 void DynamicTexture::postRenderUpdate()
 {
+    // Root needs to always have a texture for renderInParent()
+    if (isRoot() && !loadImageThreadStarted_)
+        loadImageAsync();
+
     clearOldChildren();
     renderedChildren_ = false;
 }
@@ -476,8 +480,7 @@ bool DynamicTexture::generateImagePyramid(const QString& pyramidFolder)
     scaledImage_ = QImage(); // no longer need scaled image
 
     // if we need to descend further...
-    if( (getRoot()->imageSize_.width() / pow(2,depth_)) > TEXTURE_SIZE ||
-        (getRoot()->imageSize_.height() / pow(2,depth_)) > TEXTURE_SIZE )
+    if(canHaveChildren())
     {
         // image rectangle a child quadrant contains
         QRectF imageBounds[4];

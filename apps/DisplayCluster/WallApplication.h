@@ -42,7 +42,9 @@
 
 #include "Application.h"
 
+#ifndef Q_MOC_RUN
 #include <boost/date_time/posix_time/posix_time.hpp>
+#endif
 #include <boost/scoped_ptr.hpp>
 
 class WallConfiguration;

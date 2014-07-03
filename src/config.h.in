@@ -9,7 +9,6 @@
 
 #ifdef __cplusplus
 #  ifndef CXX_FINAL_OVERRIDE_SUPPORTED
-#    define final
 #    define override
 #  endif
 #endif

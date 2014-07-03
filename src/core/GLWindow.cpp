@@ -63,6 +63,7 @@ GLWindow::GLWindow(const int tileIndex, QRect windowRect, QGLWidget* shareWidget
   , top_(0)
 {
     setGeometry(windowRect);
+    setCursor(Qt::BlankCursor);
 
     if(shareWidget && !isSharing())
     {
@@ -141,30 +142,24 @@ void GLWindow::setOrthographicView()
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
 
-    // invert y-axis to put origin at lower-left corner
-    glScalef(1.,-1.,1.);
-
     // tiled display parameters
     double tileI = (double)configuration_->getGlobalScreenIndex(tileIndex_).x();
-    double numTilesX = (double)configuration_->getTotalScreenCountX();
     double screenWidth = (double)configuration_->getScreenWidth();
     double mullionWidth = (double)configuration_->getMullionWidth();
+    double totalWidth = (double)configuration_->getTotalWidth();
 
     double tileJ = (double)configuration_->getGlobalScreenIndex(tileIndex_).y();
-    double numTilesY = (double)configuration_->getTotalScreenCountY();
     double screenHeight = (double)configuration_->getScreenHeight();
     double mullionHeight = (double)configuration_->getMullionHeight();
-
-    // border calculations
-    left_ = tileI / numTilesX * ( numTilesX * screenWidth ) + tileI * mullionWidth;
-    right_ = left_ + screenWidth;
-    bottom_ = tileJ / numTilesY * ( numTilesY * screenHeight ) + tileJ * mullionHeight;
-    top_ = bottom_ + screenHeight;
-
-    // normalize to 0->1
-    double totalWidth = (double)configuration_->getTotalWidth();
     double totalHeight = (double)configuration_->getTotalHeight();
 
+    // border calculations
+    left_ = tileI * (screenWidth + mullionWidth);
+    right_ = left_ + screenWidth;
+    top_ = tileJ * (screenHeight + mullionHeight);
+    bottom_ = top_ + screenHeight;
+
+    // normalize to 0->1
     left_ /= totalWidth;
     right_ /= totalWidth;
     bottom_ /= totalHeight;
@@ -179,7 +174,7 @@ void GLWindow::setOrthographicView()
 
 bool GLWindow::isRegionVisible(const QRectF& region) const
 {
-    const QRectF screenRect(left_, bottom_, right_-left_, top_-bottom_);
+    const QRectF screenRect(left_, top_, right_-left_, bottom_-top_);
 
     return screenRect.intersects(region);
 }
@@ -202,7 +197,7 @@ void GLWindow::drawFps()
     glPopAttrib();
 }
 
-QRectF GLWindow::getProjectedPixelRect(const bool clampToWindowArea) const
+QRectF GLWindow::getProjectedPixelRect(const bool clampToViewportBorders)
 {
     // get four corners in object space (recall we're in normalized 0->1 dimensions)
     const double corners[4][3] =
@@ -229,15 +224,22 @@ QRectF GLWindow::getProjectedPixelRect(const bool clampToWindowArea) const
     {
         gluProject(corners[i][0], corners[i][1], corners[i][2], modelview, projection, viewport, &xWin[i][0], &xWin[i][1], &xWin[i][2]);
 
-        if( clampToWindowArea )
+        const GLdouble viewportWidth = (GLdouble)viewport[2];
+        const GLdouble viewportHeight = (GLdouble)viewport[3];
+
+        // The GL coordinates system origin is at the bottom-left corner with
+        // the y-axis pointing upwards. For the QRect, we want the origin at
+        // the top of the viewport with the y-axis pointing downwards.
+        xWin[i][1] = viewportHeight - xWin[i][1];
+
+        if( clampToViewportBorders )
         {
-            // clamp to on-screen portion
-            xWin[i][0] = std::min( std::max( xWin[i][0], 0. ), (double)width() );
-            xWin[i][1] = std::min( std::max( xWin[i][1], 0. ), (double)height() );
+            xWin[i][0] = std::min( std::max( xWin[i][0], 0. ), viewportWidth );
+            xWin[i][1] = std::min( std::max( xWin[i][1], 0. ), viewportHeight );
         }
     }
 
-    const QPointF topleft( xWin[3][0], xWin[3][1] );
-    const QPointF bottomright( xWin[1][0], xWin[1][1] );
+    const QPointF topleft( xWin[0][0], xWin[0][1] );
+    const QPointF bottomright( xWin[2][0], xWin[2][1] );
     return QRectF( topleft, bottomright );
 }

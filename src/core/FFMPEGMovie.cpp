@@ -248,7 +248,17 @@ bool FFMPEGMovie::jumpTo(const double timePosInSeconds)
 void FFMPEGMovie::update(const boost::posix_time::time_duration timeSinceLastFrame, const bool skipDecoding)
 {
     newFrameAvailable_ = false;
-    timePosition_ += timeSinceLastFrame;
+
+    // If decoding is slower than frame rate, slow down decoding speed
+    const double timeIncrementInSec = timeSinceLastFrame.total_microseconds() / MICROSEC;
+    if (timeIncrementInSec < frameDurationInSeconds_)
+        timePosition_ += timeSinceLastFrame;
+    else
+    {
+        const double factor = frameDurationInSeconds_ / timeIncrementInSec;
+        const double increment = factor * frameDurationInSeconds_;
+        timePosition_ += boost::posix_time::microseconds(increment * MICROSEC);
+    }
 
     if (skipDecoding)
     {
@@ -259,17 +269,17 @@ void FFMPEGMovie::update(const boost::posix_time::time_duration timeSinceLastFra
     if (skippedFrames_)
         clampTimePosition();
 
-    const double timePositionInSec = timePosition_.total_microseconds()  / MICROSEC;
+    const double timePositionInSec = timePosition_.total_microseconds() / MICROSEC;
     const int64_t index = timePositionInSec / frameDurationInSeconds_;
+
+    bool readNewVideoFrame = false;
 
     // Catch up on missed frames
     if (skippedFrames_)
     {
-        seekToNearestFullframe(index);
+        readNewVideoFrame = seekToNearestFullframe(index);
         skippedFrames_ = false;
     }
-
-    bool readNewVideoFrame = false;
 
     // Read frames until we reach the correct timestamp
     while(avFrame_->pkt_dts < getTimestampForFrameIndex(index))
@@ -295,11 +305,13 @@ bool FFMPEGMovie::isNewFrameAvailable() const
 
 void FFMPEGMovie::clampTimePosition()
 {
-    if(getDuration() <= 0.0)
+    const double duration = getDuration();
+
+    if(duration <= 0.0)
         return;
 
-    while (timePosition_.total_seconds() > getDuration())
-        timePosition_ -= boost::posix_time::microseconds(getDuration() * MICROSEC);
+    while (timePosition_.total_microseconds() / MICROSEC > duration)
+        timePosition_ -= boost::posix_time::microseconds(duration * MICROSEC);
 }
 
 int64_t FFMPEGMovie::getTimestampForFrameIndex(const int64_t frameIndex) const
@@ -318,33 +330,6 @@ int64_t FFMPEGMovie::getTimestampForFrameIndex(const int64_t frameIndex) const
     return timestamp;
 }
 
-bool FFMPEGMovie::seekToExactFrame(const int64_t frameIndex)
-{
-    if (frameIndex < 0 || (numFrames_ && frameIndex >= numFrames_))
-    {
-        put_flog(LOG_WARN, "Invalid index: %i, seeking aborted.", frameIndex);
-        return false;
-    }
-
-    const int64_t desiredTimestamp = getTimestampForFrameIndex(frameIndex);
-
-    // AVSEEK_FLAG_ANY lets us seek to the exact frame index so we don't loose
-    // track of the frame index and can maintain sychronization.
-    // However, with this approach we display incomplete frames until the next
-    // full frame is reached (this might take as much as a few seconds with h264).
-    if(avformat_seek_file(avFormatContext_, videoStream_->index, 0, desiredTimestamp,
-                          desiredTimestamp, AVSEEK_FLAG_ANY) != 0)
-    {
-        put_flog(LOG_ERROR, "seeking error, seeking aborted.");
-        return false;
-    }
-
-    // Always flush buffers after seeking
-    avcodec_flush_buffers(videoCodecContext_);
-
-    return true;
-}
-
 bool FFMPEGMovie::seekToNearestFullframe(const int64_t frameIndex)
 {
     if (frameIndex < 0 || (numFrames_ && frameIndex >= numFrames_))
@@ -355,10 +340,7 @@ bool FFMPEGMovie::seekToNearestFullframe(const int64_t frameIndex)
 
     const int64_t desiredTimestamp = getTimestampForFrameIndex(frameIndex);
 
-    // Default behaviour is to seek to the nearest keyframe before desiredTimestamp.
-    // This gives a valid frame to display, but since ffmpeg does not inform
-    // us of the actual frame index reached, it becomes meaningless and the
-    // synchronization with processes which were not decoding is lost.
+    // Seek to the nearest keyframe before desiredTimestamp.
     if(avformat_seek_file(avFormatContext_, videoStream_->index, 0, desiredTimestamp,
                           desiredTimestamp, AVSEEK_FLAG_FRAME) != 0)
     {
@@ -369,7 +351,8 @@ bool FFMPEGMovie::seekToNearestFullframe(const int64_t frameIndex)
     // Always flush buffers after seeking
     avcodec_flush_buffers(videoCodecContext_);
 
-    return true;
+    // Read a valid frame after seeking to get a meaningful avFrame_->pkt_dts
+    return readVideoFrame();
 }
 
 bool FFMPEGMovie::readVideoFrame()
@@ -403,9 +386,15 @@ bool FFMPEGMovie::isVideoStream(const AVPacket& packet) const
 
 void FFMPEGMovie::rewind()
 {
-    if (seekToExactFrame(0))
+    if (av_seek_frame(avFormatContext_, videoStream_->index, 0, AVSEEK_FLAG_BACKWARD) >= 0)
     {
+        put_flog(LOG_DEBUG, "Time: %lf", timePosition_.total_microseconds() / MICROSEC );
+
         timePosition_ = boost::posix_time::time_duration();
+
+        // Always flush buffers after seeking
+        avcodec_flush_buffers(videoCodecContext_);
+
         readVideoFrame();
     }
 }
