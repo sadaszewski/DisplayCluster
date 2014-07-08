@@ -77,7 +77,7 @@ void ContentWindowManager::setContent(ContentPtr content)
     if(content_)
     {
         content_->disconnect(this, SLOT(setContentDimensions(int, int)));
-        content_->disconnect(this, SIGNAL(modified()));
+        content_->disconnect(this, SIGNAL(contentModified()));
     }
 
     // set content object
