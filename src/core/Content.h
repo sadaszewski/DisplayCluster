@@ -39,19 +39,16 @@
 #ifndef CONTENT_H
 #define CONTENT_H
 
+#include "types.h"
 #include "ContentFactory.h"
 #include "ContentType.h"
-#include "types.h"
-
-#include <QtGui>
 
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/assume_abstract.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/serialization/nvp.hpp>
-
-class ContentWindowManager;
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 /**
  * An abstract Content displayed in a ContentWindowManager.
@@ -85,16 +82,13 @@ class Content : public QObject
 
         void getDimensions(int &width, int &height);
         void setDimensions(int width, int height);
-        virtual void getFactoryObjectDimensions(int &width, int &height) = 0;
-        void render(ContentWindowManagerPtr window, const bool showZoomContext);
         void blockAdvance( bool block ) { blockAdvance_ = block; }
 
         // virtual method for implementing actions on advancing to a new frame
         // useful when a process has multiple GLWindows
-        virtual void advance(ContentWindowManagerPtr) { }
+        virtual void advance(FactoriesPtr, ContentWindowManagerPtr, const boost::posix_time::time_duration) { }
 
     signals:
-
         /** Emitted when dimensions have changed */
         void dimensionsChanged(int width, int height);
 
@@ -117,9 +111,6 @@ class Content : public QObject
         int width_;
         int height_;
         bool blockAdvance_;
-
-        virtual void renderFactoryObject(ContentWindowManagerPtr window,
-                                         const QRectF& texCoords) = 0;
 };
 
 BOOST_SERIALIZATION_ASSUME_ABSTRACT(Content)

@@ -51,7 +51,7 @@ public:
 
     MockHandler() : simulateFailure(false) {}
 
-    virtual dcWebservice::ConstResponsePtr handle(const dcWebservice::Request&) const
+    dcWebservice::ConstResponsePtr handle(const dcWebservice::Request&) const override
     {
         if(simulateFailure)
             return dcWebservice::ResponsePtr();
@@ -67,7 +67,7 @@ public:
 
     FakeBuilder() : simulateFailure(false) {};
 
-    virtual dcWebservice::RequestPtr buildRequest(FCGX_Request&)
+    dcWebservice::RequestPtr buildRequest(FCGX_Request&) override
     {
         if(simulateFailure)
             return dcWebservice::RequestPtr();
@@ -82,22 +82,22 @@ public:
 class FakeFCGI : public dcWebservice::FastCGIWrapper
 {
 public:
-    virtual bool init(const int, const unsigned int)
+    bool init(const unsigned int, const unsigned int) override
     {
         return true;
     }
 
-    virtual bool accept()
+    bool accept() override
     {
         return true;
     }
 
-    virtual FCGX_Request* getRequest()
+    FCGX_Request* getRequest() override
     {
         return new FCGX_Request();
     }
 
-    bool write(const std::string& msg)
+    bool write(const std::string& msg) override
     {
         message = msg;
         return true;

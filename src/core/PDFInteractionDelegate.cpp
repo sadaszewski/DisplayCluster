@@ -43,6 +43,9 @@
 #include "PDFContent.h"
 #include "globals.h"
 
+#include <QTapGesture>
+#include <QSwipeGesture>
+
 PDFInteractionDelegate::PDFInteractionDelegate(ContentWindowManager& contentWindow)
     : ZoomInteractionDelegate(contentWindow)
 {

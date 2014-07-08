@@ -42,21 +42,26 @@
 #include "Content.h"
 #include <boost/serialization/base_object.hpp>
 
+/**
+ * The Content object for a dynamically loaded large scale image.
+ */
 class DynamicTextureContent : public Content
 {
     public:
-        DynamicTextureContent(QString uri = "") : Content(uri) { }
+        /**
+         * Create a DynamicTextureContent.
+         * @param uri The image or pyramid file.
+         */
+        DynamicTextureContent(QString uri = "");
 
         /** Get the content type **/
-        CONTENT_TYPE getType();
+        CONTENT_TYPE getType() override;
 
         /**
          * Read texture informations from the source URI.
          * @return true on success, false if the URI is invalid or an error occured.
         **/
-        virtual bool readMetadata();
-
-        void getFactoryObjectDimensions(int &width, int &height);
+        bool readMetadata() override;
 
         static const QStringList& getSupportedExtensions();
 
@@ -70,9 +75,7 @@ class DynamicTextureContent : public Content
             ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Content);
         }
 
-        virtual void advance(ContentWindowManagerPtr window);
-
-        virtual void renderFactoryObject(ContentWindowManagerPtr window, const QRectF& texCoords);
+        void advance(FactoriesPtr factories, ContentWindowManagerPtr window, const boost::posix_time::time_duration) override;
 };
 
 #endif

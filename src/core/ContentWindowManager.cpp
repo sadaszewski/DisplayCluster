@@ -42,8 +42,6 @@
 #include "globals.h"
 #include "MPIChannel.h"
 #include "ContentInteractionDelegate.h"
-#include "configuration/Configuration.h"
-#include "GLWindow.h"
 #include "config.h"
 #include "log.h"
 
@@ -104,7 +102,7 @@ void ContentWindowManager::setContent(ContentPtr content)
     createInteractionDelegate();
 }
 
-ContentPtr ContentWindowManager::getContent()
+ContentPtr ContentWindowManager::getContent() const
 {
     return content_;
 }
@@ -136,7 +134,7 @@ void ContentWindowManager::createInteractionDelegate()
     }
 }
 
-DisplayGroupManagerPtr ContentWindowManager::getDisplayGroupManager()
+DisplayGroupManagerPtr ContentWindowManager::getDisplayGroupManager() const
 {
     return displayGroupManager_.lock();
 }
@@ -146,7 +144,7 @@ void ContentWindowManager::setDisplayGroupManager(DisplayGroupManagerPtr display
     displayGroupManager_ = displayGroupManager;
 }
 
-ContentInteractionDelegate& ContentWindowManager::getInteractionDelegate()
+ContentInteractionDelegate& ContentWindowManager::getInteractionDelegate() const
 {
     return *interactionDelegate_;
 }
@@ -177,10 +175,12 @@ void ContentWindowManager::close(ContentWindowInterface * source)
 
 QPointF ContentWindowManager::getWindowCenterPosition() const
 {
-    return QPointF(coordinates_.x() + 0.5 * coordinates_.width(), coordinates_.y() + 0.5 * coordinates_.height());
+    return QPointF(coordinates_.x() + 0.5 * coordinates_.width(),
+                   coordinates_.y() + 0.5 * coordinates_.height());
 }
 
-void ContentWindowManager::centerPositionAround(const QPointF& position, const bool constrainToWindowBorders)
+void ContentWindowManager::centerPositionAround(const QPointF& position,
+                                                const bool constrainToWindowBorders)
 {
     if(position.isNull())
         return;
@@ -200,156 +200,4 @@ void ContentWindowManager::centerPositionAround(const QPointF& position, const b
     }
 
     setPosition(newX, newY);
-}
-
-void ContentWindowManager::render()
-{
-    bool showWindowBorders = true;
-    bool showZoomContext = false;
-
-    DisplayGroupManagerPtr displayGroup = getDisplayGroupManager();
-    if(displayGroup)
-    {
-        showWindowBorders = displayGroup->getOptions()->getShowWindowBorders();
-        showZoomContext = displayGroup->getOptions()->getShowZoomContext();
-    }
-
-    content_->render(shared_from_this(), showZoomContext);
-
-    if(showWindowBorders || selected())
-    {
-        double horizontalBorder = 5. / (double)g_configuration->getTotalHeight(); // 5 pixels
-
-        // enlarge the border if we're highlighted
-        if(getHighlighted())
-            horizontalBorder *= 4.;
-
-        double verticalBorder = (double)g_configuration->getTotalHeight() /
-                                (double)g_configuration->getTotalWidth() * horizontalBorder;
-
-        glPushAttrib(GL_CURRENT_BIT);
-
-        // color the border based on window state
-        if(selected())
-            glColor4f(1,0,0,1);
-        else
-            glColor4f(1,1,1,1);
-
-        GLWindow::drawRectangle(coordinates_.x()-verticalBorder, coordinates_.y()-horizontalBorder,
-                                coordinates_.width()+2.*verticalBorder, coordinates_.height()+2.*horizontalBorder);
-
-        glPopAttrib();
-    }
-
-#if 0	// not needed for multitouch
-    glPushAttrib(GL_CURRENT_BIT);
-
-    // render buttons if any of the markers are over the window
-    bool markerOverWindow = false;
-
-    MarkerPtrs markers = getDisplayGroupManager()->getMarkers();
-
-    for(unsigned int i=0; i<markers.size(); i++)
-    {
-        // don't consider inactive markers
-        if(markers[i]->getActive() == false)
-        {
-            continue;
-        }
-
-        float markerX, markerY;
-        markers[i]->getPosition(markerX, markerY);
-
-        if(QRectF(x_, y_, w_, h_).contains(markerX, markerY) == true)
-        {
-            markerOverWindow = true;
-            break;
-        }
-    }
-
-    if(markerOverWindow == true)
-    {
-        // we need this to be slightly in front of the rest of the window
-        glPushMatrix();
-        glTranslatef(0,0,0.001);
-
-        // button dimensions
-        float buttonWidth, buttonHeight;
-        getButtonDimensions(buttonWidth, buttonHeight);
-
-        // draw close button
-        QRectF closeRect(x_ + w_ - buttonWidth, y_, buttonWidth, buttonHeight);
-
-        // semi-transparent background
-        glColor4f(1,0,0,0.125);
-
-        glPushAttrib(GL_ENABLE_BIT | GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_BLEND);
-        glDepthMask(GL_FALSE);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        glBegin(GL_QUADS);
-        glVertex2f(closeRect.x(), closeRect.y());
-        glVertex2f(closeRect.x()+closeRect.width(), closeRect.y());
-        glVertex2f(closeRect.x()+closeRect.width(), closeRect.y()+closeRect.height());
-        glVertex2f(closeRect.x(), closeRect.y()+closeRect.height());
-        glEnd();
-
-        glPopAttrib();
-
-        glColor4f(1,0,0,1);
-
-        glBegin(GL_LINE_LOOP);
-        glVertex2f(closeRect.x(), closeRect.y());
-        glVertex2f(closeRect.x()+closeRect.width(), closeRect.y());
-        glVertex2f(closeRect.x()+closeRect.width(), closeRect.y()+closeRect.height());
-        glVertex2f(closeRect.x(), closeRect.y()+closeRect.height());
-        glEnd();
-
-        glBegin(GL_LINES);
-        glVertex2f(closeRect.x(), closeRect.y());
-        glVertex2f(closeRect.x() + closeRect.width(), closeRect.y() + closeRect.height());
-        glVertex2f(closeRect.x()+closeRect.width(), closeRect.y());
-        glVertex2f(closeRect.x(), closeRect.y() + closeRect.height());
-        glEnd();
-
-        // resize indicator
-        QRectF resizeRect(x_ + w_ - buttonWidth, y_ + h_ - buttonHeight, buttonWidth, buttonHeight);
-
-        // semi-transparent background
-        glColor4f(0.5,0.5,0.5,0.25);
-
-        glPushAttrib(GL_ENABLE_BIT | GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_BLEND);
-        glDepthMask(GL_FALSE);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        glBegin(GL_QUADS);
-        glVertex2f(resizeRect.x(), resizeRect.y());
-        glVertex2f(resizeRect.x()+resizeRect.width(), resizeRect.y());
-        glVertex2f(resizeRect.x()+resizeRect.width(), resizeRect.y()+resizeRect.height());
-        glVertex2f(resizeRect.x(), resizeRect.y()+resizeRect.height());
-        glEnd();
-
-        glPopAttrib();
-
-        glColor4f(0.5,0.5,0.5,1);
-
-        glBegin(GL_LINE_LOOP);
-        glVertex2f(resizeRect.x(), resizeRect.y());
-        glVertex2f(resizeRect.x()+resizeRect.width(), resizeRect.y());
-        glVertex2f(resizeRect.x()+resizeRect.width(), resizeRect.y()+resizeRect.height());
-        glVertex2f(resizeRect.x(), resizeRect.y()+resizeRect.height());
-        glEnd();
-
-        glBegin(GL_LINES);
-        glVertex2f(resizeRect.x()+resizeRect.width(), resizeRect.y());
-        glVertex2f(resizeRect.x(), resizeRect.y() + resizeRect.height());
-        glEnd();
-
-        glPopMatrix();
-    }
-
-    glPopAttrib();
-#endif
 }

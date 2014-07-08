@@ -1,5 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
+/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -36,90 +37,38 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef MAIN_WINDOW_H
-#define MAIN_WINDOW_H
+#ifndef APPLICATION_H
+#define APPLICATION_H
 
-#include "config.h"
-#include "types.h"
+#include <QApplication>
 
-#include <QtGui>
-#include <QGLWidget>
-#include <boost/shared_ptr.hpp>
+#include "globals.h"
 
-class MultiTouchListener;
-class BackgroundWidget;
-
-class MainWindow : public QMainWindow
+/**
+ * The base class for both Master and Wall main applications.
+ */
+class Application : public QApplication
 {
     Q_OBJECT
+public:
+    /**
+     * Create an Application.
+     *
+     * @param argc Command line argument count (required by QApplication)
+     * @param argv Command line arguments (required by QApplication)
+     * @param mpiChannel The interprocess communication channel
+     */
+    Application(int &argc, char **argv, MPIChannelPtr mpiChannel);
 
-    public:
-        MainWindow();
-        ~MainWindow();
+    /** Destructor */
+    virtual ~Application();
 
-        GLWindowPtr getGLWindow(int index=0);
-        GLWindowPtr getActiveGLWindow();
+protected:
+    /** Get the configuration filename. */
+    QString getConfigFilename() const;
 
-        bool isRegionVisible(const QRectF& region) const;
-
-        void finalize();
-
-    signals:
-        void openDock(QPointF pos, QSize size, QString rootDir);
-        void hideDock();
-        void openWebBrowser(QPointF pos, QSize size, QString url);
-
-#if ENABLE_SKELETON_SUPPORT
-        void enableSkeletonTracking();
-        void disableSkeletonTracking();
-#endif
-        void updateGLWindowsFinished();
-
-    protected:
-        void dragEnterEvent(QDragEnterEvent *event);
-        void dropEvent(QDropEvent *event);
-
-    private slots:
-        void openContent();
-        void openContentsDirectory();
-        void clearContents();
-
-        void saveState();
-        void loadState();
-
-        void computeImagePyramid();
-        void showBackgroundWidget();
-
-        void openWebBrowser();
-        void openDock(const QPointF position);
-
-    #if ENABLE_SKELETON_SUPPORT
-        void setEnableSkeletonTracking(bool enable);
-    #endif
-
-        void updateGLWindows();
-
-    private:
-        void setupMasterWindowUI();
-        void setupWallOpenGLWindows();
-
-        void addContentDirectory(const QString &directoryName, unsigned int gridX=0, unsigned int gridY=0);
-        void loadState(const QString &filename);
-
-        void estimateGridSize(unsigned int numElem, unsigned int& gridX, unsigned int& gridY);
-
-        QStringList extractValidContentUrls(const QMimeData* mimeData);
-        QStringList extractFolderUrls(const QMimeData *mimeData);
-        QString extractStateFile(const QMimeData *mimeData);
-
-        GLWindowPtrs glWindows_;
-        GLWindowPtr activeGLWindow_;
-
-        BackgroundWidget* backgroundWidget_;
-
-#if ENABLE_TUIO_TOUCH_LISTENER
-        MultiTouchListener* touchListener_;
-#endif
+    MPIChannelPtr mpiChannel_;
+    DisplayGroupManagerPtr displayGroup_;
 };
 
-#endif
+#endif // APPLICATION_H

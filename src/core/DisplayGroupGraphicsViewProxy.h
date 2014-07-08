@@ -50,19 +50,19 @@ class DisplayGroupGraphicsViewProxy : public DisplayGroupInterface
 
     public:
 
-        DisplayGroupGraphicsViewProxy(DisplayGroupManagerPtr displayGroupManager);
+        DisplayGroupGraphicsViewProxy(DisplayGroupManagerPtr displayGroup);
         ~DisplayGroupGraphicsViewProxy();
 
         DisplayGroupGraphicsView * getGraphicsView();
 
         // re-implemented DisplayGroupInterface slots
-        void addContentWindowManager(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface * source=NULL);
-        void removeContentWindowManager(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface * source=NULL);
-        void moveContentWindowManagerToFront(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface * source=NULL);
+        void addContentWindowManager(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface* source = 0);
+        void removeContentWindowManager(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface* source = 0);
+        void moveContentWindowManagerToFront(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface* source = 0);
 
     public slots:
 
-        void optionsUpdated();
+        void optionsUpdated(OptionsPtr options);
 
     private:
 

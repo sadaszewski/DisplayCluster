@@ -39,12 +39,31 @@
 #include "FactoryObject.h"
 #include "globals.h"
 
-uint64_t FactoryObject::getRenderedFrameIndex() const
+FactoryObject::FactoryObject()
+    : renderContext_(0)
 {
-    return renderedFrameIndex_;
 }
 
-void FactoryObject::updateRenderedFrameIndex()
+FactoryObject::~FactoryObject()
 {
-    renderedFrameIndex_ = g_frameCount;
+}
+
+void FactoryObject::setRenderContext(RenderContext* renderContext)
+{
+    renderContext_ = renderContext;
+}
+
+RenderContext*FactoryObject::getRenderContext() const
+{
+    return renderContext_;
+}
+
+uint64_t FactoryObject::getFrameIndex() const
+{
+    return frameIndex_;
+}
+
+void FactoryObject::setFrameIndex(const uint64_t frameIndex)
+{
+    frameIndex_ = frameIndex;
 }

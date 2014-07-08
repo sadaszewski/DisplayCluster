@@ -53,7 +53,6 @@ namespace ut = boost::unit_test;
 #ifdef PLEASE_REMOVE_ME
 #include "globals.h"
 #include "configuration/Configuration.h"
-#include "Options.h"
 
 #include "MinimalGlobalQtApp.h"
 BOOST_GLOBAL_FIXTURE( MinimalGlobalQtApp )
@@ -67,7 +66,7 @@ const QString DUMMY_URI = "/dummuy/uri";
 BOOST_AUTO_TEST_CASE( testWhenStateIsSerializedAndDeserializedThenContentPropertiesArePreserved )
 {
 #ifdef PLEASE_REMOVE_ME
-    g_configuration = new Configuration("configuration.xml", OptionsPtr(new Options));
+    g_configuration = new Configuration("configuration.xml");
 #endif
 
     // Serialize

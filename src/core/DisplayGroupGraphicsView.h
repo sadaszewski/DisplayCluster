@@ -40,6 +40,7 @@
 #define DISPLAY_GROUP_GRAPHICS_VIEW_H
 
 #include <QtGui>
+#include "types.h"
 
 class PanGesture;
 class PinchGesture;
@@ -49,7 +50,7 @@ class DisplayGroupGraphicsView : public QGraphicsView
     Q_OBJECT
 
 public:
-    DisplayGroupGraphicsView();
+    DisplayGroupGraphicsView(DisplayGroupManagerPtr displayGroup);
     virtual ~DisplayGroupGraphicsView();
 
     void grabGestures();
@@ -59,8 +60,8 @@ signals:
     void backgroundTapAndHold(QPointF pos);
 
 protected:
-    virtual bool viewportEvent( QEvent* event );
-    virtual void resizeEvent( QResizeEvent* event );
+    bool viewportEvent( QEvent* event ) override;
+    void resizeEvent( QResizeEvent* event ) override;
 
     void gestureEvent( QGestureEvent* event );
     void swipe( QSwipeGesture* gesture );

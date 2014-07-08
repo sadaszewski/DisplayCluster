@@ -47,6 +47,8 @@
 #include "PixelStreamWindowManager.h"
 #include "log.h"
 
+#include <QFileInfo>
+
 FileCommandHandler::FileCommandHandler(DisplayGroupManagerPtr displayGroupManager,
                                        PixelStreamWindowManager& windowManager)
     : displayGroupManager_(displayGroupManager)

@@ -42,93 +42,132 @@
 #include "ContentWindowInterface.h"
 #include "Content.h" // need pyContent for pyContentWindowManager
 
-#include <QtGui>
+#include "serializationHelpers.h"
+
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/serialization/weak_ptr.hpp>
 #include <boost/date_time/posix_time/time_serialize.hpp>
 
-#include "serializationHelpers.h"
-
 class DisplayGroupManager;
 class ContentInteractionDelegate;
 
-class ContentWindowManager : public ContentWindowInterface, public boost::enable_shared_from_this<ContentWindowManager>
+/**
+ * A window for placing a Content on the Wall.
+ *
+ * Can be serialized and distributed to the Wall applications.
+ */
+class ContentWindowManager : public ContentWindowInterface,
+        public boost::enable_shared_from_this<ContentWindowManager>
 {
     Q_OBJECT
 
-    public:
+public:
+    /** No-argument constructor required for serialization. */
+    ContentWindowManager();
 
-        ContentWindowManager(); // no-argument constructor required for serialization
-        ContentWindowManager(ContentPtr content);
-        virtual ~ContentWindowManager();
+    /**
+     * Create a new window.
+     * @param content The Content for this window.
+     * @note Rank0 only.
+     */
+    ContentWindowManager(ContentPtr content);
 
-        void setContent(ContentPtr content);
-        ContentPtr getContent();
+    /** Destructor. */
+    virtual ~ContentWindowManager();
 
-        void createInteractionDelegate();
+    /** Get the content. */
+    ContentPtr getContent() const;
 
-        DisplayGroupManagerPtr getDisplayGroupManager();
-        void setDisplayGroupManager(DisplayGroupManagerPtr displayGroupManager);
+    /** Set the content, replacing the existing one. @note Rank0 only. */
+    void setContent(ContentPtr content);
 
-        ContentInteractionDelegate& getInteractionDelegate();
+    /** Get the parent DisplayGroup of this window. */
+    DisplayGroupManagerPtr getDisplayGroupManager() const;
 
-        // re-implemented ContentWindowInterface slots
-        void moveToFront(ContentWindowInterface * source=NULL);
-        void close(ContentWindowInterface * source=NULL);
+    /** Set a reference on the parent DisplayGroup of this window. */
+    void setDisplayGroupManager(DisplayGroupManagerPtr displayGroupManager);
 
-        QPointF getWindowCenterPosition() const;
-        void centerPositionAround(const QPointF& position, const bool constrainToWindowBorders);
+    /**
+     * Get the interaction delegate.
+     * @see createInteractionDelegate()
+     * @note Rank0 only.
+     */
+    ContentInteractionDelegate& getInteractionDelegate() const;
 
-        // GLWindow rendering
-        void render();
+    /**
+     * Create a delegate to handle user interaction through dc::Events.
+     * The type of delegate created depends on the ContentType.
+     * @note Rank0 only.
+     */
+    void createInteractionDelegate();
 
-    signals:
-        /** Emitted when the Content signals that it has been modified */
-        void contentModified();
+    ///@{
+    /** re-implemented ContentWindowInterface slots. */
+    void moveToFront(ContentWindowInterface* source = 0) override;
+    void close(ContentWindowInterface* source = 0) override;
+    ///@}
 
-    protected:
-        friend class boost::serialization::access;
+    /** Get the position of the window center. */
+    QPointF getWindowCenterPosition() const;
 
-        template<class Archive>
-        void serialize(Archive & ar, const unsigned int)
-        {
-            ar & content_;
-            ar & displayGroupManager_;
-            ar & contentWidth_;
-            ar & contentHeight_;
-            ar & coordinates_;
-            ar & centerX_;
-            ar & centerY_;
-            ar & zoom_;
-            ar & controlState_;
-            ar & windowState_;
-            ar & highlightedTimestamp_;
-        }
+    /**
+     * Move the window to a new position.
+     * @param position The position for the window center
+     * @param constrainToWindowBorders If true, the new position will be
+     *        adjusted so that the window does not exceed the screen boundaries.
+     */
+    void centerPositionAround(const QPointF& position,
+                              const bool constrainToWindowBorders);
 
-        template<class Archive>
-        void serialize_for_xml(Archive & ar, const unsigned int)
-        {
-            ar & boost::serialization::make_nvp("content", content_);
-            ar & boost::serialization::make_nvp("contentWidth", contentWidth_);
-            ar & boost::serialization::make_nvp("contentHeight", contentHeight_);
-            ar & boost::serialization::make_nvp("coordinates", coordinates_);
-            ar & boost::serialization::make_nvp("coordinatesBackup", coordinatesBackup_);
-            ar & boost::serialization::make_nvp("centerX", centerX_);
-            ar & boost::serialization::make_nvp("centerY", centerY_);
-            ar & boost::serialization::make_nvp("zoom", zoom_);
-            ar & boost::serialization::make_nvp("controlState", controlState_);
-            ar & boost::serialization::make_nvp("windowState", windowState_);
-        }
+signals:
+    /** Emitted when the Content signals that it has been modified. */
+    void contentModified();
 
-    private:
-        ContentPtr content_;
+protected:
+    friend class boost::serialization::access;
 
-        boost::weak_ptr<DisplayGroupManager> displayGroupManager_;
+    /** Serialize for sending to Wall applications. */
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int)
+    {
+        ar & content_;
+        ar & displayGroupManager_;
+        ar & contentWidth_;
+        ar & contentHeight_;
+        ar & coordinates_;
+        ar & centerX_;
+        ar & centerY_;
+        ar & zoom_;
+        ar & controlState_;
+        ar & windowState_;
+        ar & highlightedTimestamp_;
+    }
 
-        // Rank0: Delegate to handle user inputs
-        ContentInteractionDelegate* interactionDelegate_;
+    /** Serialize for saving to an xml file */
+    template<class Archive>
+    void serialize_for_xml(Archive & ar, const unsigned int)
+    {
+        ar & boost::serialization::make_nvp("content", content_);
+        ar & boost::serialization::make_nvp("contentWidth", contentWidth_);
+        ar & boost::serialization::make_nvp("contentHeight", contentHeight_);
+        ar & boost::serialization::make_nvp("coordinates", coordinates_);
+        ar & boost::serialization::make_nvp("coordinatesBackup", coordinatesBackup_);
+        ar & boost::serialization::make_nvp("centerX", centerX_);
+        ar & boost::serialization::make_nvp("centerY", centerY_);
+        ar & boost::serialization::make_nvp("zoom", zoom_);
+        ar & boost::serialization::make_nvp("controlState", controlState_);
+        ar & boost::serialization::make_nvp("windowState", windowState_);
+    }
+
+private:
+    ContentPtr content_;
+
+    boost::weak_ptr<DisplayGroupManager> displayGroupManager_;
+
+    // Rank0: Delegate to handle user inputs
+    ContentInteractionDelegate* interactionDelegate_;
 };
 
 DECLARE_SERIALIZE_FOR_XML(ContentWindowManager)
@@ -138,32 +177,32 @@ typedef ContentWindowManagerPtr pContentWindowManager;
 
 class pyContentWindowManager
 {
-    public:
+public:
 
-        pyContentWindowManager(pyContent content)
-        {
-            ContentWindowManagerPtr contentWindow(new ContentWindowManager(content.get()));
-            ptr_ = contentWindow;
-        }
+    pyContentWindowManager(pyContent content)
+    {
+        ContentWindowManagerPtr contentWindow(new ContentWindowManager(content.get()));
+        ptr_ = contentWindow;
+    }
 
-        pyContentWindowManager(ContentWindowManagerPtr contentWindow)
-        {
-            ptr_ = contentWindow;
-        }
+    pyContentWindowManager(ContentWindowManagerPtr contentWindow)
+    {
+        ptr_ = contentWindow;
+    }
 
-        ContentWindowManagerPtr get()
-        {
-            return ptr_;
-        }
+    ContentWindowManagerPtr get()
+    {
+        return ptr_;
+    }
 
-        pyContent getPyContent()
-        {
-            return pyContent(get()->getContent());
-        }
+    pyContent getPyContent()
+    {
+        return pyContent(get()->getContent());
+    }
 
-    private:
+private:
 
-        ContentWindowManagerPtr ptr_;
+    ContentWindowManagerPtr ptr_;
 };
 
 #endif

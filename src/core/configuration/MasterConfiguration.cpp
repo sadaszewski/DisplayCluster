@@ -47,8 +47,8 @@
 #define TRIM_REGEX "[\\n\\t\\r]"
 #define DEFAULT_URL "http://www.google.com";
 
-MasterConfiguration::MasterConfiguration(const QString &filename, OptionsPtr options)
-    : Configuration(filename, options)
+MasterConfiguration::MasterConfiguration(const QString &filename)
+    : Configuration(filename)
 {
     loadMasterSettings();
 }
@@ -64,7 +64,6 @@ void MasterConfiguration::loadMasterSettings()
 
     loadDockStartDirectory(query);
     loadWebBrowserStartURL(query);
-
 }
 
 void MasterConfiguration::loadDockStartDirectory(QXmlQuery& query)

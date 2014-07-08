@@ -51,6 +51,8 @@ namespace ut = boost::unit_test;
 #include "globals.h"
 #include "MPIChannel.h"
 
+#include <QThread>
+
 // Tests local throughput of the streaming library by sending raw as well as
 // blank and random images through dc::Stream. Baseline test for best-case
 // performance when streaming pixels.
@@ -143,7 +145,7 @@ class DCThread : public QThread
                   << "rnd: Compressed random image content" << std::endl;
 
         delete [] pixels;
-        QApplication::instance()->exit();
+        QCoreApplication::instance()->exit();
     }
 };
 
@@ -151,13 +153,10 @@ BOOST_AUTO_TEST_CASE( testSocketConnection )
 {
     ut::master_test_suite_t& testSuite = ut::framework::master_test_suite();
     g_mpiChannel.reset(new MPIChannel(testSuite.argc, testSuite.argv));
+    g_configuration = new MasterConfiguration( "configuration.xml" );
 
-    g_displayGroupManager.reset( new DisplayGroupManager );
-    g_configuration =
-        new MasterConfiguration( "configuration.xml",
-                                 g_displayGroupManager->getOptions( ));
-
-    PixelStreamWindowManager pixelStreamWindowManager( *g_displayGroupManager );
+    DisplayGroupManager displayGroup;
+    PixelStreamWindowManager pixelStreamWindowManager( displayGroup );
     NetworkListener listener( pixelStreamWindowManager );
 #ifdef NTHREADS
     QThreadPool::globalInstance()->setMaxThreadCount( NTHREADS );
@@ -165,6 +164,6 @@ BOOST_AUTO_TEST_CASE( testSocketConnection )
 
     DCThread thread;
     thread.start();
-    QApplication::instance()->exec();
+    QCoreApplication::instance()->exec();
     BOOST_CHECK( thread.wait( ));
 }

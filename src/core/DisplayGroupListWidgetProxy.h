@@ -40,34 +40,34 @@
 #define DISPLAY_GROUP_LIST_WIDGET_PROXY_H
 
 #include "DisplayGroupInterface.h"
-#include <QtGui>
 
-class DisplayGroupListWidgetProxy : public DisplayGroupInterface {
+class QListWidget;
+class QListWidgetItem;
+
+class DisplayGroupListWidgetProxy : public DisplayGroupInterface
+{
     Q_OBJECT
 
-    public:
+public:
+    DisplayGroupListWidgetProxy(DisplayGroupManagerPtr displayGroupManager);
+    ~DisplayGroupListWidgetProxy();
 
-        DisplayGroupListWidgetProxy(DisplayGroupManagerPtr displayGroupManager);
-        ~DisplayGroupListWidgetProxy();
+    QListWidget* getListWidget();
 
-        QListWidget * getListWidget();
+    // re-implemented DisplayGroupInterface slots
+    void addContentWindowManager(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface* source = 0) override;
+    void removeContentWindowManager(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface* source = 0) override;
+    void moveContentWindowManagerToFront(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface* source = 0) override;
 
-        // re-implemented DisplayGroupInterface slots
-        void addContentWindowManager(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface * source=NULL);
-        void removeContentWindowManager(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface * source=NULL);
-        void moveContentWindowManagerToFront(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface * source=NULL);
+private slots:
+    void moveListWidgetItemToFront(QListWidgetItem * item);
 
-    private slots:
+private:
+    // we make this a member since we can't have multiple inheritance of QObject and still use signals/slots
+    // see the "Diamond problem"
+    QListWidget* listWidget_;
 
-        void moveListWidgetItemToFront(QListWidgetItem * item);
-
-    private:
-
-        // we make this a member since we can't have multiple inheritance of QObject and still use signals/slots
-        // see the "Diamond problem"
-        QListWidget * listWidget_;
-
-        void refreshListWidget();
+    void refreshListWidget();
 };
 
 #endif

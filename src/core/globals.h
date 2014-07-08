@@ -43,12 +43,8 @@
 #include "types.h"
 
 class Configuration;
-class MainWindow;
 
 extern MPIChannelPtr g_mpiChannel;
 extern Configuration* g_configuration;
-extern DisplayGroupManagerPtr g_displayGroupManager;
-extern MainWindow * g_mainWindow;
-extern uint64_t g_frameCount;
 
 #endif

@@ -54,9 +54,6 @@ public:
 
     virtual bool readMetadata() { return true; }
 
-    virtual void getFactoryObjectDimensions(int &width, int &height)
-        { getDimensions( width, height ); }
-
     int dummyParam_;
 
 private:
@@ -69,8 +66,6 @@ private:
         ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Content);
         ar & BOOST_SERIALIZATION_NVP(dummyParam_);
     }
-
-    virtual void renderFactoryObject(ContentWindowManagerPtr, const QRectF&) {}
 };
 
 BOOST_CLASS_EXPORT_GUID(DummyContent, "DummyContent")

@@ -78,7 +78,7 @@ public:
     ~WebkitPixelStreamer();
 
     /** Get the size of the webpage images. */
-    virtual QSize size() const;
+    QSize size() const override;
 
     /**
      * Open a webpage.
@@ -92,7 +92,7 @@ public:
 
 public slots:
     /** Process an Event. */
-    virtual void processEvent(dc::Event event);
+    void processEvent(dc::Event event) override;
 
 private slots:
     void update();

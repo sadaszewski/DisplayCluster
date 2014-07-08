@@ -53,6 +53,18 @@ class Marker;
 class GLWindow;
 class MPIChannel;
 class PixelStreamWindowManager;
+class Factories;
+class Renderable;
+class DisplayGroupRenderer;
+class FactoryObject;
+class PixelStreamFrame;
+class SkeletonState;
+
+namespace dc
+{
+struct PixelStreamSegment;
+}
+using dc::PixelStreamSegment;
 
 typedef boost::shared_ptr< Content > ContentPtr;
 typedef boost::shared_ptr< ContentWindowManager > ContentWindowManagerPtr;
@@ -63,9 +75,18 @@ typedef boost::shared_ptr< Options > OptionsPtr;
 typedef boost::shared_ptr<Marker> MarkerPtr;
 typedef boost::shared_ptr<GLWindow> GLWindowPtr;
 typedef boost::shared_ptr<MPIChannel> MPIChannelPtr;
+typedef boost::shared_ptr<Factories> FactoriesPtr;
+typedef boost::shared_ptr<Renderable> RenderablePtr;
+typedef boost::shared_ptr<DisplayGroupRenderer> DisplayGroupRendererPtr;
+typedef boost::shared_ptr<FactoryObject> FactoryObjectPtr;
+typedef boost::shared_ptr<PixelStreamFrame> PixelStreamFramePtr;
+typedef boost::shared_ptr<SkeletonState> SkeletonStatePtr;
 
 typedef std::vector< ContentWindowManagerPtr > ContentWindowManagerPtrs;
 typedef std::vector<MarkerPtr> MarkerPtrs;
 typedef std::vector<GLWindowPtr> GLWindowPtrs;
+typedef std::vector<PixelStreamSegment> PixelStreamSegments;
+typedef std::vector<SkeletonStatePtr> SkeletonStatePtrs;
+
 
 #endif

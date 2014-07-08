@@ -39,69 +39,67 @@
 #include "Options.h"
 
 Options::Options()
-{
-    showWindowBorders_ = false;
-    showMouseCursor_ = false;
-    showTouchPoints_ = false;
-    showMovieControls_ = true;
-    showTestPattern_ = false;
-    enableMullionCompensation_ = true;
-    showZoomContext_ = true;
-    showStreamingSegments_ = false;
-    showStreamingStatistics_ = false;
-
+    : showWindowBorders_(false)
+    , showTouchPoints_(false)
+    , showMovieControls_(true)
+    , showTestPattern_(false)
+    , enableMullionCompensation_(true)
+    , showZoomContext_(true)
+    , showStreamingSegments_(false)
+    , showStreamingStatistics_(false)
 #if ENABLE_SKELETON_SUPPORT
-    showSkeletons_ = true;
+    , showSkeletons_(true)
 #endif
+{
 }
 
-bool Options::getShowWindowBorders()
+bool Options::getShowWindowBorders() const
 {
     return showWindowBorders_;
 }
 
-bool Options::getShowMouseCursor()
-{
-    return showMouseCursor_;
-}
-
-bool Options::getShowTouchPoints()
+bool Options::getShowTouchPoints() const
 {
     return showTouchPoints_;
 }
 
-bool Options::getShowMovieControls()
+bool Options::getShowMovieControls() const
 {
     return showMovieControls_;
 }
 
-bool Options::getShowTestPattern()
+bool Options::getShowTestPattern() const
 {
     return showTestPattern_;
 }
 
-bool Options::getEnableMullionCompensation()
+bool Options::getEnableMullionCompensation() const
 {
     return enableMullionCompensation_;
 }
 
-bool Options::getShowZoomContext()
+bool Options::getShowZoomContext() const
 {
     return showZoomContext_;
 }
 
-bool Options::getShowStreamingSegments()
+bool Options::getShowStreamingSegments() const
 {
     return showStreamingSegments_;
 }
 
-bool Options::getShowStreamingStatistics()
+bool Options::getShowStreamingStatistics() const
 {
     return showStreamingStatistics_;
 }
 
+QColor Options::getBackgroundColor() const
+{
+    return backgroundColor_;
+}
+
 #if ENABLE_SKELETON_SUPPORT
-bool Options::getShowSkeletons()
+bool Options::getShowSkeletons() const
 {
     return showSkeletons_;
 }
@@ -111,63 +109,65 @@ void Options::setShowWindowBorders(bool set)
 {
     showWindowBorders_ = set;
 
-    emit(updated());
-}
-
-void Options::setShowMouseCursor(bool set)
-{
-    showMouseCursor_ = set;
-
-    emit(updated());
+    emit(updated(shared_from_this()));
 }
 
 void Options::setShowTouchPoints(bool set)
 {
     showTouchPoints_ = set;
 
-    emit(updated());
+    emit(updated(shared_from_this()));
 }
 
 void Options::setShowMovieControls(bool set)
 {
     showMovieControls_ = set;
 
-    emit(updated());
+    emit(updated(shared_from_this()));
 }
 
 void Options::setShowTestPattern(bool set)
 {
     showTestPattern_ = set;
 
-    emit(updated());
+    emit(updated(shared_from_this()));
 }
 
 void Options::setEnableMullionCompensation(bool set)
 {
     enableMullionCompensation_ = set;
 
-    emit(updated());
+    emit(updated(shared_from_this()));
 }
 
 void Options::setShowZoomContext(bool set)
 {
     showZoomContext_ = set;
 
-    emit(updated());
+    emit(updated(shared_from_this()));
 }
 
 void Options::setShowStreamingSegments(bool set)
 {
     showStreamingSegments_ = set;
 
-    emit(updated());
+    emit(updated(shared_from_this()));
 }
 
 void Options::setShowStreamingStatistics(bool set)
 {
     showStreamingStatistics_ = set;
 
-    emit(updated());
+    emit(updated(shared_from_this()));
+}
+
+void Options::setBackgroundColor(QColor color)
+{
+    if(color == backgroundColor_)
+        return;
+    backgroundColor_ = color;
+
+    emit (updated(shared_from_this()));
 }
 
 #if ENABLE_SKELETON_SUPPORT
@@ -175,6 +175,6 @@ void Options::setShowSkeletons(bool set)
 {
     showSkeletons_ = set;
 
-    emit(updated());
+    emit(updated(shared_from_this()));
 }
 #endif

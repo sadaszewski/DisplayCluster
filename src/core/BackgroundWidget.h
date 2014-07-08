@@ -42,17 +42,40 @@
 
 #include <QDialog>
 
+#include "types.h"
+
+class Configuration;
 class QLabel;
 
+/**
+ * Simple widget to edit and save background settings.
+ */
 class BackgroundWidget : public QDialog
 {
     Q_OBJECT
+
 public:
-    explicit BackgroundWidget(QWidget *parent = 0);
+    /**
+     * Create a BackgroundWidget
+     * @param configuration The configuration in which to read and save
+     *                      background settings.
+     * @param parent An optional parent widget
+     */
+    BackgroundWidget(Configuration& configuration, QWidget *parent = 0);
+
+signals:
+    /** Emitted when the user selected a different color */
+    void backgroundColorChanged(QColor color);
+
+    /** Emitted when the user selected a different background */
+    void backgroundContentChanged(ContentPtr content);
 
 public slots:
-    void accept();
-    void reject();
+    /** Store the new settings and close the widget */
+    void accept() override;
+
+    /** Revert to the previous settings and close the widget */
+    void reject() override;
 
 private slots:
     void chooseColor();
@@ -60,6 +83,8 @@ private slots:
     void removeBackground();
 
 private:
+    Configuration& configuration_;
+
     QLabel *colorLabel_;
     QLabel *backgroundLabel_;
 

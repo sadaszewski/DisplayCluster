@@ -54,9 +54,8 @@ public:
     /**
      * @brief MasterConfiguration constructor
      * @param filename \see Configuration
-     * @param options \see Configuration
      */
-    MasterConfiguration(const QString& filename, OptionsPtr options);
+    MasterConfiguration(const QString& filename);
 
     /**
      * @brief getDockStartDir Get the Dock startup directory

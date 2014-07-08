@@ -36,255 +36,54 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#include <QApplication>
+#include "config.h"
 
 #include "globals.h"
 #include "MPIChannel.h"
-#include "config.h"
-#include "configuration/MasterConfiguration.h"
-#include "configuration/WallConfiguration.h"
-#include "DisplayGroupManager.h"
-#include "MainWindow.h"
-#include "NetworkListener.h"
+
+#include "WallApplication.h"
+#include "MasterApplication.h"
+
 #include "log.h"
-#include "localstreamer/PixelStreamerLauncher.h"
-#include "StateSerializationHelper.h"
-#include "PixelStreamWindowManager.h"
 
-#include "CommandHandler.h"
-#include "SessionCommandHandler.h"
-#include "FileCommandHandler.h"
-#include "WebbrowserCommandHandler.h"
-
-#include "ws/WebServiceServer.h"
-#include "ws/TextInputDispatcher.h"
-#include "ws/TextInputHandler.h"
-#include "ws/DisplayGroupManagerAdapter.h"
-
-#include <unistd.h>
+#include <QThreadPool>
 
 #if ENABLE_TUIO_TOUCH_LISTENER
-    #include <X11/Xlib.h>
+#include <X11/Xlib.h>
 #endif
-
-#if ENABLE_JOYSTICK_SUPPORT
-    #include "JoystickThread.h"
-#endif
-
-#if ENABLE_SKELETON_SUPPORT
-    #include "SkeletonThread.h"
-#endif
-
-#define CONFIGURATION_FILENAME "configuration.xml"
-#define DISPLAYCLUSTER_DIR "DISPLAYCLUSTER_DIR"
 
 int main(int argc, char * argv[])
 {
-    // get base directory
-    if( !getenv( DISPLAYCLUSTER_DIR ))
-    {
-        put_flog(LOG_FATAL, "DISPLAYCLUSTER_DIR environment variable must be set");
-        return EXIT_FAILURE;
-    }
-
-    // get configuration file name
-    const QString displayClusterDir = QString(getenv( DISPLAYCLUSTER_DIR ));
-    put_flog(LOG_DEBUG, "base directory is %s", displayClusterDir.toLatin1().constData());
-    const QString configFilename = QString( "%1/%2" ).arg( displayClusterDir )
-                                                     .arg( CONFIGURATION_FILENAME );
+    g_mpiChannel.reset( new MPIChannel( argc, argv ) );
 
 #if ENABLE_TUIO_TOUCH_LISTENER
-    // we need X multithreading support if we're running the TouchListener thread and creating X events
-    XInitThreads();
+    // we need X multithreading support if we're running the
+    // TouchListener thread and creating X events
+    if (g_mpiChannel->getRank() == 0)
+        XInitThreads();
 #endif
 
-    QApplication app(argc, argv);
-
-    g_mpiChannel.reset( new MPIChannel( argc, argv ) );
-    g_displayGroupManager.reset( new DisplayGroupManager );
-
-    // Distribute the DisplayGroup through MPI whenever it is modified
-    g_displayGroupManager->connect(g_displayGroupManager.get(),
-                                   SIGNAL(modified(DisplayGroupManagerPtr)),
-                                   g_mpiChannel.get(),
-                                   SLOT(send(DisplayGroupManagerPtr)));
-
-    // Load configuration
-    if(g_mpiChannel->getRank() == 0)
-        g_configuration = new MasterConfiguration(configFilename,
-                                                  g_displayGroupManager->getOptions());
+    Application* app = 0;
+    if ( g_mpiChannel->getRank() == 0 )
+        app = new MasterApplication(argc, argv, g_mpiChannel);
     else
-        g_configuration = new WallConfiguration(configFilename,
-                                                g_displayGroupManager->getOptions(),
-                                                g_mpiChannel->getRank());
+        app = new WallApplication(argc, argv, g_mpiChannel);
 
     // calibrate timestamp offset between rank 0 and rank 1 clocks
     g_mpiChannel->calibrateTimestampOffset();
-
-    g_mainWindow = new MainWindow();
-
-#if ENABLE_JOYSTICK_SUPPORT
-    if(g_mpiChannel->getRank() == 0)
-    {
-        // do this before the thread starts to avoid X callback race conditions
-        // we need SDL_INIT_VIDEO for events to work
-        if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0)
-        {
-            put_flog(LOG_ERROR, "could not initial SDL joystick subsystem");
-            return -2;
-        }
-
-        // create thread to monitor joystick events (all joysticks handled in same event queue)
-        JoystickThread * joystickThread = new JoystickThread();
-        joystickThread->start();
-
-        // wait for thread to start
-        while(joystickThread->isRunning() == false || joystickThread->isFinished() == true)
-        {
-            usleep(1000);
-        }
-    }
-#endif
-
-#if ENABLE_SKELETON_SUPPORT
-    SkeletonThread* skeletonThread = 0;
-
-    if(g_mpiChannel->getRank() == 0)
-    {
-        skeletonThread = new SkeletonThread();
-        skeletonThread->start();
-
-        // wait for thread to start
-        while( !skeletonThread->isRunning() || skeletonThread->isFinished() )
-        {
-            usleep(1000);
-        }
-    }
-
-    connect(g_mainWindow, SIGNAL(enableSkeletonTracking()), skeletonThread, SLOT(startTimer()));
-    connect(g_mainWindow, SIGNAL(disableSkeletonTracking()), skeletonThread, SLOT(stopTimer()));
-
-    connect(skeletonThread, SIGNAL(skeletonsUpdated(std::vector< boost::shared_ptr<SkeletonState> >)),
-            g_displayGroupManager.get(), SLOT(setSkeletons(std::vector<boost::shared_ptr<SkeletonState> >)),
-            Qt::QueuedConnection);
-#endif
-
-    NetworkListener* networkListener = 0;
-    PixelStreamerLauncher* pixelStreamerLauncher = 0;
-    PixelStreamWindowManager* pixelStreamWindowManager = 0;
-    WebServiceServer* webServiceServer = 0;
-    TextInputDispatcher* textInputDispatcher = 0;
-
-    if(g_mpiChannel->getRank() == 0)
-    {
-        pixelStreamWindowManager = new PixelStreamWindowManager(*g_displayGroupManager);
-        pixelStreamerLauncher = new PixelStreamerLauncher(*pixelStreamWindowManager);
-
-        pixelStreamerLauncher->connect(g_mainWindow, SIGNAL(openWebBrowser(QPointF,QSize,QString)),
-                                           SLOT(openWebBrowser(QPointF,QSize,QString)));
-        pixelStreamerLauncher->connect(g_mainWindow, SIGNAL(openDock(QPointF,QSize,QString)),
-                                           SLOT(openDock(QPointF,QSize,QString)));
-        pixelStreamerLauncher->connect(g_mainWindow, SIGNAL(hideDock()),
-                                           SLOT(hideDock()));
-
-        networkListener = new NetworkListener(*pixelStreamWindowManager);
-
-        CommandHandler& handler = networkListener->getCommandHandler();
-        handler.registerCommandHandler(new FileCommandHandler(g_displayGroupManager, *pixelStreamWindowManager));
-        handler.registerCommandHandler(new SessionCommandHandler(*g_displayGroupManager));
-
-        const QString& url = static_cast<MasterConfiguration*>(g_configuration)->getWebBrowserDefaultURL();
-        handler.registerCommandHandler(new WebbrowserCommandHandler(
-                                           *pixelStreamWindowManager,
-                                           *pixelStreamerLauncher,
-                                           url));
-
-        // FastCGI WebService Server
-        const int webServicePort =
-                static_cast<MasterConfiguration*>(g_configuration)->getWebServicePort();
-        webServiceServer = new WebServiceServer(webServicePort);
-
-        DisplayGroupManagerAdapterPtr adapter(new DisplayGroupManagerAdapter(g_displayGroupManager));
-        TextInputHandler* textInputHandler = new TextInputHandler(adapter);
-        webServiceServer->addHandler("/dcapi/textinput", dcWebservice::HandlerPtr(textInputHandler));
-
-        textInputHandler->moveToThread(webServiceServer);
-        textInputDispatcher = new TextInputDispatcher(g_displayGroupManager);
-        textInputDispatcher->connect(textInputHandler, SIGNAL(receivedKeyInput(char)),
-                             SLOT(sendKeyEventToActiveWindow(char)));
-
-        webServiceServer->start();
-    }
-
-
     // wait for render comms to be ready for receiving and rendering background
-    MPI_Barrier(MPI_COMM_WORLD);
+    g_mpiChannel->globalBarrier(); // previously: MPI_COMM_WORLD
 
-    if(g_mpiChannel->getRank() == 0)
-    {
-        // Must be done after everything else is setup (or in the MainWindow constructor)
-        g_displayGroupManager->setBackgroundColor( g_configuration->getBackgroundColor( ));
-        g_displayGroupManager->setBackgroundContentFromUri( g_configuration->getBackgroundUri( ));
-
-        if( argc == 2 )
-            StateSerializationHelper(g_displayGroupManager).load( argv[1] );
-    }
-
-    // enter Qt event loop
-    app.exec();
+    app->exec(); // enter Qt event loop
 
     put_flog(LOG_DEBUG, "quitting");
 
-    // wait for all threads to finish
     QThreadPool::globalInstance()->waitForDone();
 
-    if(g_mpiChannel->getRank() != 0)
-        g_displayGroupManager->deleteMarkers();
-
-#if ENABLE_SKELETON_SUPPORT
-    delete skeletonThread;
-    skeletonThread = 0;
-#endif
-
-#if ENABLE_JOYSTICK_SUPPORT
-    delete joystickThread;
-    joystickThread = 0;
-#endif
-
-    // call finalize cleanup actions
-    g_mainWindow->finalize();
-
-    // destruct the main window
-    delete g_mainWindow;
-    g_mainWindow = 0;
-
-    if(g_mpiChannel->getRank() == 0)
-    {
-        // Clear all windows - was in DisplayGroupManager::sendQuit()
-        g_displayGroupManager->setContentWindowManagers( ContentWindowManagerPtrs() );
-
+    if (g_mpiChannel->getRank() == 0)
         g_mpiChannel->sendQuit();
-        delete pixelStreamerLauncher;
-        pixelStreamerLauncher = 0;
-        delete networkListener;
-        networkListener = 0;
 
-        delete textInputDispatcher;
-        textInputDispatcher = 0;
-        webServiceServer->stop();
-        webServiceServer->wait();
-        delete webServiceServer;
-        webServiceServer = 0;
-        delete pixelStreamWindowManager;
-        pixelStreamWindowManager = 0;
-    }
-
-    delete g_configuration;
-    g_configuration = 0;
-    g_displayGroupManager.reset();
-
-    // clean up the MPI environment after the Qt event loop exits
-    g_mpiChannel.reset();
+    delete app;
 
     return EXIT_SUCCESS;
 }

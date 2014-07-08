@@ -45,9 +45,9 @@
 #include <QDomElement>
 #include <QtXmlPatterns>
 
-Configuration::Configuration(const QString &filename, OptionsPtr options)
+Configuration::Configuration(const QString &filename)
     : filename_(filename)
-    , options_(options)
+    , options_(new Options)
     , totalScreenCountX_(0)
     , totalScreenCountY_(0)
     , screenWidth_(0)
@@ -124,6 +124,15 @@ void Configuration::load()
 }
 
 
+OptionsPtr Configuration::getOptions() const
+{
+    return options_;
+}
+
+void Configuration::setOptions(OptionsPtr options)
+{
+    options_ = options;
+}
 
 int Configuration::getTotalScreenCountX() const
 {

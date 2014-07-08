@@ -42,16 +42,13 @@
 
 #include "types.h"
 
-#include "PixelStreamSegment.h"
 #include "Factory.hpp"
-#include "PixelStream.h"
 
 #include <QObject>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <mpi.h>
 
 struct MessageHeader;
-using dc::PixelStreamSegment;
 
 /**
  * Handle MPI communications between all DisplayCluster instances.
@@ -93,19 +90,11 @@ public:
 
     /**
      * Ranks 1-N: Receive messages.
-     * @param displayGroup A REFERENCE to the target DisplayGroup.
-     *        It will be replaced if a new DisplayGroup was sent by rank0.
-     * @param pixelStreamFactory The target Factory for incomming PixelStreams.
+     * Will emit a signal if an object was reveived.
+     * @see received(DisplayGroupManagerPtr)
+     * @see received(OptionsPtr)
      */
-    void receiveMessages(DisplayGroupManagerPtr& displayGroup,
-                         Factory<PixelStream>& pixelStreamFactory);
-
-    /**
-     * Rank 0: Send pixel stream segments to ranks 1-N
-     * @param segments The segements to be sent
-     * @param uri The uri associated with the segments
-     */
-    void send(const std::vector<PixelStreamSegment>& segments, const QString& uri);
+    void receiveMessages();
 
     /**
      * Rank0: Calibrate the offset between its local clock and the rank1 clock.
@@ -125,6 +114,9 @@ public:
      */
     void sendContentsDimensionsRequest(ContentWindowManagerPtrs contentWindows);
 
+    /** Set the factories on Rank1 to respond to Content Dimensions request */
+    void setFactories(FactoriesPtr factories);
+
 public slots:
     /**
      * Rank0: send the given DisplayGroup to ranks 1-N
@@ -132,10 +124,44 @@ public slots:
      */
     void send(DisplayGroupManagerPtr displayGroup);
 
+    /**
+     * Rank0: send the given Options to ranks 1-N
+     * @param options The options to send
+     */
+    void send(OptionsPtr options);
+
+    /**
+     * Rank 0: Send pixel stream frame to ranks 1-N
+     * @param frame The frame to send
+     */
+    void send(PixelStreamFramePtr frame);
+
+signals:
+    /**
+     * Rank 1-N: Emitted when a displayGroup was recieved
+     * @see receiveMessages()
+     * @param displayGroup The DisplayGroup that was received
+     */
+    void received(DisplayGroupManagerPtr displayGroup);
+
+    /**
+     * Rank 1-N: Emitted when new Options were recieved
+     * @see receiveMessages()
+     * @param options The options that was received
+     */
+    void received(OptionsPtr options);
+
+    /**
+     * Rank 1-N: Emitted when a new PixelStream frame was recieved
+     * @see receiveMessages()
+     * @param frame The frame that was received
+     */
+    void received(PixelStreamFramePtr frame);
+
 private:
-    int mpiRank;
-    int mpiSize;
-    MPI_Comm mpiRenderComm;
+    int mpiRank_;
+    int mpiSize_;
+    MPI_Comm mpiRenderComm_;
 
     boost::posix_time::ptime timestamp_; // frame timing
     boost::posix_time::time_duration timestampOffset_; // rank1 - rank0 offset
@@ -145,10 +171,14 @@ private:
 
     // Ranks 1-n recieve data through MPI
     DisplayGroupManagerPtr receiveDisplayGroup(const MessageHeader& messageHeader);
-    void receivePixelStreams(const MessageHeader& messageHeader,
-                             Factory<PixelStream>& pixelStreamFactory);
+    OptionsPtr receiveOptions(const MessageHeader& messageHeader);
+    void receivePixelStreams(const MessageHeader& messageHeader);
+
     // TODO remove content dimension requests (DISCL-21)
-    void receiveContentsDimensionsRequest(DisplayGroupManagerPtr displayGroup);
+    void receiveContentsDimensionsRequest();
+    // Storing the DisplayGroup (on Rank1) to serve contentDimensionsRequests
+    DisplayGroupManagerPtr displayGroup_;
+    FactoriesPtr factories_;
 };
 
 #endif // MPICHANNEL_H

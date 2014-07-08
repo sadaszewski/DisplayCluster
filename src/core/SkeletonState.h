@@ -58,6 +58,7 @@
 // scale factor for window size scaling
 #define WINDOW_SCALE_FACTOR 0.05
 
+#include "types.h"
 #include "SkeletonSensor.h"
 #include <QtGui>
 #include <boost/shared_ptr.hpp>
@@ -71,7 +72,7 @@ class DisplayGroupJoystick;
 class SkeletonState
 {
     public:
-        SkeletonState();
+        SkeletonState(DisplayGroupManagerPtr displayGroup);
 
         int update(Skeleton skeleton);
         void render();

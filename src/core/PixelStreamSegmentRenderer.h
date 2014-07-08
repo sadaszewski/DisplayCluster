@@ -39,10 +39,13 @@
 #ifndef PIXEL_STREAM_SEGMENT_RENDERER_H
 #define PIXEL_STREAM_SEGMENT_RENDERER_H
 
-#include <QGLWidget>
+#include "GLTexture2D.h"
+#include "GLQuad.h"
+
 #include <boost/noncopyable.hpp>
 
 class FpsCounter;
+class RenderContext;
 
 /**
  * Render a single PixelStream Segment
@@ -53,9 +56,9 @@ class PixelStreamSegmentRenderer : public boost::noncopyable
 {
 public:
     /** Construct a renderer.
-     * @param Unique identifier for the stream to which this segment belongs
+     * @param renderContext A reference to the rendering context
      */
-    PixelStreamSegmentRenderer(const QString& uri);
+    PixelStreamSegmentRenderer(RenderContext* renderContext);
 
     /** Destruct a renderer. */
     ~PixelStreamSegmentRenderer();
@@ -98,13 +101,11 @@ public:
     bool render(bool showSegmentBorders, bool showSegmentStatistics);
 
 private:
-    // pixel stream identifier
-    QString uri_;
+    /** A reference to the render context. */
+    RenderContext* renderContext_;
 
-    // texture
-    GLuint textureId_;
-    int textureWidth_;
-    int textureHeight_;
+    GLTexture2D texture_;
+    GLQuad quad_;
 
     // Segment position
     unsigned int x_, y_;
@@ -118,7 +119,7 @@ private:
     bool textureNeedsUpdate_;
 
     // Rendering
-    void drawUnitTexturedQuad(float tX, float tY, float tW, float tH);
+    void drawUnitTexturedQuad();
     void drawSegmentBorders();
     void drawSegmentStatistics();
 };

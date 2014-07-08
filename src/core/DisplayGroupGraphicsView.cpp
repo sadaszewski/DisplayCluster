@@ -48,10 +48,10 @@
 #include "gestures/PinchGesture.h"
 #include "gestures/PinchGestureRecognizer.h"
 
-DisplayGroupGraphicsView::DisplayGroupGraphicsView()
+DisplayGroupGraphicsView::DisplayGroupGraphicsView(DisplayGroupManagerPtr displayGroup)
 {
     // create and set scene for the view
-    setScene(new DisplayGroupGraphicsScene());
+    setScene(new DisplayGroupGraphicsScene(displayGroup));
 
     // force scene to be anchored at top left
     setAlignment(Qt::AlignLeft | Qt::AlignTop);

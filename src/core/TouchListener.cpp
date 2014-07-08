@@ -43,10 +43,9 @@
 
 //#define TABLET_INTERACTION
 
-TouchListener::TouchListener()
+TouchListener::TouchListener(DisplayGroupManagerPtr displayGroup)
+    : graphicsViewProxy_(new DisplayGroupGraphicsViewProxy(displayGroup))
 {
-    graphicsViewProxy_ = new DisplayGroupGraphicsViewProxy(g_displayGroupManager);
-
     client_.addTuioListener(this);
     client_.connect();
 
@@ -102,7 +101,7 @@ void TouchListener::addTuioCursor(TUIO::TuioCursor *tcur)
     lastClickPoint1_ = point;
 
     // create the mouse event
-    QGraphicsSceneMouseEvent * event = NULL;
+    QGraphicsSceneMouseEvent* event = 0;
 
     if(clickType == 2)
     {
@@ -113,7 +112,7 @@ void TouchListener::addTuioCursor(TUIO::TuioCursor *tcur)
         event = new QGraphicsSceneMouseEvent(QEvent::GraphicsSceneMousePress);
     }
 
-    if(event != NULL)
+    if(event)
     {
         // set event parameters
         event->setScenePos(point);

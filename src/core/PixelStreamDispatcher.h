@@ -41,10 +41,11 @@
 #define PIXELSTREAMDISPATCHER_H
 
 #include <QObject>
-#include <QTimer>
 #include <map>
 
 #include <boost/date_time/posix_time/posix_time.hpp>
+
+#include "types.h"
 
 #include "PixelStreamSegment.h"
 #include "PixelStreamBuffer.h"
@@ -52,8 +53,9 @@
 class PixelStreamWindowManager;
 
 //#define USE_TIMER
-
-using dc::PixelStreamSegment;
+#ifdef USE_TIMER
+#include <QTimer>
+#endif
 
 typedef std::map<QString, PixelStreamBuffer> StreamBuffers;
 
@@ -123,6 +125,13 @@ signals:
      * @param uri Identifier for the Stream
      */
     void deletePixelStream(QString uri);
+
+    /**
+     * Dispatch a full frame
+     *
+     * @param frame The frame to dispatch
+     */
+    void sendFrame(PixelStreamFramePtr frame);
 
 #ifndef USE_TIMER
     /** @internal */

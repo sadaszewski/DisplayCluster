@@ -53,20 +53,20 @@ class PixelStreamInteractionDelegate : public ContentInteractionDelegate
 public:
     PixelStreamInteractionDelegate(ContentWindowManager& contentWindow);
 
-    virtual void swipe( QSwipeGesture *gesture );
-    virtual void pan( PanGesture* gesture) ;
-    virtual void pinch( PinchGesture* gesture );
-    virtual void doubleTap( DoubleTapGesture* gesture );
-    virtual void tap( QTapGesture* gesture );
+    void swipe( QSwipeGesture *gesture ) override;
+    void pan( PanGesture* gesture)  override;
+    void pinch( PinchGesture* gesture ) override;
+    void doubleTap( DoubleTapGesture* gesture ) override;
+    void tap( QTapGesture* gesture ) override;
 
     // Keyboard + Mouse input
-    virtual void mouseMoveEvent(QGraphicsSceneMouseEvent * mouseEvent);
-    virtual void mousePressEvent(QGraphicsSceneMouseEvent * mouseEvent);
-    virtual void mouseDoubleClickEvent(QGraphicsSceneMouseEvent * mouseEvent);
-    virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent * mouseEvent);
-    virtual void wheelEvent(QGraphicsSceneWheelEvent * wheelEvent);
-    virtual void keyPressEvent(QKeyEvent* keyEvent);
-    virtual void keyReleaseEvent(QKeyEvent* keyEvent);
+    void mouseMoveEvent(QGraphicsSceneMouseEvent * mouseEvent) override;
+    void mousePressEvent(QGraphicsSceneMouseEvent * mouseEvent) override;
+    void mouseDoubleClickEvent(QGraphicsSceneMouseEvent * mouseEvent) override;
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent * mouseEvent) override;
+    void wheelEvent(QGraphicsSceneWheelEvent * wheelEvent) override;
+    void keyPressEvent(QKeyEvent* keyEvent) override;
+    void keyReleaseEvent(QKeyEvent* keyEvent) override;
 
 private:
     QPointF mousePressPos_;

@@ -39,13 +39,16 @@
 #include "DynamicTextureContent.h"
 #include "globals.h"
 #include "DynamicTexture.h"
-#include "MainWindow.h"
-#include "GLWindow.h"
 #include "serializationHelpers.h"
+#include "Factories.h"
 
 #include <boost/serialization/export.hpp>
 
 BOOST_CLASS_EXPORT_GUID(DynamicTextureContent, "DynamicTextureContent")
+
+DynamicTextureContent::DynamicTextureContent(QString uri)
+    : Content(uri)
+{}
 
 CONTENT_TYPE DynamicTextureContent::getType()
 {
@@ -74,21 +77,11 @@ const QStringList& DynamicTextureContent::getSupportedExtensions()
     return extensions;
 }
 
-void DynamicTextureContent::advance(ContentWindowManagerPtr)
+void DynamicTextureContent::advance(FactoriesPtr factories, ContentWindowManagerPtr, const boost::posix_time::time_duration)
 {
     if( blockAdvance_ )
         return;
 
-    // recall that advance() is called after rendering and before g_frameCount is incremented for the current frame
-    g_mainWindow->getGLWindow()->getDynamicTextureFactory().getObject(getURI())->clearOldChildren(g_frameCount);
-}
-
-void DynamicTextureContent::getFactoryObjectDimensions(int &width, int &height)
-{
-    g_mainWindow->getGLWindow()->getDynamicTextureFactory().getObject(getURI())->getDimensions(width, height);
-}
-
-void DynamicTextureContent::renderFactoryObject(ContentWindowManagerPtr, const QRectF& texCoords)
-{
-    g_mainWindow->getGLWindow()->getDynamicTextureFactory().getObject(getURI())->render(texCoords);
+    // recall that advance() is called after rendering
+    factories->getDynamicTextureFactory().getObject(getURI())->postRenderUpdate();
 }

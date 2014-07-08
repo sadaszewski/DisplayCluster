@@ -54,8 +54,6 @@ NetworkListener::NetworkListener(PixelStreamWindowManager& windowManager, int po
     , pixelStreamDispatcher_(new PixelStreamDispatcher(windowManager))
     , commandHandler_(new CommandHandler())
 {
-    qRegisterMetaType<size_t>("size_t");
-
     if( !listen(QHostAddress::Any, port) )
     {
         put_flog(LOG_FATAL, "could not listen on port %i", port);
@@ -72,6 +70,11 @@ NetworkListener::~NetworkListener()
 CommandHandler& NetworkListener::getCommandHandler() const
 {
     return *commandHandler_;
+}
+
+PixelStreamDispatcher* NetworkListener::getPixelStreamDispatcher() const
+{
+    return pixelStreamDispatcher_;
 }
 
 void NetworkListener::incomingConnection(int socketHandle)

@@ -36,54 +36,35 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef VECTOR_H
-#define VECTOR_H
+#ifndef RENDERCONTEXT_H
+#define RENDERCONTEXT_H
 
-#include <math.h>
+#include "types.h"
 
-template <class T> void vectorCrossProduct(const T a[3], const T b[3], T c[3])
+#include <QRectF>
+
+class WallConfiguration;
+
+class RenderContext
 {
-    c[0] = a[1] * b[2] - a[2] * b[1];
-    c[1] = a[2] * b[0] - a[0] * b[2];
-    c[2] = a[0] * b[1] - a[1] * b[0];
+public:
+    RenderContext(const WallConfiguration* configuration);
+    ~RenderContext();
 
-    return;
-}
+    GLWindowPtr getGLWindow(const int index=0) const;
+    GLWindowPtr getActiveGLWindow() const;
+    size_t getGLWindowCount() const;
 
-template <class T> T vectorMagnitude(const T a[3])
-{
-    return sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
+    bool isRegionVisible(const QRectF& region) const;
 
-}
+    void updateGLWindows();
+    void swapBuffers();
 
-template <class T> void vectorSubtraction(const T a[3], const T b[3], T c[3])
-{
-    c[0] = a[0] - b[0];
-    c[1] = a[1] - b[1];
-    c[2] = a[2] - b[2];
+private:
+    void setupOpenGLWindows(const WallConfiguration* configuration);
 
-    return;
-}
-
-template <class T> void vectorNormalize(T a[3])
-{
-    T magnitude = vectorMagnitude(a);
-
-    a[0] /= magnitude;
-    a[1] /= magnitude;
-    a[2] /= magnitude;
-
-    return;
-}
-
-template <class T> T vectorDotProduct(const T a[3], const T b[3])
-{
-    return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
-}
-
-template <class T> T vectorDistance(const T a[3], const T b[3])
-{
-    return sqrt((a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]) + (a[2] - b[2]) * (a[2] - b[2]));
-}
+    GLWindowPtrs glWindows_;
+    GLWindowPtr activeGLWindow_;
+};
 
 #endif

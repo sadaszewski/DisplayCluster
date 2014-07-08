@@ -49,7 +49,7 @@ class FolderThumbnailGenerator : public ThumbnailGenerator
 public:
     FolderThumbnailGenerator(const QSize &size);
 
-    virtual QImage generate(const QString& filename) const;
+    QImage generate(const QString& filename) const override;
 
     QImage generatePlaceholderImage(QDir dir) const;
     QImage generateUpFolderImage(QDir dir) const;

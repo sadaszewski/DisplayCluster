@@ -65,14 +65,14 @@ public:
     DockPixelStreamer(const QSize& desiredDockSize, const QString& rootDir);
     ~DockPixelStreamer();
 
-    virtual QSize size() const;
+    QSize size() const override;
 
     bool setRootDir(const QString& dir);
 
     static QSize constrainSize(const QSize& targetSize);
 
 public slots:
-    virtual void processEvent(Event evt);
+    void processEvent(Event evt) override;
 
 private slots:
     void update(const QImage &image);

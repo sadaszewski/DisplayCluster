@@ -47,7 +47,7 @@ class DefaultThumbnailGenerator : public ThumbnailGenerator
 public:
     DefaultThumbnailGenerator(const QSize& size);
 
-    virtual QImage generate(const QString& filename) const;
+    QImage generate(const QString& filename) const override;
 };
 
 #endif // DEFAULTTHUMBNAILGENERATOR_H

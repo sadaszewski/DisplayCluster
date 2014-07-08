@@ -47,6 +47,10 @@
 #include "thumbnail/ThumbnailGeneratorFactory.h"
 #include "thumbnail/ThumbnailGenerator.h"
 
+#include <QFileInfo>
+#include <QPainter>
+#include <QImageReader>
+
 #define PREVIEW_IMAGE_SIZE       512
 #define CONTENT_THUMBNAIL_SIZE   128
 

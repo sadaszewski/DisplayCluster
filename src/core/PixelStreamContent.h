@@ -48,17 +48,15 @@ class PixelStreamContent : public Content
         PixelStreamContent(const QString& uri = "") : Content(uri) { }
 
         /** Get the content type **/
-        CONTENT_TYPE getType();
+        CONTENT_TYPE getType() override;
 
         /**
          * Content method overload, not used for PixelStreams.
          * @return always returns true
         **/
-        virtual bool readMetadata();
+        bool readMetadata() override;
 
-        virtual void getFactoryObjectDimensions(int &width, int &height);
-
-        virtual void advance(ContentWindowManagerPtr);
+        void advance(FactoriesPtr factories, ContentWindowManagerPtr window, const boost::posix_time::time_duration) override;
 
     private:
         friend class boost::serialization::access;
@@ -69,8 +67,6 @@ class PixelStreamContent : public Content
             // serialize base class information (with NVP for xml archives)
             ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Content);
         }
-
-        virtual void renderFactoryObject(ContentWindowManagerPtr window, const QRectF& texCoords);
 };
 
 #endif

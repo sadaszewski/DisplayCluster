@@ -37,20 +37,16 @@
 /*********************************************************************/
 
 #include "DisplayGroupInterface.h"
+
 #include "DisplayGroupManager.h"
 #include "ContentWindowManager.h"
-#include "Content.h"
-#include "globals.h"
 
 DisplayGroupInterface::DisplayGroupInterface(DisplayGroupManagerPtr displayGroupManager)
+    : displayGroupManager_(displayGroupManager)
 {
-    displayGroupManager_ = displayGroupManager;
-
     // copy all members from displayGroupManager
-    if(displayGroupManager != NULL)
-    {
+    if(displayGroupManager)
         contentWindowManagers_ = displayGroupManager->contentWindowManagers_;
-    }
 
     // connect signals from this to slots on the DisplayGroupManager
     // use queued connections for thread-safety
@@ -92,16 +88,17 @@ ContentWindowManagerPtr DisplayGroupInterface::getContentWindowManager(const QUu
 void DisplayGroupInterface::setContentWindowManagers(ContentWindowManagerPtrs contentWindowManagers)
 {
     // remove existing content window managers
-    while(!contentWindowManagers_.empty())
-    {
-        removeContentWindowManager(contentWindowManagers_[0]);
-    }
+    clear();
 
     // add new content window managers
     for(unsigned int i=0; i<contentWindowManagers.size(); i++)
-    {
         addContentWindowManager(contentWindowManagers[i]);
-    }
+}
+
+void DisplayGroupInterface::clear()
+{
+    while(!contentWindowManagers_.empty())
+        removeContentWindowManager(contentWindowManagers_[0]);
 }
 
 void DisplayGroupInterface::addContentWindowManager(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface * source)

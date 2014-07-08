@@ -50,8 +50,7 @@
 #error PopplerPixelStreamer needs Qt4 or Qt5
 #endif
 
-#include "globals.h"
-#include "MainWindow.h"
+#include "RenderContext.h"
 #include "GLWindow.h"
 #include "log.h"
 
@@ -61,8 +60,7 @@ PDF::PDF(const QString& uri)
     : uri_(uri)
     , pdfDoc_(0)
     , pdfPage_(0)
-    , pdfPageNumber(INVALID_PAGE_NUMBER)
-    , textureId_(0)
+    , pageNumber_(INVALID_PAGE_NUMBER)
 {
     openDocument(uri_);
 }
@@ -79,40 +77,32 @@ bool PDF::isValid() const
 
 void PDF::closePage()
 {
-    if (pdfPage_) {
-        deleteTexture();
+    if (pdfPage_)
+    {
         delete pdfPage_;
         pdfPage_ = 0;
-        pdfPageNumber = INVALID_PAGE_NUMBER;
+        pageNumber_ = INVALID_PAGE_NUMBER;
+        textureRect_ = QRect();
     }
 }
 
 void PDF::closeDocument()
 {
-    if (pdfDoc_) {
+    if (pdfDoc_)
+    {
         closePage();
         delete pdfDoc_;
         pdfDoc_ = 0;
     }
 }
 
-void PDF::deleteTexture()
-{
-    if (textureId_)
-    {
-        g_mainWindow->getGLWindow()->deleteTexture(textureId_);
-        textureId_ = 0;
-        textureRect_ = QRect();
-    }
-}
-
-
-void PDF::openDocument(QString filename)
+void PDF::openDocument(const QString& filename)
 {
     closeDocument();
 
     pdfDoc_ = Poppler::Document::load(filename);
-    if (!pdfDoc_ || pdfDoc_->isLocked()) {
+    if (!pdfDoc_ || pdfDoc_->isLocked())
+    {
         put_flog(LOG_DEBUG, "Could not open document %s", filename.toLocal8Bit().constData());
         closeDocument();
         return;
@@ -123,20 +113,26 @@ void PDF::openDocument(QString filename)
     setPage(0);
 }
 
-void PDF::setPage(int pageNumber)
+bool PDF::isValid(const int pageNumber) const
 {
-    if (pageNumber != pdfPageNumber && pageNumber < pdfDoc_->numPages())
+    return pageNumber >=0 && pageNumber < pdfDoc_->numPages();
+}
+
+void PDF::setPage(const int pageNumber)
+{
+    if (pageNumber == pageNumber_ || !isValid(pageNumber))
+        return;
+
+    closePage();
+
+    pdfPage_ = pdfDoc_->page(pageNumber); // Document starts at page 0
+    if (!pdfPage_)
     {
-        closePage();
-
-        pdfPage_ = pdfDoc_->page(pageNumber); // Document starts at page 0
-        if (pdfPage_ == 0) {
-            put_flog(LOG_DEBUG, "Could not open page %d", pageNumber);
-            return;
-        }
-
-        pdfPageNumber = pageNumber;
+        put_flog(LOG_DEBUG, "Could not open page %d", pageNumber);
+        return;
     }
+
+    pageNumber_ = pageNumber;
 }
 
 int PDF::getPageCount() const
@@ -157,11 +153,12 @@ void PDF::getDimensions(int &width, int &height) const
 
 void PDF::render(const QRectF& texCoords)
 {
-    updateRenderedFrameIndex();
+    if (!pdfPage_)
+        return;
 
     // get on-screen and full rectangle corresponding to the window
-    QRectF screenRect = g_mainWindow->getGLWindow()->getProjectedPixelRect(true);
-    QRectF fullRect = g_mainWindow->getGLWindow()->getProjectedPixelRect(false);
+    const QRectF screenRect = renderContext_->getGLWindow()->getProjectedPixelRect(true);
+    const QRectF fullRect = renderContext_->getGLWindow()->getProjectedPixelRect(false);
 
     // if we're not visible or we don't have a valid SVG, we're done...
     if(screenRect.isEmpty())
@@ -173,70 +170,54 @@ void PDF::render(const QRectF& texCoords)
     // generate texture corresponding to the visible part of these texture coordinates
     generateTexture(screenRect, fullRect, texCoords);
 
-    if(textureId_ == 0)
-    {
+    if(!texture_.isValid())
         return;
-    }
-
-    // we'll now render the entire generated texture
-    const float tX = 0.f;
-    const float tY = 0.f;
-    const float tW = 1.f;
-    const float tH = 1.f;
 
     // figure out what visible region is for screenRect, a subregion of [0, 0, 1, 1]
-    double xp = (screenRect.x() - fullRect.x()) / fullRect.width();
-    double yp = (screenRect.y() - fullRect.y()) / fullRect.height();
-    double wp = screenRect.width() / fullRect.width();
-    double hp = screenRect.height() / fullRect.height();
+    const float xp = (screenRect.x() - fullRect.x()) / fullRect.width();
+    const float yp = (screenRect.y() - fullRect.y()) / fullRect.height();
+    const float wp = screenRect.width() / fullRect.width();
+    const float hp = screenRect.height() / fullRect.height();
 
-    // draw the texture
+    // Render the entire texture on a (scaled) unit textured quad
+    glPushMatrix();
+
+    glTranslatef(xp, yp, 0);
+    glScalef(wp, hp, 1.f);
+
+    drawUnitTexturedQuad();
+
+    glPopMatrix();
+}
+
+void PDF::drawUnitTexturedQuad()
+{
     glPushAttrib(GL_ENABLE_BIT | GL_TEXTURE_BIT);
 
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, textureId_);
-
-    glBegin(GL_QUADS);
-
-    glTexCoord2f(tX, tY);
-    glVertex2f(xp, yp);
-
-    glTexCoord2f(tX+tW, tY);
-    glVertex2f(xp+wp,yp);
-
-    glTexCoord2f(tX+tW,(tY+tH));
-    glVertex2f(xp+wp,yp+hp);
-
-    glTexCoord2f(tX,(tY+tH));
-    glVertex2f(xp,yp+hp);
-
-    glEnd();
+    texture_.bind();
+    quad_.render();
 
     glPopAttrib();
 }
 
-
-void PDF::generateTexture(QRectF screenRect, QRectF fullRect, const QRectF& texCoords)
+void PDF::generateTexture(const QRectF& screenRect, const QRectF& fullRect, const QRectF& texCoords)
 {
     // figure out the coordinates of the topLeft corner of the texture in the PDF page
-    double tXp = texCoords.x()/texCoords.width()*fullRect.width()  + (screenRect.x() - fullRect.x());
-    double tYp = texCoords.y()/texCoords.height()*fullRect.height() + (screenRect.y() - fullRect.y());
+    const double tXp = texCoords.x()/texCoords.width()*fullRect.width()  + (screenRect.x() - fullRect.x());
+    const double tYp = texCoords.y()/texCoords.height()*fullRect.height() + (screenRect.y() - fullRect.y());
 
     // Compute the actual texture dimensions
-    QRect textureRect(tXp, tYp, screenRect.width(), screenRect.height());
+    const QRect textureRect(tXp, tYp, screenRect.width(), screenRect.height());
 
-    // TODO The instance of this class seems to be shared, causing the texture to be
-    // constantly regenerated because the size changes... find a way around this!
+    // TODO The instance of this class is shared between GLWindows, so the
+    // texture is constantly regenerated because the size changes...
     if(textureRect == textureRect_)
-    {
-        // no need to regenerate texture
-        return;
-    }
+        return; // no need to regenerate texture
 
     // Adjust the quality to match the actual displayed size
     // Multiply resolution by the zoom factor (1/t[W,H])
-    double resFactorX = fullRect.width() / pdfPage_->pageSize().width() / texCoords.width();
-    double resFactorY = fullRect.height() / pdfPage_->pageSize().height() / texCoords.height();
+    const double resFactorX = fullRect.width() / pdfPage_->pageSize().width() / texCoords.width();
+    const double resFactorY = fullRect.height() / pdfPage_->pageSize().height() / texCoords.height();
 
     // Generate a QImage of the rendered page
     QImage image = pdfPage_->renderToImage(72.0*resFactorX , 72.0*resFactorY,
@@ -250,24 +231,7 @@ void PDF::generateTexture(QRectF screenRect, QRectF fullRect, const QRectF& texC
         return;
     }
 
-    if (textureRect.size() != textureRect_.size())
-    {
-        // Lets recreate a texture of the appropriate size
-        deleteTexture();
-        textureId_ = g_mainWindow->getGLWindow()->bindTexture(image, GL_TEXTURE_2D, GL_RGBA, QGLContext::NoBindOption);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    }
-    else
-    {
-        // put the RGB image to the already-created texture
-        // glTexSubImage2D uses the existing texture and is more efficient than other means
-        glBindTexture(GL_TEXTURE_2D, textureId_);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, image.width(), image.height(), GL_BGRA, GL_UNSIGNED_BYTE, image.bits());
-    }
-
-    // keep rendered texture information so we know when to rerender
-    textureRect_ = textureRect;
+    texture_.update(image, GL_BGRA);
+    textureRect_ = textureRect; // keep rendered texture information so we know when to rerender
 }
 

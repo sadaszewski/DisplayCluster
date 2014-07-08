@@ -56,15 +56,15 @@ public:
     PanGestureRecognizer( const int numPoints );
 
     /** @sa QGestureRecognizer::create */
-    virtual QGesture* create( QObject *target );
+    QGesture* create( QObject *target ) override;
 
     /** @sa QGestureRecognizer::recognize */
-    virtual QGestureRecognizer::Result recognize( QGesture* state,
-                                                  QObject* watched,
-                                                  QEvent* event );
+    QGestureRecognizer::Result recognize( QGesture* state,
+                                          QObject* watched,
+                                          QEvent* event ) override;
 
     /** @sa QGestureRecognizer::reset */
-    virtual void reset( QGesture* state );
+    void reset( QGesture* state ) override;
 
     /**
      * Installs the pan recognizer in the current QApplication.

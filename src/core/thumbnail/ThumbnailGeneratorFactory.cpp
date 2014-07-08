@@ -57,7 +57,7 @@
 #include "DynamicTextureContent.h"
 
 #include <QImageReader>
-
+#include <QDir>
 
 ThumbnailGeneratorFactory::ThumbnailGeneratorFactory()
 {

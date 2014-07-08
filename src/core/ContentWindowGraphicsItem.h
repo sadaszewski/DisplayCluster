@@ -45,57 +45,55 @@
 
 class ContentWindowManager;
 
-class ContentWindowGraphicsItem : public QGraphicsObject, public ContentWindowInterface {
+class ContentWindowGraphicsItem : public QGraphicsObject, public ContentWindowInterface
+{
+public:
+    ContentWindowGraphicsItem(ContentWindowManagerPtr contentWindowManager);
+    virtual ~ContentWindowGraphicsItem();
 
-    public:
+    // QGraphicsRectItem painting
+    void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget = 0) override;
 
-        ContentWindowGraphicsItem(ContentWindowManagerPtr contentWindowManager);
-        virtual ~ContentWindowGraphicsItem();
+    // re-implemented ContentWindowInterface slots
+    void adjustSize( const SizeState state, ContentWindowInterface* source = 0 ) override;
+    void setCoordinates(QRectF coordinates, ContentWindowInterface* source = 0) override;
+    void setPosition(double x, double y, ContentWindowInterface* source = 0) override;
+    void setSize(double w, double h, ContentWindowInterface* source = 0) override;
+    void setCenter(double centerX, double centerY, ContentWindowInterface* source = 0) override;
+    void setZoom(double zoom, ContentWindowInterface* source = 0) override;
+    void setWindowState(ContentWindowInterface::WindowState windowState, ContentWindowInterface* source = 0) override;
+    void setEvent(Event event, ContentWindowInterface* source = 0) override;
 
-        // QGraphicsRectItem painting
-        virtual void paint(QPainter * painter, const QStyleOptionGraphicsItem * option, QWidget * widget=0);
+    // increment the Z value of this item
+    void setZToFront();
 
-        // re-implemented ContentWindowInterface slots
-        virtual void adjustSize( const SizeState state, ContentWindowInterface * source=NULL );
-        virtual void setCoordinates(QRectF coordinates, ContentWindowInterface * source=NULL);
-        virtual void setPosition(double x, double y, ContentWindowInterface * source=NULL);
-        virtual void setSize(double w, double h, ContentWindowInterface * source=NULL);
-        virtual void setCenter(double centerX, double centerY, ContentWindowInterface * source=NULL);
-        virtual void setZoom(double zoom, ContentWindowInterface * source=NULL);
-        virtual void setWindowState(ContentWindowInterface::WindowState windowState, ContentWindowInterface * source=NULL);
-        virtual void setEvent(Event event, ContentWindowInterface * source=NULL);
+protected:
+    QRectF boundingRect() const override;
 
-        // increment the Z value of this item
-        void setZToFront();
+    // QGraphicsRectItem events
+    bool sceneEvent(QEvent* event) override;
+    void mouseMoveEvent(QGraphicsSceneMouseEvent* event) override;
+    void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
+    void mouseDoubleClickEvent(QGraphicsSceneMouseEvent* event) override;
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
+    void wheelEvent(QGraphicsSceneWheelEvent* event) override;
+    void keyPressEvent(QKeyEvent* event) override;
+    void keyReleaseEvent(QKeyEvent* event) override;
 
-    protected:
+private:
+    void drawFrame_( QPainter* painter );
+    void drawCloseButton_( QPainter* painter );
+    void drawResizeIndicator_( QPainter* painter );
+    void drawFullscreenButton_( QPainter* painter );
+    void drawMovieControls_( QPainter* painter );
+    void drawTextLabel_( QPainter* painter );
 
-        QRectF boundingRect() const;
+    // manipulation state
+    bool resizing_;
+    bool moving_;
 
-        // QGraphicsRectItem events
-        virtual bool sceneEvent(QEvent *event);
-        virtual void mouseMoveEvent(QGraphicsSceneMouseEvent * event);
-        virtual void mousePressEvent(QGraphicsSceneMouseEvent * event);
-        virtual void mouseDoubleClickEvent(QGraphicsSceneMouseEvent * event);
-        virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent * event);
-        virtual void wheelEvent(QGraphicsSceneWheelEvent * event);
-        virtual void keyPressEvent(QKeyEvent *event);
-        virtual void keyReleaseEvent(QKeyEvent *event);
-
-    private:
-        void drawFrame_( QPainter* painter );
-        void drawCloseButton_( QPainter* painter );
-        void drawResizeIndicator_( QPainter* painter );
-        void drawFullscreenButton_( QPainter* painter );
-        void drawMovieControls_( QPainter* painter );
-        void drawTextLabel_( QPainter* painter );
-
-        // manipulation state
-        bool resizing_;
-        bool moving_;
-
-        // counter used to determine stacking order in the UI
-        static qreal zCounter_;
+    // counter used to determine stacking order in the UI
+    static qreal zCounter_;
 };
 
 #endif

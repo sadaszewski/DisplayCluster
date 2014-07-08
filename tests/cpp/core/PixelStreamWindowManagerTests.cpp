@@ -57,9 +57,7 @@ BOOST_GLOBAL_FIXTURE( MinimalGlobalQtApp )
 BOOST_AUTO_TEST_CASE( testNoStreamerWindowCreation )
 {
     DisplayGroupManagerPtr displayGroupManager( new DisplayGroupManager );
-    g_configuration =
-        new MasterConfiguration( CONFIGURATION_FILE,
-                                 displayGroupManager->getOptions( ));
+    g_configuration = new MasterConfiguration( CONFIGURATION_FILE );
 
     PixelStreamWindowManager windowManager( *displayGroupManager );
 
@@ -87,9 +85,7 @@ BOOST_AUTO_TEST_CASE( testNoStreamerWindowCreation )
 BOOST_AUTO_TEST_CASE( testExplicitWindowCreation )
 {
     DisplayGroupManagerPtr displayGroupManager( new DisplayGroupManager );
-    g_configuration =
-        new MasterConfiguration( CONFIGURATION_FILE,
-                                 displayGroupManager->getOptions( ));
+    g_configuration = new MasterConfiguration( CONFIGURATION_FILE );
 
     PixelStreamWindowManager windowManager( *displayGroupManager );
 
@@ -127,9 +123,7 @@ BOOST_AUTO_TEST_CASE( testExplicitWindowCreation )
 BOOST_AUTO_TEST_CASE( testImplicitWindowCreation )
 {
     DisplayGroupManagerPtr displayGroupManager( new DisplayGroupManager );
-    g_configuration =
-        new MasterConfiguration( CONFIGURATION_FILE,
-                                 displayGroupManager->getOptions( ));
+    g_configuration = new MasterConfiguration( CONFIGURATION_FILE );
 
     PixelStreamWindowManager windowManager( *displayGroupManager );
 

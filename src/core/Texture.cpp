@@ -37,14 +37,10 @@
 /*********************************************************************/
 
 #include "Texture.h"
-#include "globals.h"
 #include "log.h"
-#include "MainWindow.h"
-#include "GLWindow.h"
 
 Texture::Texture(QString uri)
     : uri_( uri )
-    , textureId_( 0 )
 {
     const QImage image(uri_);
     if(image.isNull())
@@ -56,56 +52,41 @@ Texture::Texture(QString uri)
     // save image dimensions
     imageWidth_ = image.width();
     imageHeight_ = image.height();
-
-    // generate new texture
-    textureId_ = g_mainWindow->getGLWindow()->bindTexture(image, GL_TEXTURE_2D, GL_RGBA,
-                                                          QGLContext::LinearFilteringBindOption |
-                                                          QGLContext::MipmapBindOption);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
 Texture::~Texture()
 {
-    if(textureId_)
-        g_mainWindow->getGLWindow()->deleteTexture(textureId_);
 }
 
-void Texture::getDimensions(int &width, int &height)
+void Texture::getDimensions(int &width, int &height) const
 {
     width = imageWidth_;
     height = imageHeight_;
 }
 
+bool Texture::generateTexture()
+{
+    const QImage image(uri_);
+    if(image.isNull())
+    {
+        put_flog(LOG_ERROR, "error loading %s", uri_.toLocal8Bit().constData());
+        return false;
+    }
+
+    return texture_.init(image, GL_BGRA, true);
+}
+
 void Texture::render(const QRectF& texCoords)
 {
-    updateRenderedFrameIndex();
-
-    if(!textureId_)
+    if(!texture_.isValid() && !generateTexture())
         return;
 
-    // draw the texture
     glPushAttrib(GL_ENABLE_BIT | GL_TEXTURE_BIT);
 
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, textureId_);
+    texture_.bind();
 
-    glBegin(GL_QUADS);
-
-    glTexCoord2f(texCoords.x(), texCoords.y());
-    glVertex2f(0.,0.);
-
-    glTexCoord2f(texCoords.x()+texCoords.width(), texCoords.y());
-    glVertex2f(1.,0.);
-
-    glTexCoord2f(texCoords.x()+texCoords.width(),texCoords.y()+texCoords.height());
-    glVertex2f(1.,1.);
-
-    glTexCoord2f(texCoords.x(),texCoords.y()+texCoords.height());
-    glVertex2f(0.,1.);
-
-    glEnd();
+    quad_.setTexCoords(texCoords);
+    quad_.render();
 
     glPopAttrib();
 }

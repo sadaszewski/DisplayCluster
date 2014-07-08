@@ -43,6 +43,7 @@
 #include "DisplayGroupManager.h"
 #include "DisplayGroupGraphicsView.h"
 #include "globals.h"
+#include "Options.h"
 #include "ContentInteractionDelegate.h"
 #include "gestures/DoubleTapGestureRecognizer.h"
 #include "gestures/PanGestureRecognizer.h"
@@ -290,13 +291,13 @@ void ContentWindowGraphicsItem::mousePressEvent(QGraphicsSceneMouseEvent * event
     }
     else if(fabs(((r.x()+r.width())/2) - eventPos.x() - buttonWidth) <= buttonWidth &&
             fabs((r.y()+r.height()) - eventPos.y()) <= buttonHeight &&
-            g_displayGroupManager->getOptions()->getShowMovieControls( ))
+            g_configuration->getOptions()->getShowMovieControls( ))
     {
         contentWindow->setControlState( ControlState(contentWindow->getControlState() ^ STATE_PAUSED) );
     }
     else if(fabs(((r.x()+r.width())/2) - eventPos.x()) <= buttonWidth &&
             fabs((r.y()+r.height()) - eventPos.y()) <= buttonHeight &&
-            g_displayGroupManager->getOptions()->getShowMovieControls( ))
+            g_configuration->getOptions()->getShowMovieControls( ))
     {
         contentWindow->setControlState( ControlState(contentWindow->getControlState() ^ STATE_LOOP) );
     }
@@ -453,7 +454,7 @@ void ContentWindowGraphicsItem::drawMovieControls_( QPainter* painter )
     QPen pen;
 
     if( contentWindowManager->getContent()->getType() == CONTENT_TYPE_MOVIE &&
-        g_displayGroupManager->getOptions()->getShowMovieControls( ))
+        g_configuration->getOptions()->getShowMovieControls( ))
     {
         // play/pause
         QRectF playPauseRect(coordinates_.x() + coordinates_.width()/2 - buttonWidth, coordinates_.y() + coordinates_.height() - buttonHeight,

@@ -39,15 +39,17 @@
 #ifndef DISPLAY_GROUP_INTERFACE_H
 #define DISPLAY_GROUP_INTERFACE_H
 
-#include "Content.h"
-#include <QtGui>
-#include <boost/shared_ptr.hpp>
+#include "types.h"
+
+#include <QObject>
+#include <QUuid>
 #include <boost/weak_ptr.hpp>
 
 class DisplayGroupManager;
 class ContentWindowManager;
 
-class DisplayGroupInterface : public QObject {
+class DisplayGroupInterface : public QObject
+{
     Q_OBJECT
 
     public:
@@ -64,21 +66,23 @@ class DisplayGroupInterface : public QObject {
         void setContentWindowManagers(ContentWindowManagerPtrs contentWindowManagers);
 
     public slots:
+        /** Clear all ContentWindows */
+        void clear();
 
         // these methods set the local copies of the state variables if source != this
-        // they will emit signals if source == NULL or if this is a DisplayGroup object
+        // they will emit signals if source == 0 or if this is a DisplayGroup object
         // the source argument should not be provided by users -- only by these functions
-        virtual void addContentWindowManager(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface * source=NULL);
-        virtual void removeContentWindowManager(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface * source=NULL);
-        virtual void moveContentWindowManagerToFront(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface * source=NULL);
+        virtual void addContentWindowManager(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface* source = 0);
+        virtual void removeContentWindowManager(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface* source = 0);
+        virtual void moveContentWindowManagerToFront(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface* source = 0);
 
     signals:
 
         // emitting these signals will trigger updates on the corresponding DisplayGroup
         // as well as all other DisplayGroupInterfaces to that DisplayGroup
-        void contentWindowManagerAdded(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface * source=NULL);
-        void contentWindowManagerRemoved(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface * source=NULL);
-        void contentWindowManagerMovedToFront(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface * source=NULL);
+        void contentWindowManagerAdded(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface* source = 0);
+        void contentWindowManagerRemoved(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface* source = 0);
+        void contentWindowManagerMovedToFront(ContentWindowManagerPtr contentWindowManager, DisplayGroupInterface* source = 0);
 
     protected:
 

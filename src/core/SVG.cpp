@@ -37,10 +37,9 @@
 /*********************************************************************/
 
 #include "SVG.h"
-#include "globals.h"
 #include "log.h"
-#include "MainWindow.h"
 #include "GLWindow.h"
+#include "RenderContext.h"
 
 #include <cmath>
 
@@ -72,7 +71,7 @@ SVG::~SVG()
     // no need to delete textures, that's handled in FBO destructor
 }
 
-void SVG::getDimensions(int &width, int &height)
+void SVG::getDimensions(int &width, int &height) const
 {
     width = width_;
     height = height_;
@@ -104,21 +103,19 @@ bool SVG::setImageData(QByteArray imageData)
 
 void SVG::render(const QRectF& texCoords)
 {
-    updateRenderedFrameIndex();
-
     // get on-screen and full rectangle corresponding to the window in pixel units
-    const QRectF screenRect = g_mainWindow->getGLWindow()->getProjectedPixelRect(true);
-    const QRectF fullRect = g_mainWindow->getGLWindow()->getProjectedPixelRect(false); // maps to [tX, tY, tW, tH]
+    const QRectF screenRect = renderContext_->getGLWindow()->getProjectedPixelRect(true);
+    const QRectF fullRect = renderContext_->getGLWindow()->getProjectedPixelRect(false); // maps to [tX, tY, tW, tH]
 
     // If we're not visible or we don't have a valid SVG, we're done.
     if(screenRect.isEmpty() || !svgRenderer_.isValid())
     {
-        textureData_.erase(g_mainWindow->getActiveGLWindow()->getTileIndex());
+        textureData_.erase(renderContext_->getActiveGLWindow()->getTileIndex());
         return;
     }
 
     // Get the texture for the current GLWindow
-    SVGTextureData& textureData = textureData_[g_mainWindow->getActiveGLWindow()->getTileIndex()];
+    SVGTextureData& textureData = textureData_[renderContext_->getActiveGLWindow()->getTileIndex()];
 
     const QRectF textureRect = computeTextureRect(screenRect, fullRect, texCoords);
     const QSize textureSize(round(screenRect.width()), round(screenRect.height()));
@@ -147,7 +144,27 @@ void SVG::render(const QRectF& texCoords)
     const float wp = screenRect.width() / fullRect.width();
     const float hp = screenRect.height() / fullRect.height();
 
-    drawTexturedQuad(xp, yp, wp, hp, textureData.fbo->texture());
+    // Render the (scaled) unit textured quad
+    glPushMatrix();
+
+    glTranslatef(xp, yp, 0);
+    glScalef(wp, hp, 1.f);
+
+    drawUnitTexturedQuad(textureData.fbo->texture());
+
+    glPopMatrix();
+}
+
+void SVG::drawUnitTexturedQuad(const GLuint textureID)
+{
+    glPushAttrib(GL_ENABLE_BIT | GL_TEXTURE_BIT);
+
+    glBindTexture(GL_TEXTURE_2D, textureID);
+    // flip the y texture coordinate since the textures are loaded upside down
+    quad_.setTexCoords(QRectF(0.f, 1.f, 1.f, -1.f));
+    quad_.render();
+
+    glPopAttrib();
 }
 
 QRectF SVG::computeTextureRect(const QRectF& screenRect, const QRectF& fullRect,
@@ -213,39 +230,5 @@ void SVG::restoreGLState()
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
-    glPopAttrib();
-}
-
-void SVG::drawTexturedQuad(const float posX, const float posY,
-                           const float width, const float height, const GLuint textureID)
-{
-    // Texture coordinates
-    const float tX = 0.f;
-    const float tY = 0.f;
-    const float tW = 1.f;
-    const float tH = 1.f;
-
-    glPushAttrib(GL_ENABLE_BIT | GL_TEXTURE_BIT);
-
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, textureID);
-
-    glBegin(GL_QUADS);
-
-    // note we need to flip the y coordinate since the textures are loaded upside down
-    glTexCoord2f(tX, 1.-tY);
-    glVertex2f(posX, posY);
-
-    glTexCoord2f(tX+tW, 1.-tY);
-    glVertex2f(posX+width, posY);
-
-    glTexCoord2f(tX+tW, 1.-(tY+tH));
-    glVertex2f(posX+width, posY+height);
-
-    glTexCoord2f(tX, 1.-(tY+tH));
-    glVertex2f(posX, posY+height);
-
-    glEnd();
-
     glPopAttrib();
 }

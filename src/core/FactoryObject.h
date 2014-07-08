@@ -40,27 +40,65 @@
 #define FACTORY_OBJECT_H
 
 #include <stdint.h>
+class QRectF;
+class RenderContext;
 
+/**
+ * An interface for objects that store Content data on Wall processes.
+ *
+ * An implementation must exist for every valid ContentType.
+ */
 class FactoryObject
 {
-    public:
-        /**
-         * Get the current frame index for this Object.
-         * Used by the Factory to check if the object is still being used/referenced
-         * by a ContentWindow.
-         */
-        uint64_t getRenderedFrameIndex() const;
+public:
+    /** Constructor */
+    FactoryObject();
 
-    protected:
-        /**
-         * Must be called everytime a derived object is rendered.
-         * Failing that, it will be garbage collected by the factory.
-         */
-        void updateRenderedFrameIndex();
+    /** Destructor */
+    virtual ~FactoryObject();
 
-    private:
-        /** Frame index when object was last rendered. */
-        uint64_t renderedFrameIndex_;
+    /**
+     * Get the dimensions of the full resolution texture.
+     * @param width Returned width
+     * @param height Returned height
+     */
+    virtual void getDimensions(int &width, int &height) const = 0;
+
+    /**
+     * Render the FactoryObject
+     * @param textCoord The region of the texture to render
+     */
+    virtual void render(const QRectF& textCoord) = 0;
+
+    /**
+     * Set the render context to render the object on Rank 1-N
+     * @param renderContext The render context
+     */
+    void setRenderContext(RenderContext* renderContext);
+
+    /** Get the render context (only set on Rank 1-N) */
+    RenderContext* getRenderContext() const;
+
+    /**
+     * Get the current frame index for this Object.
+     * Used by the Factory to check if the object is still being used/referenced
+     * by a ContentWindow.
+     */
+    uint64_t getFrameIndex() const;
+
+    /**
+     * Must be called everytime a derived object is rendered.
+     * Failing that, it will be garbage collected by the factory.
+     */
+    void setFrameIndex(const uint64_t frameIndex);
+
+protected:
+    /** A reference to the render context. */
+    RenderContext* renderContext_;
+
+private:
+    /** Frame index when object was last rendered. */
+    uint64_t frameIndex_;
 };
 
 #endif

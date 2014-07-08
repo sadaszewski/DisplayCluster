@@ -39,9 +39,10 @@
 #include "PixelStream.h"
 #include "globals.h"
 #include "ContentWindowManager.h"
-#include "DisplayGroupManager.h"
+#include "configuration/Configuration.h"
+#include "Options.h"
 #include "MPIChannel.h"
-#include "MainWindow.h"
+#include "RenderContext.h"
 #include "GLWindow.h"
 #include "log.h"
 
@@ -49,6 +50,7 @@
 #include "PixelStreamSegmentDecoder.h"
 
 #include "PixelStreamSegmentParameters.h"
+using dc::PixelStreamSegmentParameters;
 
 PixelStream::PixelStream(const QString &uri)
     : uri_(uri)
@@ -66,6 +68,9 @@ void PixelStream::getDimensions(int &width, int &height) const
 
 void PixelStream::preRenderUpdate(const QRectF& windowRect)
 {
+    // Store the window coordinates for the rendering pass
+    contentWindowRect_ = windowRect;
+
     if( isDecodingInProgress( ))
         return;
 
@@ -159,19 +164,17 @@ void PixelStream::decodeVisibleTextures(const QRectF& windowRect)
     }
 }
 
-void PixelStream::render(const QRectF&, const QRectF& windowRect)
+void PixelStream::render(const QRectF&)
 {
-    updateRenderedFrameIndex();
-
-    const bool showSegmentBorders = g_displayGroupManager->getOptions()->getShowStreamingSegments();
-    const bool showSegmentStatistics = g_displayGroupManager->getOptions()->getShowStreamingStatistics();
+    const bool showSegmentBorders = g_configuration->getOptions()->getShowStreamingSegments();
+    const bool showSegmentStatistics = g_configuration->getOptions()->getShowStreamingStatistics();
 
     glPushMatrix();
     glScalef(1.f/(float)width_, 1.f/(float)height_, 0.f);
 
     for(std::vector<PixelStreamSegmentRendererPtr>::iterator it=segmentRenderers_.begin(); it != segmentRenderers_.end(); ++it)
     {
-        if (isVisible( (*it)->getRect(), windowRect ))
+        if (isVisible( (*it)->getRect(), contentWindowRect_ ))
         {
             (*it)->render(showSegmentBorders, showSegmentStatistics);
         }
@@ -196,7 +199,7 @@ void PixelStream::adjustSegmentRendererCount(const size_t count)
     {
         segmentRenderers_.clear();
         for (size_t i=0; i<count; ++i)
-            segmentRenderers_.push_back( PixelStreamSegmentRendererPtr(new PixelStreamSegmentRenderer(uri_)) );
+            segmentRenderers_.push_back( PixelStreamSegmentRendererPtr(new PixelStreamSegmentRenderer(renderContext_)) );
     }
 }
 
@@ -229,7 +232,7 @@ bool PixelStream::isVisible(const QRect& segment, const QRectF& windowRect)
     const double segmentW = (double)segment.width() / (double)width_ * windowRect.width();
     const double segmentH = (double)segment.height() / (double)height_ * windowRect.height();
 
-    return g_mainWindow->isRegionVisible(QRectF(segmentX, segmentY, segmentW, segmentH));
+    return renderContext_->isRegionVisible(QRectF(segmentX, segmentY, segmentW, segmentH));
 }
 
 bool PixelStream::isVisible(const dc::PixelStreamSegment& segment, const QRectF& windowRect)

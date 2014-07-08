@@ -39,13 +39,14 @@
 #ifndef DYNAMIC_TEXTURE_H
 #define DYNAMIC_TEXTURE_H
 
-#include "FactoryObject.h"
 #include "types.h"
+#include "FactoryObject.h"
+#include "GLTexture2D.h"
+#include "GLQuad.h"
 
 #include <QImage>
 #include <QFuture>
 #include <QRectF>
-#include <QGLWidget>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
@@ -86,21 +87,18 @@ public:
      * @param width Returned width
      * @param height Returned height
      */
-    void getDimensions(int &width, int &height);
+    void getDimensions(int &width, int &height) const;
 
     /**
      * Render the dynamic texture.
      * @param texCoords The area of the full scale texture to render
-     * @param loadOnDemand Load the texture if not already available
-     * @param considerChildren Attempt to use the children objects for rendering
      */
-    void render(const QRectF& texCoords, bool loadOnDemand=true, bool considerChildren=true);
+    void render(const QRectF& texCoords) override;
 
     /**
-     * Recursively clear children of this object which have not been rendered recently.
-     * @param currentFrameIndex The current frame index
+     * Post render step.
      */
-    void clearOldChildren(const uint64_t currentFrameIndex);
+    void postRenderUpdate();
 
     /**
      * Generate an image Pyramid from the current uri and save it to the disk.
@@ -110,11 +108,10 @@ public:
 
     /**
      * Load the image for this part of the texture
-     * @param convertToGLFormat convert the image to GL format for texture upload
      * @throw boost::bad_weak_ptr exception if a parent object is deleted during thread execution
      * @internal asynchronous loading thread needs access to this method
      */
-    void loadImage(const bool convertToGLFormat=true);
+    void loadImage();
 
     /**
      * Decrement the global count of loading threads.
@@ -146,19 +143,36 @@ private:
     std::vector<int> treePath_; // To construct the image name for each object
     int depth_; // The depth of the object in the image pyramid
 
-    QFuture<void> loadImageThread_; // Future for asychronous image loading
+    mutable QFuture<void> loadImageThread_; // Future for asychronous image loading
     bool loadImageThreadStarted_; // True if the texture loading has been started
 
-    QImage scaledImage_; // for texture upload to GPU
-    GLuint textureId_;
     QSize imageSize_; // full scale image dimensions
+    QImage scaledImage_; // for texture upload to GPU
+    GLTexture2D texture_;
+    GLQuad quad_;
 
     std::vector<DynamicTexturePtr> children_; // Children in the image pyramid
-    uint64_t renderChildrenFrameIndex_; // Used for garbage-collecting unused child objects
+    bool renderedChildren_; // Used for garbage-collecting unused child objects
 
+    bool isVisibleInCurrentGLView();
+    bool isResolutionSufficientForCurrentGLView();
+    bool canHaveChildren();
+
+    /**
+     * Recursively clear children of this object which have not been rendered recently.
+     */
+    void clearOldChildren(); // @All
+
+    /**
+     * Render the dynamic texture.
+     * This function is also called from child objects to render a low-res
+     * texture when the high-res one is not loaded yet.
+     * @param texCoords The area of the full scale texture to render
+     */
+    void render_(const QRectF& texCoords); // @All
 
     /** Is this object the root element. */
-    bool isRoot() const;
+    bool isRoot() const;  // @All
 
     /**
      * Get the root object,
@@ -179,10 +193,9 @@ private:
     bool loadFullResImage(); // @Root only
     QImage loadImageRegionFromFullResImageFile(const QString& filename); // @Child only
     QImage getImageFromParent(const QRectF& imageRegion, DynamicTexture * start); // @Child only
-    void uploadTexture(); // @All
+    void generateTexture(); // @All
 
     void renderChildren(const QRectF& texCoords); // @All
-    double getProjectedPixelArea(const bool onScreenOnly); // Used to determine children visibility // @All
     void renderTextureBorder(); // @All
     void renderTexturedUnitQuad(const QRectF& texCoords); // @All
 

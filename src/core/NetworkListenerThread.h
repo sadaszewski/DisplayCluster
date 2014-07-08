@@ -49,6 +49,7 @@
 
 using dc::Event;
 using dc::PixelStreamSegment;
+using dc::PixelStreamSegmentParameters;
 
 class NetworkListenerThread : public EventReceiver
 {

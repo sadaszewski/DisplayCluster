@@ -43,10 +43,12 @@ if(ENABLE_SKELETON_SUPPORT)
   include_directories(SYSTEM ${OpenNI_INCLUDE_DIRS}) # use SYSTEM to suppress OpenNI compile warnings
   list(APPEND CORE_LIBRARY_LIBS ${OpenNI_LIBRARIES})
 
-  list(APPEMD SRCS
+  list(APPEND SRCS
     SkeletonThread.cpp
     SkeletonSensor.cpp
-    SkeletonState.cpp)
+    SkeletonState.cpp
+    SkeletonRenderer.cpp
+  )
 
   if(NOT ENABLE_JOYSTICK_SUPPORT)
     list(APPEMD SRCS DisplayGroupJoystick.cpp)
@@ -99,10 +101,12 @@ list(APPEND SRCS
     ContentType.cpp
     ContentInteractionDelegate.cpp
     ContentWindowManager.cpp
+    ContentWindowRenderer.cpp
     ContentWindowInterface.cpp
     ContentWindowGraphicsItem.cpp
     ContentWindowListWidgetItem.cpp
     DisplayGroupManager.cpp
+    DisplayGroupRenderer.cpp
     DisplayGroupInterface.cpp
     DisplayGroupGraphicsScene.cpp
     DisplayGroupGraphicsViewProxy.cpp
@@ -110,9 +114,15 @@ list(APPEND SRCS
     DisplayGroupListWidgetProxy.cpp
     DynamicTexture.cpp
     DynamicTextureContent.cpp
+    Factory.hpp
+    Factories.cpp
     FactoryObject.cpp
+    FFMPEGMovie.cpp
+    FFMPEGVideoFrameConverter.cpp
     FileCommandHandler.cpp
     FpsCounter.cpp
+    GLQuad.cpp
+    GLTexture2D.cpp
     GLWindow.cpp
     globals.cpp
     gestures/DoubleTapGestureRecognizer.cpp
@@ -124,8 +134,9 @@ list(APPEND SRCS
     ../log.cpp
     ../MessageHeader.cpp
     ImageJpegDecompressor.cpp
-    MainWindow.cpp
     Marker.cpp
+    MarkerRenderer.cpp
+    MetaTypeRegistration.cpp
     Movie.cpp
     MovieContent.cpp
     MPIChannel.cpp
@@ -140,12 +151,14 @@ list(APPEND SRCS
     PixelStreamSegmentDecoder.cpp
     PixelStreamSegmentRenderer.cpp
     PixelStreamWindowManager.cpp
+    RenderContext.cpp
     SessionCommandHandler.cpp
     State.cpp
     StatePreview.cpp
     StateSerializationHelper.cpp
     SVG.cpp
     SVGContent.cpp
+    TestPattern.cpp
     Texture.cpp
     TextureContent.cpp
     WebbrowserCommandHandler.cpp
@@ -192,7 +205,6 @@ list(APPEND MOC_HEADERS
     DisplayGroupGraphicsViewProxy.h
     DisplayGroupListWidgetProxy.h
     EventReceiver.h
-    MainWindow.h
     Marker.h
     MPIChannel.h
     NetworkListener.h

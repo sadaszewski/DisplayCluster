@@ -39,40 +39,38 @@
 #ifndef GL_WINDOW_H
 #define GL_WINDOW_H
 
-#include "Factory.hpp"
-#include "Texture.h"
-#include "DynamicTexture.h"
-#include "PDF.h"
-#include "SVG.h"
-#include "Movie.h"
-#include "PixelStream.h"
-#include "FpsCounter.h"
 #include <QGLWidget>
+#include <QList>
+
+#include "types.h"
+#include "FpsCounter.h"
 
 class WallConfiguration;
 
+/**
+ * An OpenGL window used by Wall applications to render contents.
+ */
 class GLWindow : public QGLWidget
 {
 public:
-    GLWindow(int tileIndex);
-    GLWindow(int tileIndex, QRect windowRect, QGLWidget * shareWidget = 0);
+    /**
+     * Create a new window.
+     * @param tileIndex A unique index associated with this window.
+     * @param windowRect The position and dimensions for the window.
+     * @param shareWidget An optional widget to share an existing GLContext.
+     *                    A new GLContext is allocated if not provided.
+     */
+    GLWindow(const int tileIndex, QRect windowRect, QGLWidget* shareWidget = 0);
     ~GLWindow();
 
     /** Get the unique tile index identifier. */
     int getTileIndex() const;
 
-    Factory<Texture> & getTextureFactory();
-    Factory<DynamicTexture> & getDynamicTextureFactory();
-    Factory<PDF> &getPDFFactory();
-    Factory<SVG> & getSVGFactory();
-    Factory<Movie> & getMovieFactory();
-    Factory<PixelStream> & getPixelStreamFactory();
+    /** Add an object to be rendered. */
+    void addRenderable(RenderablePtr renderable);
 
-    void insertPurgeTextureId(GLuint textureId);
-    void purgeTextures();
-
-    /** Must be called before destroying this object to clear all Contents and textures. */
-    void finalize();
+    /** Set the test pattern renderable */
+    void setTestPattern(RenderablePtr testPattern);
 
     /**
      * Is the given region visible in this window.
@@ -82,19 +80,23 @@ public:
      */
     bool isRegionVisible(const QRectF& region) const;
 
-    /** Used by PDF and SVG renderers */
-    QRectF getProjectedPixelRect(const bool clampToWindowArea);
-
-    /** Draw an un-textured rectangle.
-     * @param x,y postion
-     * @param w,h dimensions
+    /**
+     * Get the region spanned by a unit rectangle {(0;0),(1;1)} in the current
+     * GL view.
+     * The region is in screen coordinates with the origin at the viewport's
+     * top-left corner.
+     * @param clampToViewportBorders Clamp to the visible part of the region.
+     * @return The region in pixel units.
      */
-    static void drawRectangle(double x, double y, double w, double h);
+    static QRectF getProjectedPixelRect(const bool clampToViewportBorders);
 
 protected:
-    void initializeGL();
-    void paintGL();
-    void resizeGL(int w, int h);
+    ///@{
+    /** Overloaded methods from QGLWidget */
+    void initializeGL() override;
+    void paintGL() override;
+    void resizeGL(int w, int h) override;
+    ///@}
 
 private:
     const WallConfiguration* configuration_;
@@ -107,30 +109,13 @@ private:
     double bottom_;
     double top_;
 
-    Factory<Texture> textureFactory_;
-    Factory<DynamicTexture> dynamicTextureFactory_;
-    Factory<PDF> pdfFactory_;
-    Factory<SVG> svgFactory_;
-    Factory<Movie> movieFactory_;
-    Factory<PixelStream> pixelStreamFactory_;
+    FpsCounter fpsCounter_;
 
-    // mutex and vector of texture id's to purge
-    // this allows other threads to trigger deletion of a texture during the main OpenGL thread execution
-    QMutex purgeTexturesMutex_;
-    std::vector<GLuint> purgeTextureIds_;
+    QList<RenderablePtr> renderables_;
+    RenderablePtr testPattern_;
 
-    FpsCounter fpsCounter;
-
-    void renderBackgroundContent(ContentWindowManagerPtr backgroundContentWindow);
-    void renderContentWindows(ContentWindowManagerPtrs contentWindowManagers);
-    void renderMarkers(const MarkerPtrs& markers);
-
-    void setOrthographicView(const QColor& clearColor);
-#if ENABLE_SKELETON_SUPPORT
-    bool setPerspectiveView(double x=0., double y=0., double w=1., double h=1.);
-#endif
-
-    void renderTestPattern();
+    void clear(const QColor& clearColor);
+    void setOrthographicView();
     void drawFps();
 };
 

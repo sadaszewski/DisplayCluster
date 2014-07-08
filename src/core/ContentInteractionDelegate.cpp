@@ -50,6 +50,8 @@
 #include "globals.h"
 #include "configuration/Configuration.h"
 
+#include <QTapGesture>
+#include <QSwipeGesture>
 
 ContentInteractionDelegate::ContentInteractionDelegate(ContentWindowManager& contentWindow)
     : contentWindowManager_(contentWindow)
@@ -129,7 +131,6 @@ void ContentInteractionDelegate::gestureEvent( QGestureEvent* event )
     }
 }
 
-
 void ContentInteractionDelegate::tapAndHoldUnselected(QTapAndHoldGesture *gesture)
 {
     if( gesture->state() == Qt::GestureFinished )
@@ -151,15 +152,13 @@ void ContentInteractionDelegate::panUnselected(PanGesture *gesture)
     if( gesture->state() == Qt::GestureStarted )
         contentWindowManager_.getContent()->blockAdvance( true );
 
+    else if( gesture->state() == Qt::GestureCanceled ||
+             gesture->state() == Qt::GestureFinished )
+        contentWindowManager_.getContent()->blockAdvance( false );
+
     double x, y;
     contentWindowManager_.getPosition( x, y );
     contentWindowManager_.setPosition( x+dx, y+dy );
-
-    if( gesture->state() == Qt::GestureCanceled ||
-        gesture->state() == Qt::GestureFinished )
-    {
-        contentWindowManager_.getContent()->blockAdvance( false );
-    }
 }
 
 void ContentInteractionDelegate::pinchUnselected(PinchGesture *gesture)
@@ -171,13 +170,11 @@ void ContentInteractionDelegate::pinchUnselected(PinchGesture *gesture)
     if( gesture->state() == Qt::GestureStarted )
         contentWindowManager_.getContent()->blockAdvance( true );
 
-    contentWindowManager_.scaleSize( factor );
-
-    if( gesture->state() == Qt::GestureCanceled ||
-        gesture->state() == Qt::GestureFinished )
-    {
+    else if( gesture->state() == Qt::GestureCanceled ||
+             gesture->state() == Qt::GestureFinished )
         contentWindowManager_.getContent()->blockAdvance( false );
-    }
+
+    contentWindowManager_.scaleSize( factor );
 }
 
 double ContentInteractionDelegate::adaptZoomFactor(double pinchGestureScaleFactor)

@@ -56,6 +56,11 @@
 #endif
 #include "PixelStreamContent.h"
 
+#include <QFile>
+#include <QFileInfo>
+#include <QImageReader>
+#include <QTextStream>
+
 #define ERROR_IMAGE_FILENAME ":/img/error.png"
 
 ContentPtr ContentFactory::getContent(const QString& uri)

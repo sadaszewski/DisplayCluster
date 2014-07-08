@@ -43,14 +43,10 @@
 #include "PixelStreamSegment.h"
 #include "types.h"
 
-#include <QtGui>
+#include <QRectF>
+#include <QString>
 #include <boost/shared_ptr.hpp>
 #include <vector>
-#include <queue>
-
-using dc::PixelStreamSegment;
-using dc::PixelStreamSegmentParameters;
-typedef std::vector<PixelStreamSegment> PixelStreamSegments;
 
 class PixelStreamSegmentRenderer;
 class PixelStreamSegmentDecoder;
@@ -62,10 +58,10 @@ class PixelStream : public FactoryObject
 public:
     PixelStream(const QString& uri);
 
-    void getDimensions(int &width, int &height) const;
+    void getDimensions(int &width, int &height) const override;
 
     void preRenderUpdate(const QRectF& windowRect);
-    void render(const QRectF& texCoords, const QRectF& windowRect);
+    void render(const QRectF& texCoords) override;
 
     void insertNewFrame(const PixelStreamSegments& segments);
 
@@ -88,6 +84,9 @@ private:
 
     // For each segment, object for image decoding, rendering and storing parameters
     std::vector<PixelStreamSegmentRendererPtr> segmentRenderers_;
+
+    // The coordinates of the ContentWindow of this PixelStream
+    QRectF contentWindowRect_;
 
     void updateRenderers(const PixelStreamSegments& segments);
     void updateVisibleTextures(const QRectF& windowRect);

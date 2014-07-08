@@ -39,39 +39,23 @@
 #include "DisplayGroupManager.h"
 
 #include "ContentWindowManager.h"
-#include "ContentFactory.h"
 #include "Content.h"
-
-#include "globals.h"
 #include "MPIChannel.h"
-#include "MainWindow.h"
-#include "GLWindow.h"
 
-#include "log.h"
+#include <QApplication>
 
 DisplayGroupManager::DisplayGroupManager()
-    : options_(new Options())
 {
-    // make Options trigger sendDisplayGroup() when it is updated
-    connect(options_.get(), SIGNAL(updated()), this, SLOT(sendDisplayGroup()), Qt::QueuedConnection);
-
-    // register types for use in signals/slots
-    qRegisterMetaType<Event>("Event");
-    qRegisterMetaType<ContentWindowManagerPtr>("ContentWindowManagerPtr");
-    qRegisterMetaType<PixelStreamSegment>("PixelStreamSegment");
-
-#if ENABLE_SKELETON_SUPPORT
-    qRegisterMetaType<std::vector< boost::shared_ptr<SkeletonState> > >("std::vector< boost::shared_ptr<SkeletonState> >");
-#endif
 }
 
 DisplayGroupManager::~DisplayGroupManager()
 {
 }
 
-OptionsPtr DisplayGroupManager::getOptions() const
+DisplayGroupManager::DisplayGroupManager(MPIChannelPtr mpiChannel)
+    : mpiChannel_(mpiChannel)
 {
-    return options_;
+    assert(mpiChannel_->getRank() == 0);
 }
 
 MarkerPtr DisplayGroupManager::getNewMarker()
@@ -99,16 +83,11 @@ MarkerPtrs DisplayGroupManager::getMarkers() const
 void DisplayGroupManager::deleteMarkers()
 {
     QMutexLocker locker(&markersMutex_);
-
-    if( markers_.empty( ))
-        return;
-
-    markers_[0]->releaseTexture();
     markers_.clear();
 }
 
 #if ENABLE_SKELETON_SUPPORT
-std::vector<boost::shared_ptr<SkeletonState> > DisplayGroupManager::getSkeletons()
+SkeletonStatePtrs DisplayGroupManager::getSkeletons()
 {
     return skeletons_;
 }
@@ -125,12 +104,12 @@ void DisplayGroupManager::addContentWindowManager(ContentWindowManagerPtr conten
 
         emit modified(shared_from_this());
 
-        if (contentWindowManager->getContent()->getType() != CONTENT_TYPE_PIXEL_STREAM)
+        if (mpiChannel_ && contentWindowManager->getContent()->getType() != CONTENT_TYPE_PIXEL_STREAM)
         {
             // TODO initialize all content dimensions on creation so we can
             // remove this procedure (DISCL-21)
             // make sure we have its dimensions so we can constrain its aspect ratio
-            g_mpiChannel->sendContentsDimensionsRequest(getContentWindowManagers());
+            mpiChannel_->sendContentsDimensionsRequest(getContentWindowManagers());
         }
     }
 }
@@ -182,23 +161,25 @@ void DisplayGroupManager::moveContentWindowManagerToFront(ContentWindowManagerPt
     }
 }
 
-void DisplayGroupManager::setBackgroundContentWindowManager(ContentWindowManagerPtr contentWindowManager)
+void DisplayGroupManager::setBackgroundContent(ContentPtr content)
 {
-    // This method can be used to remove the background by sending a NULL ptr
-    if (contentWindowManager)
+    if (content)
     {
+        backgroundContent_ = ContentWindowManagerPtr(new ContentWindowManager(content));
         // set display group in content window manager object
-        contentWindowManager->setDisplayGroupManager(shared_from_this());
-        contentWindowManager->adjustSize( SIZE_FULLSCREEN );
-        watchChanges(contentWindowManager);
+        backgroundContent_->setDisplayGroupManager(shared_from_this());
+        backgroundContent_->adjustSize( SIZE_FULLSCREEN );
+        watchChanges(backgroundContent_);
     }
-
-    backgroundContent_ = contentWindowManager;
+    else
+    {
+        backgroundContent_ = ContentWindowManagerPtr();
+    }
 
     emit modified(shared_from_this());
 }
 
-ContentWindowManagerPtr DisplayGroupManager::getBackgroundContentWindowManager() const
+ContentWindowManagerPtr DisplayGroupManager::getBackgroundContentWindow() const
 {
     return backgroundContent_;
 }
@@ -216,57 +197,13 @@ ContentWindowManagerPtr DisplayGroupManager::getActiveWindow() const
     return contentWindowManagers_.back();
 }
 
-bool DisplayGroupManager::setBackgroundContentFromUri(const QString& filename)
-{
-    if(!filename.isEmpty())
-    {
-        ContentPtr content = ContentFactory::getContent(filename);
-
-        if( content )
-        {
-            ContentWindowManagerPtr contentWindow(new ContentWindowManager(content));
-            setBackgroundContentWindowManager(contentWindow);
-            return true;
-        }
-    }
-    return false;
-}
-
-QColor DisplayGroupManager::getBackgroundColor() const
-{
-    return backgroundColor_;
-}
-
-void DisplayGroupManager::setBackgroundColor(QColor color)
-{
-    if(color == backgroundColor_)
-        return;
-    backgroundColor_ = color;
-
-    emit modified(shared_from_this());
-}
-
-void DisplayGroupManager::advanceContents()
-{
-    // note that if we have multiple ContentWindowManagers corresponding to a single Content object,
-    // we will call advance() multiple times per frame on that Content object...
-    for(unsigned int i=0; i<contentWindowManagers_.size(); i++)
-    {
-        contentWindowManagers_[i]->getContent()->advance(contentWindowManagers_[i]);
-    }
-    if (backgroundContent_)
-    {
-        backgroundContent_->getContent()->advance(backgroundContent_);
-    }
-}
-
 void DisplayGroupManager::sendDisplayGroup()
 {
     emit modified(shared_from_this());
 }
 
 #if ENABLE_SKELETON_SUPPORT
-void DisplayGroupManager::setSkeletons(std::vector< boost::shared_ptr<SkeletonState> > skeletons)
+void DisplayGroupManager::setSkeletons(SkeletonStatePtrs skeletons)
 {
     skeletons_ = skeletons;
 

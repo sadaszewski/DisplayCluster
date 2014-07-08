@@ -39,7 +39,4 @@
 #include "globals.h"
 
 MPIChannelPtr g_mpiChannel;
-Configuration * g_configuration = NULL;
-DisplayGroupManagerPtr g_displayGroupManager;
-MainWindow * g_mainWindow = NULL;
-uint64_t g_frameCount = 0; // Used to garbage collect FactoryObjects which are no longer being rendered
+Configuration * g_configuration = 0;

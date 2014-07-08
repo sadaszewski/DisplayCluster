@@ -38,11 +38,13 @@
 
 #include "DisplayGroupGraphicsScene.h"
 #include "globals.h"
+#include "Options.h"
 #include "configuration/Configuration.h"
 #include "DisplayGroupManager.h"
 #include "Marker.h"
 
-DisplayGroupGraphicsScene::DisplayGroupGraphicsScene()
+DisplayGroupGraphicsScene::DisplayGroupGraphicsScene(DisplayGroupManagerPtr displayGroup)
+    : displayGroup_(displayGroup)
 {
     setSceneRect(0., 0., 1., 1.);
 
@@ -53,7 +55,7 @@ DisplayGroupGraphicsScene::DisplayGroupGraphicsScene()
     refreshTileRects();
 
     // get marker for this scene
-    markers_.push_back( g_displayGroupManager->getNewMarker());
+    markers_.push_back( displayGroup_->getNewMarker( ));
 }
 
 void DisplayGroupGraphicsScene::refreshTileRects()
@@ -118,12 +120,12 @@ bool DisplayGroupGraphicsScene::event(QEvent *evt)
     case QEvent::TouchUpdate:
     case QEvent::TouchEnd:
     {
-        if( g_displayGroupManager->getOptions()->getShowTouchPoints( ))
+        if( g_configuration->getOptions()->getShowTouchPoints( ))
         {
             QTouchEvent* touchEvent = static_cast< QTouchEvent* >( evt );
 
             while( markers_.size() < size_t( touchEvent->touchPoints().size( )))
-                markers_.push_back( g_displayGroupManager->getNewMarker());
+                markers_.push_back( displayGroup_->getNewMarker( ));
 
             for( int i = 0; i < touchEvent->touchPoints().size(); ++i )
             {

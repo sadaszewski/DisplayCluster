@@ -78,7 +78,7 @@ public:
 
 protected:
     /** @overload Start the server. */
-    virtual void run();
+    void run() override;
 
 private:
     dcWebservice::Server* server_;

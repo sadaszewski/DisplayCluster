@@ -43,11 +43,10 @@
 #include "ContentWindowManager.h"
 #include "ContentWindowGraphicsItem.h"
 
-DisplayGroupGraphicsViewProxy::DisplayGroupGraphicsViewProxy(DisplayGroupManagerPtr displayGroupManager)
-    : DisplayGroupInterface(displayGroupManager)
-    , graphicsView_( new DisplayGroupGraphicsView() )
+DisplayGroupGraphicsViewProxy::DisplayGroupGraphicsViewProxy(DisplayGroupManagerPtr displayGroup)
+    : DisplayGroupInterface(displayGroup)
+    , graphicsView_( new DisplayGroupGraphicsView(displayGroup) )
 {
-    connect(displayGroupManager->getOptions().get(), SIGNAL(updated()), this, SLOT(optionsUpdated()));
 }
 
 DisplayGroupGraphicsViewProxy::~DisplayGroupGraphicsViewProxy()
@@ -85,7 +84,7 @@ void DisplayGroupGraphicsViewProxy::removeContentWindowManager(ContentWindowMana
             // need dynamic cast to make sure this is actually a CWGI
             ContentWindowGraphicsItem * cwgi = dynamic_cast<ContentWindowGraphicsItem *>(itemsList.at(i));
 
-            if(cwgi != NULL && cwgi->getContentWindowManager() == contentWindowManager)
+            if(cwgi && cwgi->getContentWindowManager() == contentWindowManager)
             {
                 graphicsView_->scene()->removeItem(itemsList.at(i));
             }
@@ -113,7 +112,7 @@ void DisplayGroupGraphicsViewProxy::moveContentWindowManagerToFront(ContentWindo
             // need dynamic cast to make sure this is actually a CWGI
             ContentWindowGraphicsItem * cwgi = dynamic_cast<ContentWindowGraphicsItem *>(itemsList.at(i));
 
-            if(cwgi != NULL && cwgi->getContentWindowManager() == contentWindowManager)
+            if(cwgi && cwgi->getContentWindowManager() == contentWindowManager)
             {
                 // don't call cwgi->moveToFront() here or that'll lead to infinite recursion!
                 cwgi->setZToFront();
@@ -122,7 +121,7 @@ void DisplayGroupGraphicsViewProxy::moveContentWindowManagerToFront(ContentWindo
     }
 }
 
-void DisplayGroupGraphicsViewProxy::optionsUpdated()
+void DisplayGroupGraphicsViewProxy::optionsUpdated(OptionsPtr)
 {
     // mullion compensation may have been enabled or disabled, so refresh the tiled display rectangles
     static_cast<DisplayGroupGraphicsScene *>(graphicsView_->scene())->refreshTileRects();

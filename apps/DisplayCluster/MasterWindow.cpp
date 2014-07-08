@@ -1,5 +1,6 @@
 /*********************************************************************/
-/* Copyright (c) 2011 - 2012, The University of Texas at Austin.     */
+/* Copyright (c) 2014, EPFL/Blue Brain Project                       */
+/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -36,24 +37,26 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#include "MainWindow.h"
+#include "MasterWindow.h"
+
 #include "globals.h"
-#include "MPIChannel.h"
-#include "configuration/WallConfiguration.h"
+#include "Options.h"
 #include "configuration/MasterConfiguration.h"
+#include "log.h"
+
 #include "ContentLoader.h"
 #include "ContentFactory.h"
-#include "ContentWindowManager.h"
-#include "log.h"
+#include "StateSerializationHelper.h"
+#include "localstreamer/DockPixelStreamer.h"
+
+#include "DynamicTexture.h"
+
 #include "DisplayGroupManager.h"
+#include "ContentWindowManager.h"
 #include "DisplayGroupGraphicsViewProxy.h"
 #include "DisplayGroupGraphicsView.h"
 #include "DisplayGroupListWidgetProxy.h"
 #include "BackgroundWidget.h"
-#include "StateSerializationHelper.h"
-#include "localstreamer/DockPixelStreamer.h"
-
-#include "GLWindow.h"
 
 #if ENABLE_PYTHON_SUPPORT
     #include "PythonConsole.h"
@@ -67,51 +70,34 @@
 
 #define DOCK_WIDTH_RELATIVE_TO_WALL   0.175
 
-MainWindow::MainWindow()
-    : backgroundWidget_(0)
+MasterWindow::MasterWindow(DisplayGroupManagerPtr displayGroup)
+    : QMainWindow()
+    , displayGroup_(displayGroup)
+    , backgroundWidget_(0)
 #if ENABLE_TUIO_TOUCH_LISTENER
     , touchListener_(0)
 #endif
 {
-    // make application quit when last window is closed
-    QObject::connect(QApplication::instance(), SIGNAL(lastWindowClosed()),
-                     QApplication::instance(), SLOT(quit()));
-
-    if(g_mpiChannel->getRank() == 0)
-    {
 #if ENABLE_PYTHON_SUPPORT
-        PythonConsole::init();
+    PythonConsole::init();
 #endif
-        // rank 0 window setup
-        resize(800,600);
-        setAcceptDrops(true);
 
-        setupMasterWindowUI();
+    resize(800,600);
+    setAcceptDrops(true);
 
-        show();
-    }
-    else
-    {
-        setupWallOpenGLWindows();
+    setupMasterWindowUI();
 
-        // setup connection so updateGLWindows() will be called continuously
-        // must be queued so we return to the main event loop and avoid infinite recursion
-        connect(this, SIGNAL(updateGLWindowsFinished()), this, SLOT(updateGLWindows()), Qt::QueuedConnection);
-
-        // trigger the first update
-        updateGLWindows();
-    }
+    show();
 }
 
-MainWindow::~MainWindow()
+MasterWindow::~MasterWindow()
 {
 #if ENABLE_TUIO_TOUCH_LISTENER
     delete touchListener_;
 #endif
 }
 
-
-void MainWindow::setupMasterWindowUI()
+void MasterWindow::setupMasterWindowUI()
 {
     // create menus in menu bar
     QMenu * fileMenu = menuBar()->addMenu("&File");
@@ -142,7 +128,7 @@ void MainWindow::setupMasterWindowUI()
     // clear contents action
     QAction * clearContentsAction = new QAction("Clear", this);
     clearContentsAction->setStatusTip("Clear");
-    connect(clearContentsAction, SIGNAL(triggered()), this, SLOT(clearContents()));
+    connect(clearContentsAction, SIGNAL(triggered()), displayGroup_.get(), SLOT(clear()));
 
     // save state action
     QAction * saveStateAction = new QAction("Save State", this);
@@ -181,68 +167,63 @@ void MainWindow::setupMasterWindowUI()
     quitAction->setStatusTip("Quit application");
     connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
 
+    OptionsPtr options = g_configuration->getOptions();
+
     // show window borders action
     QAction * showWindowBordersAction = new QAction("Show Window Borders", this);
     showWindowBordersAction->setStatusTip("Show window borders");
     showWindowBordersAction->setCheckable(true);
-    showWindowBordersAction->setChecked(g_displayGroupManager->getOptions()->getShowWindowBorders());
-    connect(showWindowBordersAction, SIGNAL(toggled(bool)), g_displayGroupManager->getOptions().get(), SLOT(setShowWindowBorders(bool)));
-
-    // show mouse cursor action
-    QAction * showMouseCursorAction = new QAction("Show Mouse Cursor", this);
-    showMouseCursorAction->setStatusTip("Show mouse cursor");
-    showMouseCursorAction->setCheckable(true);
-    showMouseCursorAction->setChecked(g_displayGroupManager->getOptions()->getShowMouseCursor());
-    connect(showMouseCursorAction, SIGNAL(toggled(bool)), g_displayGroupManager->getOptions().get(), SLOT(setShowMouseCursor(bool)));
+    showWindowBordersAction->setChecked(options->getShowWindowBorders());
+    connect(showWindowBordersAction, SIGNAL(toggled(bool)), options.get(), SLOT(setShowWindowBorders(bool)));
 
     // show touch points action
     QAction * showTouchPoints = new QAction("Show Touch Points", this);
     showTouchPoints->setStatusTip("Show touch points");
     showTouchPoints->setCheckable(true);
-    showTouchPoints->setChecked(g_displayGroupManager->getOptions()->getShowTouchPoints());
-    connect(showTouchPoints, SIGNAL(toggled(bool)), g_displayGroupManager->getOptions().get(), SLOT(setShowTouchPoints(bool)));
+    showTouchPoints->setChecked(options->getShowTouchPoints());
+    connect(showTouchPoints, SIGNAL(toggled(bool)), options.get(), SLOT(setShowTouchPoints(bool)));
 
     // show movie controls action
     QAction * showMovieControlsAction = new QAction("Show Movie Controls", this);
     showMovieControlsAction->setStatusTip("Show movie controls");
     showMovieControlsAction->setCheckable(true);
-    showMovieControlsAction->setChecked(g_displayGroupManager->getOptions()->getShowMovieControls());
-    connect(showMovieControlsAction, SIGNAL(toggled(bool)), g_displayGroupManager->getOptions().get(), SLOT(setShowMovieControls(bool)));
+    showMovieControlsAction->setChecked(options->getShowMovieControls());
+    connect(showMovieControlsAction, SIGNAL(toggled(bool)), options.get(), SLOT(setShowMovieControls(bool)));
 
     // show test pattern action
     QAction * showTestPatternAction = new QAction("Show Test Pattern", this);
     showTestPatternAction->setStatusTip("Show test pattern");
     showTestPatternAction->setCheckable(true);
-    showTestPatternAction->setChecked(g_displayGroupManager->getOptions()->getShowTestPattern());
-    connect(showTestPatternAction, SIGNAL(toggled(bool)), g_displayGroupManager->getOptions().get(), SLOT(setShowTestPattern(bool)));
+    showTestPatternAction->setChecked(options->getShowTestPattern());
+    connect(showTestPatternAction, SIGNAL(toggled(bool)), options.get(), SLOT(setShowTestPattern(bool)));
 
     // enable mullion compensation action
     QAction * enableMullionCompensationAction = new QAction("Enable Mullion Compensation", this);
     enableMullionCompensationAction->setStatusTip("Enable mullion compensation");
     enableMullionCompensationAction->setCheckable(true);
-    enableMullionCompensationAction->setChecked(g_displayGroupManager->getOptions()->getEnableMullionCompensation());
-    connect(enableMullionCompensationAction, SIGNAL(toggled(bool)), g_displayGroupManager->getOptions().get(), SLOT(setEnableMullionCompensation(bool)));
+    enableMullionCompensationAction->setChecked(options->getEnableMullionCompensation());
+    connect(enableMullionCompensationAction, SIGNAL(toggled(bool)), options.get(), SLOT(setEnableMullionCompensation(bool)));
 
     // show zoom context action
     QAction * showZoomContextAction = new QAction("Show Zoom Context", this);
     showZoomContextAction->setStatusTip("Show zoom context");
     showZoomContextAction->setCheckable(true);
-    showZoomContextAction->setChecked(g_displayGroupManager->getOptions()->getShowZoomContext());
-    connect(showZoomContextAction, SIGNAL(toggled(bool)), g_displayGroupManager->getOptions().get(), SLOT(setShowZoomContext(bool)));
+    showZoomContextAction->setChecked(options->getShowZoomContext());
+    connect(showZoomContextAction, SIGNAL(toggled(bool)), options.get(), SLOT(setShowZoomContext(bool)));
 
     // show streaming segments action
     QAction * showStreamingSegmentsAction = new QAction("Show Segments", this);
     showStreamingSegmentsAction->setStatusTip("Show segments");
     showStreamingSegmentsAction->setCheckable(true);
-    showStreamingSegmentsAction->setChecked(g_displayGroupManager->getOptions()->getShowStreamingSegments());
-    connect(showStreamingSegmentsAction, SIGNAL(toggled(bool)), g_displayGroupManager->getOptions().get(), SLOT(setShowStreamingSegments(bool)));
+    showStreamingSegmentsAction->setChecked(options->getShowStreamingSegments());
+    connect(showStreamingSegmentsAction, SIGNAL(toggled(bool)), options.get(), SLOT(setShowStreamingSegments(bool)));
 
     // show streaming statistics action
     QAction * showStreamingStatisticsAction = new QAction("Show Statistics", this);
     showStreamingStatisticsAction->setStatusTip("Show statistics");
     showStreamingStatisticsAction->setCheckable(true);
-    showStreamingStatisticsAction->setChecked(g_displayGroupManager->getOptions()->getShowStreamingStatistics());
-    connect(showStreamingStatisticsAction, SIGNAL(toggled(bool)), g_displayGroupManager->getOptions().get(), SLOT(setShowStreamingStatistics(bool)));
+    showStreamingStatisticsAction->setChecked(options->getShowStreamingStatistics());
+    connect(showStreamingStatisticsAction, SIGNAL(toggled(bool)), options.get(), SLOT(setShowStreamingStatistics(bool)));
 
 #if ENABLE_SKELETON_SUPPORT
     // enable skeleton tracking action
@@ -256,8 +237,8 @@ void MainWindow::setupMasterWindowUI()
     QAction * showSkeletonsAction = new QAction("Show Skeletons", this);
     showSkeletonsAction->setStatusTip("Show skeletons");
     showSkeletonsAction->setCheckable(true);
-    showSkeletonsAction->setChecked(g_displayGroupManager->getOptions()->getShowSkeletons());
-    connect(showSkeletonsAction, SIGNAL(toggled(bool)), g_displayGroupManager->getOptions().get(), SLOT(setShowSkeletons(bool)));
+    showSkeletonsAction->setChecked(options->getShowSkeletons());
+    connect(showSkeletonsAction, SIGNAL(toggled(bool)), options.get(), SLOT(setShowSkeletons(bool)));
 #endif
 
     // add actions to menus
@@ -271,7 +252,6 @@ void MainWindow::setupMasterWindowUI()
     fileMenu->addAction(quitAction);
     viewMenu->addAction(backgroundAction);
     viewMenu->addAction(showWindowBordersAction);
-    viewMenu->addAction(showMouseCursorAction);
     viewMenu->addAction(showTouchPoints);
     viewMenu->addAction(showMovieControlsAction);
     viewMenu->addAction(showTestPatternAction);
@@ -306,11 +286,15 @@ void MainWindow::setupMasterWindowUI()
     setCentralWidget(mainWidget);
 
     // add the local renderer group
-    DisplayGroupGraphicsViewProxy * dggv = new DisplayGroupGraphicsViewProxy(g_displayGroupManager);
+    DisplayGroupGraphicsViewProxy * dggv = new DisplayGroupGraphicsViewProxy(displayGroup_);
     mainWidget->addTab((QWidget *)dggv->getGraphicsView(), "Display group 0");
     // Forward background touch events
-    connect(dggv->getGraphicsView(), SIGNAL(backgroundTap(QPointF)), this, SIGNAL(hideDock()));
-    connect(dggv->getGraphicsView(), SIGNAL(backgroundTapAndHold(QPointF)), this, SLOT(openDock(QPointF)));
+    connect(dggv->getGraphicsView(), SIGNAL(backgroundTap(QPointF)),
+            this, SIGNAL(hideDock()));
+    connect(dggv->getGraphicsView(), SIGNAL(backgroundTapAndHold(QPointF)),
+            this, SLOT(openDock(QPointF)));
+    connect(g_configuration->getOptions().get(), SIGNAL(updated(OptionsPtr)),
+            dggv, SLOT(optionsUpdated(OptionsPtr)));
 
 #if ENABLE_TUIO_TOUCH_LISTENER
     touchListener_ = new MultiTouchListener( dggv );
@@ -325,95 +309,17 @@ void MainWindow::setupMasterWindowUI()
     addDockWidget(Qt::LeftDockWidgetArea, contentsDockWidget);
 
     // add the list widget
-    DisplayGroupListWidgetProxy * dglwp = new DisplayGroupListWidgetProxy(g_displayGroupManager);
+    DisplayGroupListWidgetProxy * dglwp = new DisplayGroupListWidgetProxy(displayGroup_);
     contentsLayout->addWidget(dglwp->getListWidget());
 }
 
-
-void MainWindow::setupWallOpenGLWindows()
-{
-    // if we have just one tile for this process, make the GL window the central widget
-    // otherwise, create multiple windows
-
-    WallConfiguration* configuration = static_cast<WallConfiguration*>(g_configuration);
-
-    if(configuration->getScreenCount() == 1)
-    {
-        move(configuration->getScreenPosition(0));
-        resize(configuration->getScreenWidth(), configuration->getScreenHeight());
-
-        GLWindowPtr glw(new GLWindow(0));
-        glWindows_.push_back(glw);
-
-        setCentralWidget(glw.get());
-
-        if(configuration->getFullscreen())
-        {
-            showFullScreen();
-        }
-        else
-        {
-            show();
-        }
-    }
-    else
-    {
-        for(int i=0; i<configuration->getScreenCount(); i++)
-        {
-            QRect windowRect = QRect(configuration->getScreenPosition(i), QSize(configuration->getScreenWidth(), configuration->getScreenHeight()));
-
-            // setup shared OpenGL contexts
-            GLWindow * shareWidget = NULL;
-
-            if(i > 0)
-            {
-                shareWidget = glWindows_[0].get();
-            }
-
-            GLWindowPtr glw(new GLWindow(i, windowRect, shareWidget));
-            glWindows_.push_back(glw);
-
-            if(configuration->getFullscreen())
-            {
-                glw->showFullScreen();
-            }
-            else
-            {
-                glw->show();
-            }
-        }
-    }
-}
-
-GLWindowPtr MainWindow::getGLWindow(int index)
-{
-    return glWindows_[index];
-}
-
-GLWindowPtr MainWindow::getActiveGLWindow()
-{
-    return activeGLWindow_;
-}
-
-bool MainWindow::isRegionVisible(const QRectF& region) const
-{
-    for(unsigned int i=0; i<glWindows_.size(); i++)
-    {
-        if(glWindows_[i]->isRegionVisible(region))
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
-void MainWindow::openContent()
+void MasterWindow::openContent()
 {
     QString filename = QFileDialog::getOpenFileName(this, tr("Choose content"), QString(), ContentFactory::getSupportedFilesFilterAsString());
 
     if(!filename.isEmpty())
     {
-        const bool success = ContentLoader(g_displayGroupManager).load(filename);
+        const bool success = ContentLoader(displayGroup_).load(filename);
 
         if ( !success )
         {
@@ -424,7 +330,7 @@ void MainWindow::openContent()
     }
 }
 
-void MainWindow::estimateGridSize(unsigned int numElem, unsigned int &gridX, unsigned int &gridY)
+void MasterWindow::estimateGridSize(unsigned int numElem, unsigned int &gridX, unsigned int &gridY)
 {
     assert(numElem > 0);
     gridX = (unsigned int)(ceil(sqrt(numElem)));
@@ -432,7 +338,7 @@ void MainWindow::estimateGridSize(unsigned int numElem, unsigned int &gridX, uns
     gridY = (gridX*(gridX-1)>=numElem) ? gridX-1 : gridX;
 }
 
-void MainWindow::addContentDirectory(const QString& directoryName, unsigned int gridX, unsigned int gridY)
+void MasterWindow::addContentDirectory(const QString& directoryName, unsigned int gridX, unsigned int gridY)
 {
     QDir directory(directoryName);
     directory.setFilter(QDir::Files);
@@ -470,7 +376,7 @@ void MainWindow::addContentDirectory(const QString& directoryName, unsigned int 
         const QPointF position(x_coord*w + 0.5*w, y_coord*h + 0.5*h);
         const QSizeF windowSize(w, h);
 
-        const bool success = ContentLoader(g_displayGroupManager).load(filename, position, windowSize);
+        const bool success = ContentLoader(displayGroup_).load(filename, position, windowSize);
 
         if(success)
         {
@@ -484,9 +390,9 @@ void MainWindow::addContentDirectory(const QString& directoryName, unsigned int 
     }
 }
 
-void MainWindow::openContentsDirectory()
+void MasterWindow::openContentsDirectory()
 {
-    QString directoryName = QFileDialog::getExistingDirectory(this);
+    const QString directoryName = QFileDialog::getExistingDirectory(this);
 
     if(!directoryName.isEmpty())
     {
@@ -498,37 +404,35 @@ void MainWindow::openContentsDirectory()
     }
 }
 
-void MainWindow::showBackgroundWidget()
+void MasterWindow::showBackgroundWidget()
 {
-    assert(g_mpiChannel->getRank() == 0 && "Background widget is intended only for rank 0 application");
-
     if(!backgroundWidget_)
     {
-        backgroundWidget_ = new BackgroundWidget(this);
+        backgroundWidget_ = new BackgroundWidget(*g_configuration, this);
         backgroundWidget_->setModal(true);
+
+        connect(backgroundWidget_, SIGNAL(backgroundColorChanged(QColor)),
+                g_configuration->getOptions().get(), SLOT(setBackgroundColor(QColor)));
+        connect(backgroundWidget_, SIGNAL(backgroundContentChanged(ContentPtr)),
+                displayGroup_.get(), SLOT(setBackgroundContent(ContentPtr)));
     }
 
     backgroundWidget_->show();
 }
 
-void MainWindow::openWebBrowser()
+void MasterWindow::openWebBrowser()
 {
     bool ok;
-    QString url = QInputDialog::getText(this, tr("New WebBrowser Content"),
-                                         tr("URL:"), QLineEdit::Normal,
-                                         WEBBROWSER_DEFAULT_URL, &ok);
+    const QString url = QInputDialog::getText(this, tr("New WebBrowser Content"),
+                                              tr("URL:"), QLineEdit::Normal,
+                                              WEBBROWSER_DEFAULT_URL, &ok);
     if (ok && !url.isEmpty())
     {
         emit openWebBrowser(QPointF(.5,.5), QSize(), url);
     }
 }
 
-void MainWindow::clearContents()
-{
-    g_displayGroupManager->setContentWindowManagers(ContentWindowManagerPtrs());
-}
-
-void MainWindow::saveState()
+void MasterWindow::saveState()
 {
     QString filename = QFileDialog::getSaveFileName(this, "Save State", "", "State files (*.dcx)");
 
@@ -541,18 +445,19 @@ void MainWindow::saveState()
             filename.append(".dcx");
         }
 
-        bool success = StateSerializationHelper(g_displayGroupManager).save(filename);
+        bool success = StateSerializationHelper(displayGroup_).save(filename);
 
         if(!success)
         {
-            QMessageBox::warning(this, "Error", "Could not save state file.", QMessageBox::Ok, QMessageBox::Ok);
+            QMessageBox::warning(this, "Error", "Could not save state file.",
+                                 QMessageBox::Ok, QMessageBox::Ok);
         }
     }
 }
 
-void MainWindow::loadState()
+void MasterWindow::loadState()
 {
-    QString filename = QFileDialog::getOpenFileName(this, "Load State", "", "State files (*.dcx)");
+    const QString filename = QFileDialog::getOpenFileName(this, "Load State", "", "State files (*.dcx)");
 
     if(!filename.isEmpty())
     {
@@ -560,17 +465,17 @@ void MainWindow::loadState()
     }
 }
 
-void MainWindow::loadState(const QString& filename)
+void MasterWindow::loadState(const QString& filename)
 {
-    if( !StateSerializationHelper(g_displayGroupManager).load(filename ))
+    if( !StateSerializationHelper(displayGroup_).load(filename ))
     {
-        QMessageBox::warning(this, "Error", "Could not load state file.", QMessageBox::Ok, QMessageBox::Ok);
+        QMessageBox::warning(this, "Error", "Could not load state file.",
+                             QMessageBox::Ok, QMessageBox::Ok);
     }
 }
 
-void MainWindow::computeImagePyramid()
+void MasterWindow::computeImagePyramid()
 {
-    // get image filename
     const QString imageFilename = QFileDialog::getOpenFileName(this, "Select image");
 
     if(!imageFilename.isEmpty())
@@ -589,20 +494,16 @@ void MainWindow::computeImagePyramid()
 }
 
 #if ENABLE_SKELETON_SUPPORT
-void MainWindow::setEnableSkeletonTracking(bool enable)
+void MasterWindow::setEnableSkeletonTracking(bool enable)
 {
-    if(enable == true)
-    {
+    if(enable)
         emit(enableSkeletonTracking());
-    }
     else
-    {
         emit(disableSkeletonTracking());
-    }
 }
 #endif
 
-QStringList MainWindow::extractValidContentUrls(const QMimeData* mimeData)
+QStringList MasterWindow::extractValidContentUrls(const QMimeData* mimeData)
 {
     QStringList pathList;
 
@@ -621,7 +522,7 @@ QStringList MainWindow::extractValidContentUrls(const QMimeData* mimeData)
     return pathList;
 }
 
-QStringList MainWindow::extractFolderUrls(const QMimeData* mimeData)
+QStringList MasterWindow::extractFolderUrls(const QMimeData* mimeData)
 {
     QStringList pathList;
 
@@ -639,7 +540,7 @@ QStringList MainWindow::extractFolderUrls(const QMimeData* mimeData)
     return pathList;
 }
 
-QString MainWindow::extractStateFile(const QMimeData* mimeData)
+QString MasterWindow::extractStateFile(const QMimeData* mimeData)
 {
     QList<QUrl> urlList = mimeData->urls();
     if (urlList.size() == 1)
@@ -652,7 +553,7 @@ QString MainWindow::extractStateFile(const QMimeData* mimeData)
     return QString();
 }
 
-void MainWindow::dragEnterEvent(QDragEnterEvent* dragEvent)
+void MasterWindow::dragEnterEvent(QDragEnterEvent* dragEvent)
 {
     const QStringList& pathList = extractValidContentUrls(dragEvent->mimeData());
     const QStringList& dirList = extractFolderUrls(dragEvent->mimeData());
@@ -664,12 +565,12 @@ void MainWindow::dragEnterEvent(QDragEnterEvent* dragEvent)
     }
 }
 
-void MainWindow::dropEvent(QDropEvent* dropEvt)
+void MasterWindow::dropEvent(QDropEvent* dropEvt)
 {
     const QStringList& pathList = extractValidContentUrls(dropEvt->mimeData());
     foreach (QString url, pathList)
     {
-        ContentLoader(g_displayGroupManager).load(url);
+        ContentLoader(displayGroup_).load(url);
     }
 
     const QStringList& dirList = extractFolderUrls(dropEvt->mimeData());
@@ -689,7 +590,7 @@ void MainWindow::dropEvent(QDropEvent* dropEvt)
     dropEvt->acceptProposedAction();
 }
 
-void MainWindow::openDock(const QPointF position)
+void MasterWindow::openDock(const QPointF position)
 {
     const unsigned int dockWidth = g_configuration->getTotalWidth()*DOCK_WIDTH_RELATIVE_TO_WALL;
     const unsigned int dockHeight = dockWidth * DockPixelStreamer::getDefaultAspectRatio();
@@ -699,64 +600,3 @@ void MainWindow::openDock(const QPointF position)
     emit openDock(position, QSize(dockWidth, dockHeight), dockRootDir);
 }
 
-void MainWindow::updateGLWindows()
-{
-    // receive any waiting messages
-    g_mpiChannel->receiveMessages(g_displayGroupManager,
-                                  getGLWindow()->getPixelStreamFactory());
-
-    // synchronize clock right after receiving messages to ensure we have an
-    // accurate time for rendering, etc. below
-    g_mpiChannel->synchronizeClock();
-
-    if( g_displayGroupManager->getOptions()->getShowMouseCursor( ))
-        unsetCursor();
-    else
-        setCursor( QCursor( Qt::BlankCursor ));
-
-    // render all GLWindows
-    for(size_t i=0; i<glWindows_.size(); i++)
-    {
-        activeGLWindow_ = glWindows_[i];
-        glWindows_[i]->updateGL();
-    }
-
-    // all render processes render simultaneously
-    g_mpiChannel->globalBarrier();
-
-    // swap buffers on all windows
-    for(size_t i=0; i<glWindows_.size(); i++)
-    {
-        glWindows_[i]->swapBuffers();
-    }
-
-    // advance all contents
-    g_displayGroupManager->advanceContents();
-
-    // clear old factory objects and purge any textures
-    if(!glWindows_.empty())
-    {
-        glWindows_[0]->getTextureFactory().clearStaleObjects();
-        glWindows_[0]->getDynamicTextureFactory().clearStaleObjects();
-        glWindows_[0]->getPDFFactory().clearStaleObjects();
-        glWindows_[0]->getSVGFactory().clearStaleObjects();
-        glWindows_[0]->getMovieFactory().clearStaleObjects();
-        glWindows_[0]->getPixelStreamFactory().clearStaleObjects();
-        glWindows_[0]->getPDFFactory().clearStaleObjects();
-
-        glWindows_[0]->purgeTextures();
-    }
-
-    // increment frame counter
-    ++g_frameCount;
-
-    emit(updateGLWindowsFinished());
-}
-
-void MainWindow::finalize()
-{
-    for(size_t i=0; i<glWindows_.size(); i++)
-    {
-        glWindows_[i]->finalize();
-    }
-}
