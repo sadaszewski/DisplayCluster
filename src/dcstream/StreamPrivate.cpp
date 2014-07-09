@@ -42,10 +42,11 @@
 
 #include "log.h"
 
+#include "StreamSendWorker.h"
 #include "PixelStreamSegment.h"
 #include "PixelStreamSegmentParameters.h"
-#include "Stream.h" // For defaultCompressionQuality
 
+#include <boost/thread/thread.hpp>
 #define SEGMENT_SIZE 512
 
 namespace dc
@@ -56,6 +57,7 @@ StreamPrivate::StreamPrivate( const std::string &name,
     : name_(name)
     , dcSocket_( address )
     , registeredForEvents_(false)
+    , sendWorker_( 0 )
 {
     imageSegmenter_.setNominalSegmentDimensions(SEGMENT_SIZE, SEGMENT_SIZE);
 
@@ -72,6 +74,8 @@ StreamPrivate::StreamPrivate( const std::string &name,
 
 StreamPrivate::~StreamPrivate()
 {
+    delete sendWorker_;
+
     if( !dcSocket_.isConnected( ))
         return;
 
@@ -79,6 +83,36 @@ StreamPrivate::~StreamPrivate()
     dcSocket_.send(mh, QByteArray());
 
     registeredForEvents_ = false;
+}
+
+bool StreamPrivate::send( const ImageWrapper& image )
+{
+    if( image.compressionPolicy != COMPRESSION_ON &&
+        image.pixelFormat != dc::RGBA )
+    {
+        put_flog(LOG_ERROR, "Currently, RAW images can only be sent in RGBA "
+                            "format. Other formats support remain to be implemented.");
+        return false;
+    }
+
+    const ImageSegmenter::Handler sendFunc =
+        boost::bind( &StreamPrivate::sendPixelStreamSegment, this, _1 );
+    return imageSegmenter_.generate( image, sendFunc );
+}
+
+Stream::Future StreamPrivate::asyncSend( const ImageWrapper& image )
+{
+    if( !sendWorker_ )
+        sendWorker_ = new StreamSendWorker( *this );
+
+    return sendWorker_->enqueueImage( image );
+}
+
+bool StreamPrivate::finishFrame()
+{
+    // Open a window for the PixelStream
+    MessageHeader mh(MESSAGE_TYPE_PIXELSTREAM_FINISH_FRAME, 0, name_);
+    return dcSocket_.send(mh, QByteArray());
 }
 
 bool StreamPrivate::sendPixelStreamSegment(const PixelStreamSegment &segment)
