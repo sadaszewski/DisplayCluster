@@ -1,7 +1,6 @@
 /*********************************************************************/
 /* Copyright (c) 2013-2014, EPFL/Blue Brain Project                  */
-/*                     Raphael Dumusc <raphael.dumusc@epfl.ch>       */
-/*                     Stefan.Eilemann@epfl.ch                       */
+/*                     Daniel.Nachbaur@epfl.ch                       */
 /* All rights reserved.                                              */
 /*                                                                   */
 /* Redistribution and use in source and binary forms, with or        */
@@ -38,95 +37,56 @@
 /* or implied, of The University of Texas at Austin.                 */
 /*********************************************************************/
 
-#ifndef DCSTREAMPRIVATE_H
-#define DCSTREAMPRIVATE_H
+#ifndef DCSTREAMSENDWORKER_H
+#define DCSTREAMSENDWORKER_H
 
-#include "Event.h"
-#include "MessageHeader.h"
-#include "ImageSegmenter.h"
-#include "Socket.h" // member
+// needed for future.hpp with Boost 1.41
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/condition.hpp>
+
+#include <boost/thread/future.hpp>
+#include <boost/thread/thread.hpp>
+#include <deque>
+
 #include "Stream.h" // Stream::Future
-
-#include <QMutex>
-#include <string>
-
-class QString;
 
 namespace dc
 {
 
-struct PixelStreamSegment;
-struct PixelStreamSegmentParameters;
-class StreamSendWorker;
+class StreamPrivate;
+struct ImageWrapper;
 
 /**
- * Private implementation for the Stream class.
+ * Worker class that is used to send images that are pushed to a worker queue.
  */
-class StreamPrivate
+class StreamSendWorker
 {
 public:
-    /**
-     * Create a new stream and open a new connection to the DisplayCluster.
-     *
-     * It can be a hostname like "localhost" or an IP in string format,
-     * e.g. "192.168.1.83" This method must be called by all Streams sharing a
-     * common identifier before any of them starts sending images.
-     *
-     * @param name the unique stream name
-     * @param address Address of the target DisplayCluster instance.
-     * @return true if the connection could be established
-     */
-    StreamPrivate( const std::string& name, const std::string& address );
+    /** Create a new stream worker associated to an existing stream object. */
+    StreamSendWorker( StreamPrivate& stream );
 
-    ~StreamPrivate();
+    ~StreamSendWorker();
 
-    /** The stream identifier. */
-    const std::string name_;
-
-    /** The communication socket instance */
-    Socket dcSocket_;
-
-    /** The image segmenter */
-    ImageSegmenter imageSegmenter_;
-
-    /** Has a successful event registration reply been received */
-    bool registeredForEvents_;
-
-    /**
-     * Close the stream.
-     * @return true if the connection could be terminated or the Stream was not connected, false otherwise
-     */
-    bool close();
-
-    /** @sa Stream::send */
-    bool send( const ImageWrapper& image );
-
-    /** @sa Stream::asyncSend */
-    Stream::Future asyncSend(const ImageWrapper& image);
-
-    /** @sa Stream::finishFrame */
-    bool finishFrame();
-
-    /**
-     * Send an existing PixelStreamSegment via the DcSocket.
-     * @param socket The DcSocket instance
-     * @param segment A pixel stream segement with valid parameters and imageData
-     * @param senderName Used to identifiy the sender on the receiver side
-     * @return true if the message could be sent
-     */
-    bool sendPixelStreamSegment(const PixelStreamSegment& segment);
-
-    /**
-     * Send a command to the wall
-     * @param command A command string formatted by the Command class.
-     * @return true if the request could be sent, false otherwise.
-     */
-    bool sendCommand(const QString& command);
-
-    QMutex sendLock_;
+    /** Enqueue an image to be send during the execution of run(). */
+    Stream::Future enqueueImage( const ImageWrapper& image );
 
 private:
-    StreamSendWorker* sendWorker_;
+    /** Starts asynchronous sending of queued images. */
+    void run_();
+
+    /** Stop the worker and clear any pending image send requests. */
+    void stop_();
+
+    typedef boost::promise< bool > Promise;
+    typedef boost::shared_ptr< Promise > PromisePtr;
+    typedef std::pair< PromisePtr, ImageWrapper > Request;
+
+    StreamPrivate& stream_;
+    std::deque< Request > requests_;
+    boost::mutex mutex_;
+    boost::condition condition_;
+    bool running_;
+    boost::thread thread_;
 };
 
 }
