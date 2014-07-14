@@ -1,6 +1,10 @@
+include_directories(${Qt5Core_INCLUDE_DIRS} ${Qt5Network_INCLUDE_DIRS} ${Qt5Concurrent_INCLUDE_DIRS})
 
-set(DCSTREAM_LIBRARY_LIBS ${QT_QTCORE_LIBRARY}
-                          ${QT_QTNETWORK_LIBRARY}
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=shadow")
+
+set(DCSTREAM_LIBRARY_LIBS ${Qt5Core_LIBRARIES}
+                          ${Qt5Network_LIBRARIES}
+                          ${Qt5Concurrent_LIBRARIES}
                           ${LibJpegTurbo_LIBRARIES}
                           ${Boost_THREAD_LIBRARY}
                           ${Boost_SYSTEM_LIBRARY})
@@ -30,7 +34,7 @@ set(DCSTREAM_LIBRARY_PUBLIC_HEADERS
 )
 
 set(MOC_HEADERS Socket.h)
-qt4_wrap_cpp(MOC_OUTFILES ${MOC_HEADERS})
+qt5_wrap_cpp(MOC_OUTFILES ${MOC_HEADERS})
 
 add_library(dcstream SHARED ${DCSTREAM_LIBRARY_SRCS} ${MOC_OUTFILES} ${DISPLAYCLUSTER_LIBRARY_SHARED_HEADERS})
 target_link_libraries(dcstream ${DCSTREAM_LIBRARY_LIBS})

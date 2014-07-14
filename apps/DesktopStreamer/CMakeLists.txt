@@ -1,3 +1,4 @@
+include_directories(${Qt5Gui_INCLUDE_DIRS} ${Qt5Widgets_INCLUDE_DIRS}  ${Qt5Core_INCLUDE_DIRS})
 
 set(DESKTOP_STREAMER_SRCS ${DESKTOP_STREAMER_SRCS}
     src/DesktopSelectionRectangle.cpp
@@ -13,10 +14,10 @@ set(DESKTOP_STREAMER_MOC_HEADERS
     src/DesktopSelectionRectangle.h
 )
 
-qt4_wrap_cpp(DESKTOP_STREAMER_MOC_OUTFILES ${DESKTOP_STREAMER_MOC_HEADERS})
-qt4_add_resources(DESKTOP_STREAMER_RRC resources.qrc)
+qt5_wrap_cpp(DESKTOP_STREAMER_MOC_OUTFILES ${DESKTOP_STREAMER_MOC_HEADERS})
+qt5_add_resources(DESKTOP_STREAMER_RRC resources.qrc)
 
-set(DESKTOP_STREAMER_LIBS ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY})
+set(DESKTOP_STREAMER_LIBS ${Qt5Concurrent_LIBRARIES} ${Qt5Core_LIBRARIES} ${Qt5Gui_LIBRARIES} ${Qt5Widgets_LIBRARIES})
 
 if(APPLE)
   set(STREAMER_APP_NAME DesktopStreamer)

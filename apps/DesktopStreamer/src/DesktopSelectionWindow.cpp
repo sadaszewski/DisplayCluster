@@ -40,6 +40,8 @@
 
 #include "DesktopSelectionView.h"
 
+#include <QPushButton>
+
 DesktopSelectionWindow::DesktopSelectionWindow()
     : desktopSelectionView_(new DesktopSelectionView(this))
 {

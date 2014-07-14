@@ -40,6 +40,7 @@
 #define DESKTOP_SELECTION_RECTANGLE_H
 
 #include <QtGui>
+#include <QGraphicsRectItem>
 
 class DesktopSelectionRectangle : public QObject, public QGraphicsRectItem
 {

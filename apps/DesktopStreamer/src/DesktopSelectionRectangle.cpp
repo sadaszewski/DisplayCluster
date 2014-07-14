@@ -37,6 +37,7 @@
 /*********************************************************************/
 
 #include "DesktopSelectionRectangle.h"
+#include <QGraphicsSceneMouseEvent>
 
 #define PEN_WIDTH 10 // should be even
 #define CORNER_RESIZE_THRESHHOLD 50

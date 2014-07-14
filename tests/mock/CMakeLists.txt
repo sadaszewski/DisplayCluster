@@ -5,6 +5,8 @@
 #
 # Generates a mock library used by the cpp unit tests.
 
+include_directories(${Qt5Network_INCLUDE_DIRS} ${Qt5Core_INCLUDE_DIRS})
+
 set(MOCK_LIBRARY_FILES
   glxDisplay.h
   GlobalQtApp.h
@@ -20,7 +22,7 @@ if(BUILD_CORE_LIBRARY)
   list(APPEND MOCK_LIBRARY_FILES MockTextInputDispatcher.cpp)
 endif()
 
-qt4_wrap_cpp(MOC_OUTFILES ${MOC_HEADERS})
+qt5_wrap_cpp(MOC_OUTFILES ${MOC_HEADERS})
 
 # Create the mock library
 add_library(mock SHARED ${MOC_OUTFILES} ${MOCK_LIBRARY_FILES})

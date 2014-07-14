@@ -41,6 +41,12 @@
 
 #include <QtGui>
 
+#include <QLineEdit>
+#include <QSpinBox>
+#include <QCheckBox>
+#include <QLabel>
+#include <QMainWindow>
+
 namespace dc
 {
 class Stream;

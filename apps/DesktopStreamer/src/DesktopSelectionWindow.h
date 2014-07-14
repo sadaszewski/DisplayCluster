@@ -40,6 +40,7 @@
 #define DESKTOP_SELECTION_WINDOW_H
 
 #include <QtGui>
+#include <QMainWindow>
 
 class DesktopSelectionView;
 

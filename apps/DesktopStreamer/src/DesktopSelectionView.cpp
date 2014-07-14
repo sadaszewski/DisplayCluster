@@ -39,6 +39,11 @@
 #include "DesktopSelectionView.h"
 #include "DesktopSelectionRectangle.h"
 
+#include <QLineEdit>
+#include <QSpinBox>
+#include <QCheckBox>
+#include <QLabel>
+
 DesktopSelectionView::DesktopSelectionView(QWidget* widget_)
     : QGraphicsView(widget_)
     , desktopSelectionRectangle_(0)

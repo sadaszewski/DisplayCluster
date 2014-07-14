@@ -44,6 +44,13 @@
 
 #include "dcstream/Stream.h"
 
+#include <QAction>
+#include <QToolBar>
+#include <QFormLayout>
+#include <QApplication>
+#include <QMessageBox>
+#include <QDesktopWidget>
+
 #ifdef _WIN32
     typedef __int32 int32_t;
     #include <windows.h>

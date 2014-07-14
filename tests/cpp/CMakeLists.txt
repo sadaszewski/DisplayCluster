@@ -6,6 +6,8 @@
 # Generates executables for the unit tests and defines a "tests" make target
 # which runs all of them.
 
+include_directories(${Qt5Core_INCLUDE_DIRS})
+
 # TEST_LIBRARIES is used by CommonCTest.cmake to link tests against them
 set(TEST_LIBRARIES
   ${DC_LIBRARIES}

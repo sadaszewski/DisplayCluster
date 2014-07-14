@@ -40,6 +40,7 @@
 #define DESKTOP_SELECTION_VIEW_H
 
 #include <QtGui>
+#include <QGraphicsView>
 
 class DesktopSelectionRectangle;
 
